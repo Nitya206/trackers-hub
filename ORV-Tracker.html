@@ -2293,6 +2293,9 @@ function RC(i){
     </div>`;
   document.body.appendChild(el);
   document.body.style.overflow='hidden';
+  // Hide scroll ribbon while reader is open
+  const _ribbon=document.getElementById('scroll-ribbon');
+  if(_ribbon) _ribbon.style.display='none';
   rmSaveReaderState({
     open:true,
     sessionIdx:i,
@@ -2458,6 +2461,9 @@ function rmClose(){
   rmClearReaderState();
   const m=document.getElementById('rm');
   if(m){m.style.animation='modalOut .2s ease forwards';setTimeout(()=>{m.remove();document.body.style.overflow='';},200);}
+  // Restore scroll ribbon
+  const _ribbon=document.getElementById('scroll-ribbon');
+  if(_ribbon) _ribbon.style.display='';
 }
 
 // ── Reader Theme & Settings ──

@@ -2680,7 +2680,20 @@ document.addEventListener('touchend',e=>{
   if(!document.getElementById('rm'))return;
   if(document.querySelector('.rm-cfg.show'))return;
   const dx=e.changedTouches[0].clientX-_tx;
-  if(Math.abs(dx)>55){rmFlip(dx<0?1:-1);}
+  const dy=e.changedTouches[0].clientY-_ty;
+  // Swipe left/right → flip page
+  if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)){rmFlip(dx<0?1:-1);return;}
+  // Tap in center third of screen (not swipe, not on bar/buttons) → toggle bar
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<12){
+    const target=e.target;
+    // Don't toggle if tapping a button or the bar itself
+    if(target.closest('.rm-bar,.rm-bar-cfg,.rm-bar-x,.rm-cfg'))return;
+    const cx=e.changedTouches[0].clientX;
+    const W=window.innerWidth;
+    // Only toggle if tap is in the middle 40% of screen width
+    if(cx>W*0.3&&cx<W*0.7){rmToggleBar();}
+  }
 },{passive:true});
 // ── Scroll wheel (just flips pages like arrow keys) ──
 document.addEventListener('wheel',e=>{

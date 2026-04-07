@@ -438,13 +438,28 @@ header {
   .card-wrap{perspective:none;}
   .page{padding:44px 18px 60px;}
   .title-glow,.title-main{font-size:36px !important;}
+  .date-pill{font-size:10px;padding:6px 14px;gap:10px;}
+  .eyebrow{font-size:9px;letter-spacing:.25em;}
+  .sub{font-size:11px;}
+  .c-title{font-size:15px;}
+  .s-val{font-size:13px;}
+  .c-icon{width:44px;height:44px;font-size:20px;}
+  .c-launch{width:36px;height:36px;font-size:14px;}
 }
 
-/* Prevent transform override on mobile tap */
-@media(hover:none){
-  .card { transform:none !important; transition:none !important; }
-  .card::before { opacity:0 !important; }
-  .card::after  { opacity:0 !important; }
+/* Touch devices — disable custom cursor and 3D tilt */
+@media(hover:none),(pointer:coarse){
+  /* Hide the sci-fi cursor entirely */
+  #cursor{display:none !important;}
+  /* Restore default cursor for all elements */
+  *,*::before,*::after{cursor:auto !important;}
+  a,button,[role=button]{cursor:pointer !important;}
+  /* Disable 3D tilt — use simple press feedback instead */
+  .card{transform:none !important;transition:opacity .15s ease !important;}
+  .card:active{opacity:.85;}
+  .card::before{opacity:0 !important;}
+  .card::after{opacity:0 !important;}
+  .card-wrap{perspective:none !important;}
 }
 </style>
 </head>
@@ -669,6 +684,11 @@ header {
 (function cursor() {
   const el = document.getElementById('cursor');
   if (!el) return;
+  // Disable on touch devices
+  if (window.matchMedia('(hover:none),(pointer:coarse)').matches) {
+    el.style.display = 'none';
+    return;
+  }
 
   document.addEventListener('mousemove', function(e) {
     el.style.transform = 'translate(' + (e.clientX - 21) + 'px,' + (e.clientY - 21) + 'px)';
@@ -692,6 +712,9 @@ header {
    No perspective() in the JS transform string to avoid conflicts.
 ══════════════════════════════ */
 (function tilt() {
+  // Skip tilt entirely on touch/pointer-coarse devices
+  if (window.matchMedia('(hover:none),(pointer:coarse)').matches) return;
+
   const MAX_ROT = 20;
 
   let raf = null;

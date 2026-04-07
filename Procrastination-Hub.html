@@ -4687,20 +4687,23 @@
 
   /* Small screen layout fixes */
   @media (max-width: 600px) {
-    /* Fit all 11 items (7 nav + mute + sep + 2 hub-nav) without scrolling */
+    /* Bottom nav: horizontal scroll — clean and simple */
     #bottom-nav {
       bottom: 10px;
-      padding: 3px 3px;
-      gap: 0 !important;
+      padding: 4px 6px;
+      gap: 2px;
       border-radius: 20px;
-      max-width: calc(100vw - 16px);
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-width: none;
+      max-width: calc(100vw - 20px);
       left: 50%;
       transform: translateX(-50%);
-      justify-content: space-evenly;
     }
-    .bn-item { width: 30px !important; height: 30px !important; flex-shrink: 0; }
-    .bn-item svg { width: 13px !important; height: 13px !important; }
-    .hn-bn-sep { width: 1px; margin: 0; flex-shrink: 0; }
+    #bottom-nav::-webkit-scrollbar { display: none; }
+    .bn-item { width: 38px; height: 38px; flex-shrink: 0; }
+    .bn-item svg { width: 15px; height: 15px; }
+    .hn-bn-sep { flex-shrink: 0; }
 
     /* Stat cards: 2-column on mobile */
     .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
@@ -4734,8 +4737,23 @@
     #app-main { padding: 20px 16px 100px; }
 
     /* Keep the fixed app-main scroll intact — do NOT override body overflow */
-    /* Just ensure app-main has smooth momentum scrolling on iOS */
-    #app-main { -webkit-overflow-scrolling: touch; }
+    /* Smooth momentum scrolling on iOS for the fixed scroll container */
+    #app-main {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    /* Overview calendar: 3 columns on mobile instead of 7 */
+    .sched-calendar {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 6px;
+    }
+
+    /* Overview manifest rows: ensure they don't overflow */
+    .manifest-row {
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
   }
 
   </style>

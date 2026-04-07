@@ -631,32 +631,6 @@
     #hn-s-footer{ display:none; }
     #hn-sw-popup{ min-width:200px; border-radius:14px; }
   }
-
-  /* Injected nav icon buttons — shared style for both trackers */
-  .hn-nav-icon-btn{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:2px;
-    flex-shrink:0;
-    cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    touch-action:manipulation;
-    opacity:0.55;
-    transition:opacity .15s ease, transform .15s ease;
-    border-radius:10px;
-    padding:4px 6px;
-  }
-  .hn-nav-icon-btn:active{ opacity:1; transform:scale(0.92); }
-  .hn-nav-icon-btn svg{ display:block; }
-  .hn-nav-icon-btn-label{
-    font-size:9px;
-    font-weight:600;
-    letter-spacing:0.02em;
-    line-height:1;
-    white-space:nowrap;
-  }
   `;
 
   const styleEl = document.createElement('style');
@@ -727,14 +701,14 @@
     if (swOpen) {
       const isMobile = window.innerWidth <= 1023;
       if (isMobile) {
-        // Open upward from bottom-left where the pills sit
-        swPopup.style.left = '10px';
-        swPopup.style.right = 'auto';
+        // Open upward from bottom-right where the overlay bar sits
+        swPopup.style.right = '8px';
+        swPopup.style.left = 'auto';
         swPopup.style.bottom = '70px';
         swPopup.style.top = 'auto';
         swPopup.style.transform = '';
         swPopup.style.minWidth = '220px';
-        swPopup.style.maxWidth = 'calc(100vw - 20px)';
+        swPopup.style.maxWidth = 'calc(100vw - 16px)';
       } else {
         swPopup.style.transform = '';
         // Position popup relative to the trigger element
@@ -1041,98 +1015,112 @@ return btn;
 
   function mountInBottomNav(navEl) {
     if (!navEl || navEl.querySelector('.hn-injected')) return;
-
-    // Always inject into the nav — icon-only on mobile, same on desktop
-    // Hide floating root since we're inside the nav
     root.style.display = 'none';
     document.body.appendChild(root);
 
-    const isMobile = window.innerWidth <= 600;
-
-    if (isMobile) {
-      // Mobile: tiny icon-only buttons that match .bn-item sizing (42×42)
-      const makeMobileItem = (svg, label, clickFn) => {
-        const el = document.createElement('div');
-        el.className = 'bn-item hn-injected';
-        el.setAttribute('aria-label', label);
-        el.style.cssText = 'cursor:pointer;opacity:0.55;';
-        el.innerHTML = `<div class="bn-icon-wrap">${svg}</div>`;
-        el.addEventListener('click', (e) => { e.stopPropagation(); el.style.opacity='1'; setTimeout(()=>el.style.opacity='0.55',300); clickFn(e); });
-        return el;
-      };
-      const sep = document.createElement('div');
-      sep.className = 'hn-bn-sep';
-      navEl.appendChild(sep);
-      navEl.appendChild(makeMobileItem(SW_SVG, 'Switch App', toggleSwitcher));
-      navEl.appendChild(makeMobileItem(SR_SVG, 'Search', openSearch));
-    } else {
-      // Desktop: full bn-item with tooltip
-      const makeProcItem = (svg, label, clickFn) => {
-        const el = document.createElement('div');
-        el.className = 'bn-item hn-injected';
-        el.innerHTML = `<div class="bn-tip">${label}</div><div class="bn-icon-wrap">${svg}</div>`;
-        el.onclick = (e) => { e.stopPropagation(); clickFn(e); };
-        return el;
-      };
-      const sep = document.createElement('div');
-      sep.className = 'hn-bn-sep';
-      navEl.appendChild(sep);
-      navEl.appendChild(makeProcItem(SW_SVG, 'Switch App', toggleSwitcher));
-      navEl.appendChild(makeProcItem(SR_SVG, 'Search ⌘K', openSearch));
+    if (window.innerWidth <= 600) {
+      // Mobile: don't touch the nav — show a tiny 2-button overlay on its right edge
+      showMobileNavOverlay('proc');
+      return;
     }
+
+    // Desktop: inject into nav with tooltip
+    const makeProcItem = (svg, label, clickFn) => {
+      const el = document.createElement('div');
+      el.className = 'bn-item hn-injected';
+      el.innerHTML = `<div class="bn-tip">${label}</div><div class="bn-icon-wrap">${svg}</div>`;
+      el.onclick = (e) => { e.stopPropagation(); clickFn(e); };
+      return el;
+    };
+    const sep = document.createElement('div');
+    sep.className = 'hn-bn-sep';
+    navEl.appendChild(sep);
+    navEl.appendChild(makeProcItem(SW_SVG, 'Switch App', toggleSwitcher));
+    navEl.appendChild(makeProcItem(SR_SVG, 'Search ⌘K', openSearch));
   }
 
   function mountInStudyNav(navEl) {
     document.body.appendChild(root);
     root.style.display = 'none';
 
-    const isMobile = window.innerWidth <= 1023;
-
-    if (isMobile) {
-      // Mobile: icon-only nav-item (no label text) so nav doesn't overflow
-      const makeItem = (svg, label, clickFn) => {
-        const a = document.createElement('a');
-        a.className = 'nav-item hn-injected';
-        a.setAttribute('role', 'button');
-        a.setAttribute('aria-label', label);
-        a.style.cssText = 'cursor:pointer;min-width:36px;padding:6px 4px;opacity:0.6;';
-        // Icon only — no label span
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'nav-icon';
-        iconSpan.style.fontSize = '16px';
-        iconSpan.innerHTML = svg;
-        a.appendChild(iconSpan);
-        a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); a.style.opacity='1'; setTimeout(()=>a.style.opacity='0.6',300); clickFn(e); });
-        return a;
-      };
-      navEl.appendChild(makeItem(SW_SVG, 'Switch App', toggleSwitcher));
-      navEl.appendChild(makeItem(SR_SVG, 'Search', openSearch));
-    } else {
-      // Desktop sidebar: full nav-item with label
-      const sep = document.createElement('div');
-      sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
-      navEl.appendChild(sep);
-
-      const makeItem = (emoji, label, clickFn) => {
-        const a = document.createElement('a');
-        a.className = 'nav-item';
-        a.style.cursor = 'pointer';
-        a.setAttribute('role', 'button');
-        a.setAttribute('aria-label', label);
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'nav-icon';
-        iconSpan.textContent = emoji;
-        const labelSpan = document.createElement('span');
-        labelSpan.className = 'nav-label';
-        labelSpan.textContent = label;
-        a.appendChild(iconSpan);
-        a.appendChild(labelSpan);
-        a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
-        return a;
-      };
-      navEl.appendChild(makeItem('⬡', 'Apps', toggleSwitcher));
-      navEl.appendChild(makeItem('🔍', 'Search', openSearch));
+    if (window.innerWidth <= 1023) {
+      // Mobile: don't touch the nav — show a tiny 2-button overlay on its right edge
+      showMobileNavOverlay('study');
+      return;
     }
+
+    // Desktop sidebar: inject as full nav-items with label
+    const sep = document.createElement('div');
+    sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
+    navEl.appendChild(sep);
+
+    const makeItem = (emoji, label, clickFn) => {
+      const a = document.createElement('a');
+      a.className = 'nav-item';
+      a.style.cursor = 'pointer';
+      a.setAttribute('role', 'button');
+      a.setAttribute('aria-label', label);
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'nav-icon';
+      iconSpan.textContent = emoji;
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'nav-label';
+      labelSpan.textContent = label;
+      a.appendChild(iconSpan);
+      a.appendChild(labelSpan);
+      a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
+      return a;
+    };
+    navEl.appendChild(makeItem('⬡', 'Apps', toggleSwitcher));
+    navEl.appendChild(makeItem('🔍', 'Search', openSearch));
+  }
+
+  // Tiny 2-button bar that sits on the RIGHT side of the nav bar without affecting its layout
+  function showMobileNavOverlay(appType) {
+    if (document.getElementById('hn-mob-bar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'hn-mob-bar';
+    const navH = appType === 'study' ? 64 : 60;
+    bar.style.cssText = `
+      position:fixed;bottom:0;right:0;
+      height:${navH}px;
+      display:flex;align-items:center;gap:2px;
+      padding:0 8px;
+      z-index:99999;
+      pointer-events:auto;
+    `;
+
+    const makeBtn = (svg, label, clickFn) => {
+      const btn = document.createElement('button');
+      btn.setAttribute('aria-label', label);
+      btn.style.cssText = `
+        width:36px;height:36px;
+        border-radius:10px;
+        border:1px solid rgba(255,255,255,0.1);
+        background:rgba(10,12,20,0.75);
+        backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px);
+        display:flex;align-items:center;justify-content:center;
+        cursor:pointer;
+        color:rgba(255,255,255,0.55);
+        padding:0;
+        -webkit-tap-highlight-color:transparent;
+        touch-action:manipulation;
+        transition:background .15s,color .15s;
+      `;
+      btn.innerHTML = svg;
+      btn.addEventListener('touchstart', () => { btn.style.background='rgba(255,255,255,0.12)'; btn.style.color='rgba(255,255,255,0.9)'; }, {passive:true});
+      btn.addEventListener('touchend', () => { btn.style.background='rgba(10,12,20,0.75)'; btn.style.color='rgba(255,255,255,0.55)'; }, {passive:true});
+      btn.addEventListener('click', (e) => { e.stopPropagation(); clickFn(e); });
+      return btn;
+    };
+
+    bar.appendChild(makeBtn(SW_SVG, 'Switch App', toggleSwitcher));
+    bar.appendChild(makeBtn(SR_SVG, 'Search', openSearch));
+    document.body.appendChild(bar);
+
+    // Update popup to open upward from this bar
+    // (toggleSwitcher already handles positioning)
   }
 
   function mountInSidebar(sidebarEl) {

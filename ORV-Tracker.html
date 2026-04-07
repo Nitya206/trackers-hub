@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#04070f">
 <title>ORV — Omniscient Reader's Tracker</title>
@@ -581,6 +581,64 @@ body::before{
 @keyframes nowPulse{0%,100%{opacity:1;box-shadow:0 0 10px rgba(212,168,67,.18)}50%{opacity:.6;box-shadow:0 0 20px rgba(212,168,67,.32)}}
 @keyframes rmIn{from{opacity:0}to{opacity:1}}
 @keyframes shimmerSweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOBILE LAYOUT — up to 767px
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@media(max-width:767px){
+  body{overflow-y:auto;overflow-x:hidden;}
+  .app{max-width:100%;padding:0 0 80px;}
+  .layout{display:block;}
+  .sidebar{
+    padding:0;
+    background:none;
+  }
+  .main-col{
+    padding:0 0 20px;
+    overflow:visible;
+  }
+  /* Header: tighten up on mobile */
+  .hdr-hero{padding:28px 16px 20px;}
+  .hdr-title{font-size:clamp(52px,18vw,80px);letter-spacing:6px;}
+  .hdr-subtitle{font-size:clamp(10px,3vw,14px);letter-spacing:6px;}
+  .hdr-tagline{font-size:10.5px;}
+  /* Ring: smaller on mobile */
+  .rw{width:140px;height:140px;margin:18px auto 0;}
+  .rp{font-size:36px;}
+  .rp span{font-size:14px;}
+  /* Stats: full width */
+  .sts{margin:14px 12px 0;}
+  .sn{font-size:24px;}
+  /* Control bar */
+  .ctrl-bar{margin:10px 12px 0;}
+  .tb{padding:10px 6px;font-size:7.5px;}
+  /* FW quote */
+  .fw-quote{padding:12px 20px 0;font-size:10.5px;}
+  .dv{margin:14px 12px 8px;}
+  /* Session list */
+  .ss{padding:0 10px;}
+  .cd{margin-bottom:5px;}
+  .cd-inner{padding:11px 12px 11px 16px;}
+  .ck{width:24px;height:24px;font-size:9px;}
+  .an2{font-size:13px;}
+  .bds{gap:3px;margin-top:5px;}
+  .bd{font-size:6.5px;padding:2px 6px;}
+  /* Touch targets */
+  .ck{min-width:44px;min-height:44px;width:44px;height:44px;}
+  .tb{min-height:44px;}
+  .db{min-height:44px;}
+  /* Cards: no horizontal translate on touch */
+  .cd:hover{transform:none;}
+  /* Footer */
+  .ft{margin:18px 10px 0;padding:14px 16px;font-size:11px;}
+}
+
+/* Touch devices — disable hover effects */
+@media(hover:none),(pointer:coarse){
+  .cd:hover{transform:none !important;}
+  .cd:active{transform:translateX(3px);}
+  .ck:hover{border-color:rgba(212,168,67,.7);background:rgba(212,168,67,.07);}
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    DESKTOP LAYOUT — 768px+

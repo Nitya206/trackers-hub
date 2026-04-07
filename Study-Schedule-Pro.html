@@ -867,26 +867,6 @@ All code is well-commented and organized by feature.
             .nav-logo { display: none; }
         }
 
-        /* When hub-nav injects 2 extra items on mobile, compress nav items */
-        @media (max-width: 1023px) {
-            .bottom-nav:has(.hn-injected) {
-                justify-content: space-evenly;
-                padding: 0 2px;
-            }
-            .bottom-nav:has(.hn-injected) .nav-item {
-                min-width: 0;
-                padding: 6px 6px;
-            }
-            .bottom-nav:has(.hn-injected) .nav-label {
-                font-size: 9px;
-            }
-            /* The injected icon-only items stay compact */
-            .bottom-nav .hn-injected {
-                min-width: 32px;
-                padding: 6px 4px;
-            }
-        }
-
         /* ==================== COMMAND PALETTE v6.0 ==================== */
         
         .command-overlay {
@@ -3218,6 +3198,15 @@ All code is well-commented and organized by feature.
             display: flex;
             align-items: center;
             gap: var(--space-2);
+            min-width: 0;
+        }
+
+        .slot-activity-name {
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .slot-tag {
@@ -3226,6 +3215,7 @@ All code is well-commented and organized by feature.
             font-size: var(--text-xs);
             font-weight: 600;
             text-transform: uppercase;
+            flex-shrink: 0;
         }
 
         .slot-tag.tag-routine { background: var(--routine-bg); color: var(--routine); }
@@ -3330,12 +3320,17 @@ All code is well-commented and organized by feature.
                 font-size: var(--text-xs);
             }
 
-            /* Activity name + tag: wrap onto separate lines if needed */
+            /* On mobile the slot is column — let name wrap freely, no ellipsis */
             .slot-activity {
                 flex-wrap: wrap;
                 gap: var(--space-1);
-                word-break: break-word;
-                overflow-wrap: anywhere;
+            }
+
+            .slot-activity-name {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: unset;
+                flex: none;
             }
 
             .slot-actions {
@@ -10122,7 +10117,7 @@ All code is well-commented and organized by feature.
                         <div class="slot-time">${timeDisplay}</div>
                         <div class="slot-content">
                             <div class="slot-activity">
-                                ${displayActivity}
+                                <span class="slot-activity-name">${displayActivity}</span>
                                 <span class="slot-tag tag-${displayType}">${displayType}</span>
                             </div>
                             ${slot.sessions ? `<div class="slot-info">${slot.sessions} sessions</div>` : ''}

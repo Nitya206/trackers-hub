@@ -4703,9 +4703,7 @@
     }
     #bottom-nav::-webkit-scrollbar { display: none; }
     .bn-item { width: 36px; height: 36px; flex-shrink: 0; }
-    /* Injected hub-nav items: even more compact */
-    .bn-item.hn-injected { width: 32px; height: 32px; opacity: 0.6; }
-    .hn-bn-sep { margin: 0 2px; }
+    /* No injected items on mobile — they use the overlay bar instead */
 
     /* Stat cards: 2-column on mobile */
     .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }

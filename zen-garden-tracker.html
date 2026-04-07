@@ -922,15 +922,21 @@ function loadData() {
     if (!d.skipped) d.skipped = {};
     return d;
   }
-  return { days: {}, skipped: {}, journal: {}, startDate: new Date().toISOString().slice(0, 10) };
+  return { days: {}, skipped: {}, journal: {}, startDate: localDate(new Date()) };
 }
 
 function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+// Local date helper — avoids UTC timezone shift
+function localDate(d) {
+  const dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return localDate(new Date());
 }
 
 function dateStr(y, m, d) {
@@ -944,7 +950,7 @@ function calcStreak(data) {
   // If today not yet marked, start checking from today (allow marking today still)
   // If today is marked, include it
   while (true) {
-    const key = d.toISOString().slice(0, 10);
+    const key = localDate(d);
     if (data.days[key]) {
       streak++;
       d.setDate(d.getDate() - 1);
@@ -987,7 +993,7 @@ function getWeekData(data) {
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
+    const key = localDate(d);
     const isFuture = d > today;
     const isToday = key === todayStr();
     weekDays.push({

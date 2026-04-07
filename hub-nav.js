@@ -1014,6 +1014,10 @@ return btn;
     root.style.display = 'none'; 
     document.body.appendChild(root);
 
+    // On mobile, don't inject into the bottom nav — it overflows.
+    // The floating pills (root) will be used instead on small screens.
+    if (window.innerWidth <= 600) return;
+
     const makeProcItem = (svg, label, clickFn) => {
       const el = document.createElement('div');
       el.className = 'bn-item hn-injected';
@@ -1170,7 +1174,15 @@ return btn;
     if (currentId === 'proc') {
       const ensureProcNav = () => {
         const nav = document.getElementById('bottom-nav');
-        if (nav) mountInBottomNav(nav);
+        if (nav) {
+          if (window.innerWidth <= 600) {
+            // Mobile: show floating pills instead of injecting into nav
+            root.style.display = 'flex';
+            document.body.appendChild(root);
+          } else {
+            mountInBottomNav(nav);
+          }
+        }
       };
       ensureProcNav();
       // Watchdog: Proc Hub clears the nav bar on internal navigation

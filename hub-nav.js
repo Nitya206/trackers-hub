@@ -964,6 +964,10 @@
 
   searchPill.addEventListener('click', openSearch);
 
+  // Always populate root with the floating pills — mount functions decide whether to show it
+  root.appendChild(swWrap);
+  root.appendChild(searchPill);
+
   /* ─────────────────────────────────────────
      HELPER: make a nav-injected icon button
   ───────────────────────────────────────── */
@@ -1010,13 +1014,17 @@ return btn;
 
   function mountInBottomNav(navEl) {
     if (!navEl || navEl.querySelector('.hn-injected')) return;
-    
-    root.style.display = 'none'; 
-    document.body.appendChild(root);
 
-    // On mobile, don't inject into the bottom nav — it overflows.
-    // The floating pills (root) will be used instead on small screens.
-    if (window.innerWidth <= 600) return;
+    // On mobile: show floating pills, don't inject into nav
+    if (window.innerWidth <= 600) {
+      root.style.display = 'flex';
+      document.body.appendChild(root);
+      return;
+    }
+
+    // Desktop: inject into nav, hide floating root
+    root.style.display = 'none';
+    document.body.appendChild(root);
 
     const makeProcItem = (svg, label, clickFn) => {
       const el = document.createElement('div');
@@ -1043,18 +1051,24 @@ return btn;
   }
 
   function mountInStudyNav(navEl) {
-    // Study: #bottomNav uses .nav-item (emoji icon + text label) — match exactly
-    root.style.display = 'none';
     document.body.appendChild(root);
 
-    // Thin separator matching Study's subtle border style
+    // Mobile: show floating pills, don't inject into nav
+    if (window.innerWidth <= 1023) {
+      root.style.display = 'flex';
+      return;
+    }
+
+    // Desktop sidebar: hide floating root, inject as nav-items
+    root.style.display = 'none';
+
     const sep = document.createElement('div');
     sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
     navEl.appendChild(sep);
 
     function makeStudyItem(emoji, label, clickFn) {
       const a = document.createElement('a');
-      a.className = 'nav-item'; // inherit ALL Study nav styling automatically
+      a.className = 'nav-item';
       a.style.cursor = 'pointer';
       a.setAttribute('role', 'button');
       a.setAttribute('aria-label', label);
@@ -1174,18 +1188,9 @@ return btn;
     if (currentId === 'proc') {
       const ensureProcNav = () => {
         const nav = document.getElementById('bottom-nav');
-        if (nav) {
-          if (window.innerWidth <= 600) {
-            // Mobile: show floating pills instead of injecting into nav
-            root.style.display = 'flex';
-            document.body.appendChild(root);
-          } else {
-            mountInBottomNav(nav);
-          }
-        }
+        if (nav) mountInBottomNav(nav);
       };
       ensureProcNav();
-      // Watchdog: Proc Hub clears the nav bar on internal navigation
       setInterval(ensureProcNav, 1000);
       return;
     }
@@ -1205,19 +1210,8 @@ return btn;
       if (panel) { mountInZenPanel(panel); return; }
     }
     
-    // Fallback logic
-    const swPill = document.createElement('div'); 
-    swPill.className = 'hn-pill'; 
-    swPill.innerHTML = SW_SVG + '<span>Switch App</span>'; 
-    swPill.onclick = toggleSwitcher;
-
-    const srPill = document.createElement('div'); 
-    srPill.className = 'hn-pill'; 
-    srPill.innerHTML = SR_SVG + '<span>Search</span> <span style="font-size:10px;opacity:.35;font-family:\'JetBrains Mono\',monospace;margin-left:2px;">⌘K</span>'; 
-    srPill.onclick = openSearch;
-
-    root.appendChild(swPill); 
-    root.appendChild(srPill); 
+    // Fallback: show floating pills
+    root.style.display = 'flex';
     document.body.appendChild(root);
   }
 

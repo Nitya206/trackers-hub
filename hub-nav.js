@@ -618,17 +618,44 @@
   .hn-app-row{-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:44px;}
   .hn-result{min-height:44px;}
 
-  @media(max-width:600px){
-    #hn-root{bottom:80px;right:14px;gap:7px;}
-    .hn-pill{height:36px;padding:0 12px;font-size:11px;}
-    #hn-sw-popup{min-width:180px;border-radius:14px;}
-    #hn-search-overlay{padding:5vh 12px 20px;}
-    #hn-search-box{border-radius:16px;}
-    #hn-s-input{font-size:16px;}
-    #hn-s-results{max-height:55vh;}
-    .hn-result{min-height:48px;}
-    .hn-app-row{min-height:48px;}
-    #hn-s-footer{display:none;}
+  @media(max-width:1023px){
+    /* Mobile: hide the floating root entirely — pills are injected into the nav bar */
+    #hn-root{ display:none !important; }
+    /* Search overlay still needs to work */
+    #hn-search-overlay{ padding:5vh 12px 20px; }
+    #hn-search-box{ border-radius:16px; }
+    #hn-s-input{ font-size:16px; }
+    #hn-s-results{ max-height:55vh; }
+    .hn-result{ min-height:48px; }
+    .hn-app-row{ min-height:48px; }
+    #hn-s-footer{ display:none; }
+    #hn-sw-popup{ min-width:200px; border-radius:14px; }
+  }
+
+  /* Injected nav icon buttons — shared style for both trackers */
+  .hn-nav-icon-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    flex-shrink:0;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    opacity:0.55;
+    transition:opacity .15s ease, transform .15s ease;
+    border-radius:10px;
+    padding:4px 6px;
+  }
+  .hn-nav-icon-btn:active{ opacity:1; transform:scale(0.92); }
+  .hn-nav-icon-btn svg{ display:block; }
+  .hn-nav-icon-btn-label{
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    line-height:1;
+    white-space:nowrap;
   }
   `;
 
@@ -698,16 +725,16 @@
     if (e && e.stopPropagation) e.stopPropagation();
     swOpen = !swOpen;
     if (swOpen) {
-      const isMobile = window.innerWidth <= 600;
+      const isMobile = window.innerWidth <= 1023;
       if (isMobile) {
-        // On mobile: center the popup above the bottom of the screen
-        swPopup.style.left = '50%';
+        // Open upward from bottom-left where the pills sit
+        swPopup.style.left = '10px';
         swPopup.style.right = 'auto';
-        swPopup.style.bottom = '90px';
+        swPopup.style.bottom = '70px';
         swPopup.style.top = 'auto';
-        swPopup.style.transform = 'translateX(-50%)';
+        swPopup.style.transform = '';
         swPopup.style.minWidth = '220px';
-        swPopup.style.maxWidth = 'calc(100vw - 28px)';
+        swPopup.style.maxWidth = 'calc(100vw - 20px)';
       } else {
         swPopup.style.transform = '';
         // Position popup relative to the trigger element
@@ -1015,80 +1042,97 @@ return btn;
   function mountInBottomNav(navEl) {
     if (!navEl || navEl.querySelector('.hn-injected')) return;
 
-    // On mobile: show floating pills, don't inject into nav
-    if (window.innerWidth <= 600) {
-      root.style.display = 'flex';
-      document.body.appendChild(root);
-      return;
-    }
-
-    // Desktop: inject into nav, hide floating root
+    // Always inject into the nav — icon-only on mobile, same on desktop
+    // Hide floating root since we're inside the nav
     root.style.display = 'none';
     document.body.appendChild(root);
 
-    const makeProcItem = (svg, label, clickFn) => {
-      const el = document.createElement('div');
-      el.className = 'bn-item hn-injected';
-      el.style.cursor = 'none';
-      el.innerHTML = `
-        <div class="bn-tip">${label}</div>
-        <div class="bn-icon-wrap">${svg}</div>
-      `;
-      el.onclick = (e) => { e.stopPropagation(); clickFn(e); };
-      return el;
-    };
+    const isMobile = window.innerWidth <= 600;
 
-    const swItem = makeProcItem(SW_SVG, 'Switch App', toggleSwitcher);
-    const srItem = makeProcItem(SR_SVG, 'Search ⌘K', openSearch);
-
-    // Small separator to match Study app spacing
-    const sep = document.createElement('div');
-    sep.className = 'hn-bn-sep';
-    navEl.appendChild(sep);
-
-    navEl.appendChild(swItem);
-    navEl.appendChild(srItem);
+    if (isMobile) {
+      // Mobile: tiny icon-only buttons that match .bn-item sizing (42×42)
+      const makeMobileItem = (svg, label, clickFn) => {
+        const el = document.createElement('div');
+        el.className = 'bn-item hn-injected';
+        el.setAttribute('aria-label', label);
+        el.style.cssText = 'cursor:pointer;opacity:0.55;';
+        el.innerHTML = `<div class="bn-icon-wrap">${svg}</div>`;
+        el.addEventListener('click', (e) => { e.stopPropagation(); el.style.opacity='1'; setTimeout(()=>el.style.opacity='0.55',300); clickFn(e); });
+        return el;
+      };
+      const sep = document.createElement('div');
+      sep.className = 'hn-bn-sep';
+      navEl.appendChild(sep);
+      navEl.appendChild(makeMobileItem(SW_SVG, 'Switch App', toggleSwitcher));
+      navEl.appendChild(makeMobileItem(SR_SVG, 'Search', openSearch));
+    } else {
+      // Desktop: full bn-item with tooltip
+      const makeProcItem = (svg, label, clickFn) => {
+        const el = document.createElement('div');
+        el.className = 'bn-item hn-injected';
+        el.innerHTML = `<div class="bn-tip">${label}</div><div class="bn-icon-wrap">${svg}</div>`;
+        el.onclick = (e) => { e.stopPropagation(); clickFn(e); };
+        return el;
+      };
+      const sep = document.createElement('div');
+      sep.className = 'hn-bn-sep';
+      navEl.appendChild(sep);
+      navEl.appendChild(makeProcItem(SW_SVG, 'Switch App', toggleSwitcher));
+      navEl.appendChild(makeProcItem(SR_SVG, 'Search ⌘K', openSearch));
+    }
   }
 
   function mountInStudyNav(navEl) {
     document.body.appendChild(root);
-
-    // Mobile: show floating pills, don't inject into nav
-    if (window.innerWidth <= 1023) {
-      root.style.display = 'flex';
-      return;
-    }
-
-    // Desktop sidebar: hide floating root, inject as nav-items
     root.style.display = 'none';
 
-    const sep = document.createElement('div');
-    sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
-    navEl.appendChild(sep);
+    const isMobile = window.innerWidth <= 1023;
 
-    function makeStudyItem(emoji, label, clickFn) {
-      const a = document.createElement('a');
-      a.className = 'nav-item';
-      a.style.cursor = 'pointer';
-      a.setAttribute('role', 'button');
-      a.setAttribute('aria-label', label);
+    if (isMobile) {
+      // Mobile: icon-only nav-item (no label text) so nav doesn't overflow
+      const makeItem = (svg, label, clickFn) => {
+        const a = document.createElement('a');
+        a.className = 'nav-item hn-injected';
+        a.setAttribute('role', 'button');
+        a.setAttribute('aria-label', label);
+        a.style.cssText = 'cursor:pointer;min-width:36px;padding:6px 4px;opacity:0.6;';
+        // Icon only — no label span
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'nav-icon';
+        iconSpan.style.fontSize = '16px';
+        iconSpan.innerHTML = svg;
+        a.appendChild(iconSpan);
+        a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); a.style.opacity='1'; setTimeout(()=>a.style.opacity='0.6',300); clickFn(e); });
+        return a;
+      };
+      navEl.appendChild(makeItem(SW_SVG, 'Switch App', toggleSwitcher));
+      navEl.appendChild(makeItem(SR_SVG, 'Search', openSearch));
+    } else {
+      // Desktop sidebar: full nav-item with label
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
+      navEl.appendChild(sep);
 
-      const iconSpan = document.createElement('span');
-      iconSpan.className = 'nav-icon';
-      iconSpan.textContent = emoji;
-
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'nav-label';
-      labelSpan.textContent = label;
-
-      a.appendChild(iconSpan);
-      a.appendChild(labelSpan);
-      a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
-      return a;
+      const makeItem = (emoji, label, clickFn) => {
+        const a = document.createElement('a');
+        a.className = 'nav-item';
+        a.style.cursor = 'pointer';
+        a.setAttribute('role', 'button');
+        a.setAttribute('aria-label', label);
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'nav-icon';
+        iconSpan.textContent = emoji;
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'nav-label';
+        labelSpan.textContent = label;
+        a.appendChild(iconSpan);
+        a.appendChild(labelSpan);
+        a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
+        return a;
+      };
+      navEl.appendChild(makeItem('⬡', 'Apps', toggleSwitcher));
+      navEl.appendChild(makeItem('🔍', 'Search', openSearch));
     }
-
-    navEl.appendChild(makeStudyItem('⬡', 'Apps', toggleSwitcher));
-    navEl.appendChild(makeStudyItem('🔍', 'Search', openSearch));
   }
 
   function mountInSidebar(sidebarEl) {

@@ -2360,7 +2360,13 @@ function rmInit(){
   const mgPct=(_rmPrefs.mg||5.5)/100;
   const padV=Math.round(H*0.075);
   const padH=Math.max(20,Math.round(W*mgPct));
-  const colH=H-padV*2;
+
+  // Account for the bar height so text never slides under it
+  const bar=document.querySelector('.rm-bar');
+  const barH=bar?bar.getBoundingClientRect().height:0;
+  const topOffset=Math.max(padV, barH+8);
+
+  const colH=H-topOffset-padV;
   const colW=W-padH*2;
   const GAP=Math.round(colW*0.5);
   const pendingState=_rmRestoreState||(_rmSessionIdx!==null?{pageIdx:_rmIdx,total:_rmTotal,progress:rmGetProgress()}:null);
@@ -2369,7 +2375,7 @@ function rmInit(){
   const clip=document.getElementById('rm-clip');
   if(!strip||!clip)return;
 
-  clip.style.cssText=`position:absolute;top:${padV}px;left:${padH}px;width:${colW}px;height:${colH}px;overflow:hidden;`;
+  clip.style.cssText=`position:absolute;top:${topOffset}px;left:${padH}px;width:${colW}px;height:${colH}px;overflow:hidden;`;
 
   const th=rmGetResolvedTheme();
   const fontFam=(_rmPrefs.font||'Georgia')+",Georgia,'Times New Roman',serif";

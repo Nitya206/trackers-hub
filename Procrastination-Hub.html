@@ -4687,19 +4687,19 @@
 
   /* Small screen layout fixes */
   @media (max-width: 600px) {
-    /* Fit all 10 items (7 nav + mute + sep + 2 hub-nav) without scrolling */
+    /* Fit all 11 items (7 nav + mute + sep + 2 hub-nav) without scrolling */
     #bottom-nav {
       bottom: 10px;
-      padding: 3px 4px;
-      gap: 0;
+      padding: 3px 3px;
+      gap: 0 !important;
       border-radius: 20px;
       max-width: calc(100vw - 16px);
       left: 50%;
       transform: translateX(-50%);
       justify-content: space-evenly;
     }
-    .bn-item { width: 30px; height: 30px; flex-shrink: 0; }
-    .bn-item svg { width: 13px; height: 13px; }
+    .bn-item { width: 30px !important; height: 30px !important; flex-shrink: 0; }
+    .bn-item svg { width: 13px !important; height: 13px !important; }
     .hn-bn-sep { width: 1px; margin: 0; flex-shrink: 0; }
 
     /* Stat cards: 2-column on mobile */

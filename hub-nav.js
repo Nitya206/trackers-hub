@@ -701,14 +701,14 @@
     if (swOpen) {
       const isMobile = window.innerWidth <= 1023;
       if (isMobile) {
-        // Open upward from bottom-right where the overlay bar sits
-        swPopup.style.right = '8px';
-        swPopup.style.left = 'auto';
-        swPopup.style.bottom = '70px';
+        // Open popup above the nav bar, centered on screen
+        swPopup.style.left = '50%';
+        swPopup.style.right = 'auto';
+        swPopup.style.transform = 'translateX(-50%)';
+        swPopup.style.bottom = '80px';
         swPopup.style.top = 'auto';
-        swPopup.style.transform = '';
         swPopup.style.minWidth = '220px';
-        swPopup.style.maxWidth = 'calc(100vw - 16px)';
+        swPopup.style.maxWidth = 'calc(100vw - 20px)';
       } else {
         swPopup.style.transform = '';
         // Position popup relative to the trigger element
@@ -1018,14 +1018,8 @@ return btn;
     root.style.display = 'none';
     document.body.appendChild(root);
 
-    if (window.innerWidth <= 600) {
-      // Mobile: don't touch the nav — show a tiny 2-button overlay on its right edge
-      showMobileNavOverlay('proc');
-      return;
-    }
-
-    // Desktop: inject into nav with tooltip
-    const makeProcItem = (svg, label, clickFn) => {
+    // Always inject — Proc items are icon-only (42×42) so they fit on mobile too
+    const makeItem = (svg, label, clickFn) => {
       const el = document.createElement('div');
       el.className = 'bn-item hn-injected';
       el.innerHTML = `<div class="bn-tip">${label}</div><div class="bn-icon-wrap">${svg}</div>`;
@@ -1035,28 +1029,18 @@ return btn;
     const sep = document.createElement('div');
     sep.className = 'hn-bn-sep';
     navEl.appendChild(sep);
-    navEl.appendChild(makeProcItem(SW_SVG, 'Switch App', toggleSwitcher));
-    navEl.appendChild(makeProcItem(SR_SVG, 'Search ⌘K', openSearch));
+    navEl.appendChild(makeItem(SW_SVG, 'Switch App', toggleSwitcher));
+    navEl.appendChild(makeItem(SR_SVG, 'Search ⌘K', openSearch));
   }
 
   function mountInStudyNav(navEl) {
     document.body.appendChild(root);
     root.style.display = 'none';
 
-    if (window.innerWidth <= 1023) {
-      // Mobile: don't touch the nav — show a tiny 2-button overlay on its right edge
-      showMobileNavOverlay('study');
-      return;
-    }
-
-    // Desktop sidebar: inject as full nav-items with label
-    const sep = document.createElement('div');
-    sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
-    navEl.appendChild(sep);
-
+    // Always inject — labels hidden on mobile via CSS so items stay compact
     const makeItem = (emoji, label, clickFn) => {
       const a = document.createElement('a');
-      a.className = 'nav-item';
+      a.className = 'nav-item hn-injected';
       a.style.cursor = 'pointer';
       a.setAttribute('role', 'button');
       a.setAttribute('aria-label', label);
@@ -1071,57 +1055,18 @@ return btn;
       a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
       return a;
     };
+
+    if (window.innerWidth >= 1024) {
+      // Desktop sidebar: add separator before items
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;width:60%;margin:2px auto 4px;background:rgba(91,141,239,0.12);flex-shrink:0;';
+      navEl.appendChild(sep);
+    }
     navEl.appendChild(makeItem('⬡', 'Apps', toggleSwitcher));
     navEl.appendChild(makeItem('🔍', 'Search', openSearch));
   }
 
-  // Tiny 2-button bar that sits on the RIGHT side of the nav bar without affecting its layout
-  function showMobileNavOverlay(appType) {
-    if (document.getElementById('hn-mob-bar')) return;
-    const bar = document.createElement('div');
-    bar.id = 'hn-mob-bar';
-    const navH = appType === 'study' ? 64 : 60;
-    bar.style.cssText = `
-      position:fixed;bottom:0;right:0;
-      height:${navH}px;
-      display:flex;align-items:center;gap:2px;
-      padding:0 8px;
-      z-index:99999;
-      pointer-events:auto;
-    `;
-
-    const makeBtn = (svg, label, clickFn) => {
-      const btn = document.createElement('button');
-      btn.setAttribute('aria-label', label);
-      btn.style.cssText = `
-        width:36px;height:36px;
-        border-radius:10px;
-        border:1px solid rgba(255,255,255,0.1);
-        background:rgba(10,12,20,0.75);
-        backdrop-filter:blur(12px);
-        -webkit-backdrop-filter:blur(12px);
-        display:flex;align-items:center;justify-content:center;
-        cursor:pointer;
-        color:rgba(255,255,255,0.55);
-        padding:0;
-        -webkit-tap-highlight-color:transparent;
-        touch-action:manipulation;
-        transition:background .15s,color .15s;
-      `;
-      btn.innerHTML = svg;
-      btn.addEventListener('touchstart', () => { btn.style.background='rgba(255,255,255,0.12)'; btn.style.color='rgba(255,255,255,0.9)'; }, {passive:true});
-      btn.addEventListener('touchend', () => { btn.style.background='rgba(10,12,20,0.75)'; btn.style.color='rgba(255,255,255,0.55)'; }, {passive:true});
-      btn.addEventListener('click', (e) => { e.stopPropagation(); clickFn(e); });
-      return btn;
-    };
-
-    bar.appendChild(makeBtn(SW_SVG, 'Switch App', toggleSwitcher));
-    bar.appendChild(makeBtn(SR_SVG, 'Search', openSearch));
-    document.body.appendChild(bar);
-
-    // Update popup to open upward from this bar
-    // (toggleSwitcher already handles positioning)
-  }
+  function showMobileNavOverlay() { /* no-op — kept for safety */ }
 
   function mountInSidebar(sidebarEl) {
     // Study / ORV: inject two icon buttons at bottom of sidebar

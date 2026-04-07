@@ -867,6 +867,26 @@ All code is well-commented and organized by feature.
             .nav-logo { display: none; }
         }
 
+        /* When hub-nav injects 2 extra items on mobile, compress nav items */
+        @media (max-width: 1023px) {
+            .bottom-nav:has(.hn-injected) {
+                justify-content: space-evenly;
+                padding: 0 2px;
+            }
+            .bottom-nav:has(.hn-injected) .nav-item {
+                min-width: 0;
+                padding: 6px 6px;
+            }
+            .bottom-nav:has(.hn-injected) .nav-label {
+                font-size: 9px;
+            }
+            /* The injected icon-only items stay compact */
+            .bottom-nav .hn-injected {
+                min-width: 32px;
+                padding: 6px 4px;
+            }
+        }
+
         /* ==================== COMMAND PALETTE v6.0 ==================== */
         
         .command-overlay {
@@ -3307,6 +3327,15 @@ All code is well-commented and organized by feature.
 
             .slot-time {
                 min-width: auto;
+                font-size: var(--text-xs);
+            }
+
+            /* Activity name + tag: wrap onto separate lines if needed */
+            .slot-activity {
+                flex-wrap: wrap;
+                gap: var(--space-1);
+                word-break: break-word;
+                overflow-wrap: anywhere;
             }
 
             .slot-actions {

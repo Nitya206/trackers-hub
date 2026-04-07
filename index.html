@@ -898,11 +898,13 @@ const zCard = document.querySelector('.card-zen');
 if(zCard) {
     let streak = 0;
     let checkDate = new Date();
-    const todayStr = checkDate.toISOString().slice(0, 10);
+    // Use local date to avoid UTC timezone shift
+    const localDate = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const todayStr = localDate(checkDate);
     if (!zData.days[todayStr]) checkDate.setDate(checkDate.getDate() - 1);
 
     while (true) {
-        const key = checkDate.toISOString().slice(0, 10);
+        const key = localDate(checkDate);
         if (zData.days[key]) { streak++; checkDate.setDate(checkDate.getDate() - 1); } 
         else { break; }
     }

@@ -4687,23 +4687,20 @@
 
   /* Small screen layout fixes */
   @media (max-width: 600px) {
-    /* Bottom nav: shrink items to fit all naturally — no scrolling */
+    /* Fit all 10 items (7 nav + mute + sep + 2 hub-nav) without scrolling */
     #bottom-nav {
       bottom: 10px;
-      padding: 4px 4px;
+      padding: 3px 4px;
       gap: 0;
       border-radius: 20px;
-      max-width: calc(100vw - 20px);
+      max-width: calc(100vw - 16px);
       left: 50%;
       transform: translateX(-50%);
+      justify-content: space-evenly;
     }
-    .bn-item { width: 32px; height: 32px; flex-shrink: 0; }
+    .bn-item { width: 30px; height: 30px; flex-shrink: 0; }
     .bn-item svg { width: 13px; height: 13px; }
-    /* Injected hub-nav items: slightly smaller to distinguish */
-    .bn-item.hn-injected { width: 28px; height: 28px; opacity: 0.7; }
-    /* Mute button: same small size */
-    #p6-mute-btn { width: 28px !important; height: 28px !important; }
-    .hn-bn-sep { width: 1px; margin: 0 1px; }
+    .hn-bn-sep { width: 1px; margin: 0; flex-shrink: 0; }
 
     /* Stat cards: 2-column on mobile */
     .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }

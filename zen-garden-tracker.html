@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zen Garden — Daily Clarity Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f110f;
+    --surface: #181a18;
+    --surface2: #1e211e;
+    --border: #2a2d2a;
+    --text: #e8e5df;
+    --text-dim: #8a8780;
+    --text-faint: #555350;
+    --accent: #7cb87c;
+    --accent-dim: #3a5c3a;
+    --accent-glow: rgba(124, 184, 124, 0.15);
+    --danger: #c47a6e;
+    --gold: #c9b458;
+    --gold-dim: rgba(201, 180, 88, 0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle animated grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .app {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 48px 56px 80px;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 56px;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-dim), #2a3d2a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo-text h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .header-stat {
+    text-align: right;
+  }
+
+  .header-stat .value {
+    font-family: 'Instrument Serif', serif;
+    font-size: 36px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .header-stat .value.accent { color: var(--accent); }
+  .header-stat .value.gold { color: var(--gold); }
+
+  .header-stat .label {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* ─── Streak Banner ─── */
+  .streak-banner {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .streak-banner::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+    pointer-events: none;
+  }
+
+  .streak-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 1;
+  }
+
+  .streak-flame {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .streak-info h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  .streak-info h2 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .streak-info p {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .streak-right {
+    z-index: 1;
+  }
+
+  .today-btn {
+    background: var(--accent);
+    color: #111;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+  }
+
+  .today-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(124, 184, 124, 0.3);
+  }
+
+  .today-btn.done {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    cursor: default;
+  }
+
+  .today-btn.done:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .skip-btn {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+    opacity: 0.7;
+  }
+
+  .skip-btn:hover {
+    opacity: 1;
+    background: rgba(196, 122, 110, 0.1);
+  }
+
+  .skip-btn.skipped {
+    background: rgba(196, 122, 110, 0.1);
+    color: var(--danger);
+    border-color: var(--danger);
+    cursor: default;
+    opacity: 0.8;
+  }
+
+  .skip-btn.skipped:hover {
+    background: rgba(196, 122, 110, 0.1);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .cal-day.skipped {
+    color: var(--danger);
+    opacity: 0.7;
+    background: rgba(196, 122, 110, 0.08);
+  }
+
+  .cal-day.skipped::after {
+    content: '✕';
+    position: absolute;
+    bottom: 2px;
+    font-size: 7px;
+    color: var(--danger);
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: none;
+  }
+
+  /* ─── Main Grid ─── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    margin-bottom: 40px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+  }
+
+  /* ─── Calendar Grid ─── */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .month-nav h3 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    font-weight: 400;
+  }
+
+  .month-nav button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.15s;
+  }
+
+  .month-nav button:hover {
+    border-color: var(--accent-dim);
+    color: var(--text);
+  }
+
+  .cal-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .cal-header span {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 6px 0;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    border: 1px solid transparent;
+  }
+
+  .cal-day:hover:not(.empty):not(.future) {
+    border-color: var(--border);
+    background: var(--surface2);
+  }
+
+  .cal-day.empty { cursor: default; }
+  .cal-day.future { color: var(--text-faint); opacity: 0.3; cursor: default; }
+
+  .cal-day.today {
+    border-color: var(--accent-dim);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .cal-day.tended {
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .cal-day.tended::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .cal-day.missed {
+    color: var(--danger);
+    opacity: 0.6;
+  }
+
+  .cal-day.missed::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--danger);
+  }
+
+  /* ─── Side Panel ─── */
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Milestones */
+  .milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .milestone {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .milestone.achieved {
+    border-color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .milestone-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .milestone.achieved .milestone-icon {
+    background: rgba(201, 180, 88, 0.15);
+  }
+
+  .milestone-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .milestone-info h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .milestone.achieved .milestone-info h4 {
+    color: var(--gold);
+  }
+
+  .milestone-info p {
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+
+  .milestone-check {
+    font-size: 14px;
+    color: var(--text-faint);
+  }
+
+  .milestone.achieved .milestone-check {
+    color: var(--gold);
+  }
+
+  /* ─── Weekly Rhythm ─── */
+  .rhythm-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .rhythm-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .rhythm-fill {
+    width: 100%;
+    height: 56px;
+    border-radius: 6px;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rhythm-fill .inner {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: var(--accent-dim);
+    border-radius: 6px;
+    transition: height 0.3s ease;
+  }
+
+  .rhythm-fill.full .inner {
+    background: var(--accent);
+    opacity: 0.7;
+  }
+
+  .rhythm-label {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── Journal ─── */
+  .journal-area {
+    margin-top: 4px;
+  }
+
+  .journal-textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+
+  .journal-textarea:focus {
+    border-color: var(--accent-dim);
+  }
+
+  .journal-textarea::placeholder {
+    color: var(--text-faint);
+  }
+
+  .journal-hint {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* ─── Footer Quote ─── */
+  .footer-quote {
+    text-align: center;
+    padding: 32px 0 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-quote p {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--text-dim);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .footer-quote .attr {
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .header { animation: fadeUp 0.5s ease both; }
+  .streak-banner { animation: fadeUp 0.5s ease 0.05s both; }
+  .main-grid { animation: fadeUp 0.5s ease 0.1s both; }
+  .footer-quote { animation: fadeUp 0.5s ease 0.15s both; }
+
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .cal-day.tended {
+    animation: popIn 0.25s ease both;
+  }
+
+  /* ─── Confetti canvas ─── */
+  #confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ─── Warning / Punishment Animation ─── */
+  @keyframes shakeHard {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-8px) rotate(-1deg); }
+    20% { transform: translateX(8px) rotate(1deg); }
+    30% { transform: translateX(-6px) rotate(-0.5deg); }
+    40% { transform: translateX(6px) rotate(0.5deg); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+  }
+
+  @keyframes redPulse {
+    0% { opacity: 0; }
+    15% { opacity: 0.25; }
+    30% { opacity: 0.1; }
+    45% { opacity: 0.2; }
+    60% { opacity: 0.08; }
+    80% { opacity: 0.12; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes warningSlideIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    60% { transform: translate(-50%, -50%) scale(0.97); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  @keyframes warningFadeOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  }
+
+  #warning-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
+  #warning-overlay .red-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(200, 50, 40, 0.35), rgba(140, 30, 25, 0.15), transparent 75%);
+    animation: redPulse 1.2s ease both;
+  }
+
+  #warning-overlay .warning-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a0a0a, #2a1010);
+    border: 2px solid var(--danger);
+    border-radius: 18px;
+    padding: 36px 44px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(200, 50, 40, 0.3), 0 0 120px rgba(200, 50, 40, 0.1);
+    animation: warningSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    min-width: 320px;
+  }
+
+  #warning-overlay .warning-card.fade-out {
+    animation: warningFadeOut 0.4s ease both;
+  }
+
+  #warning-overlay .warning-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 12px rgba(200, 50, 40, 0.5));
+  }
+
+  #warning-overlay .warning-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--danger);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  #warning-overlay .warning-msg {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  #warning-overlay .warning-streak-lost {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(196, 122, 110, 0.2);
+    font-size: 12px;
+    color: var(--danger);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .app.shake {
+    animation: shakeHard 0.6s ease both;
+  }
+
+  /* ─── Day Action Popup ─── */
+  .day-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .day-popup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    min-width: 300px;
+    text-align: center;
+    animation: warningSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .day-popup .popup-date {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .day-popup .popup-status {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .day-popup .popup-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .day-popup .popup-btn {
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .day-popup .popup-btn.tend {
+    background: var(--accent);
+    color: #111;
+  }
+  .day-popup .popup-btn.tend:hover {
+    box-shadow: 0 4px 16px rgba(124, 184, 124, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .day-popup .popup-btn.skip {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .day-popup .popup-btn.skip:hover {
+    background: rgba(196, 122, 110, 0.1);
+  }
+
+  .day-popup .popup-btn.clear {
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .day-popup .popup-btn.clear:hover {
+    border-color: var(--text-dim);
+  }
+
+  .day-popup .popup-btn.cancel {
+    background: transparent;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+    width: 100%;
+  }
+  .day-popup .popup-btn.cancel:hover {
+    color: var(--text-dim);
+    border-color: var(--text-dim);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+<div id="warning-overlay"></div>
+
+<div class="app" id="app"></div>
+
+<script>
+// ─── DATA LAYER (localStorage) ───
+const STORAGE_KEY = 'zen_garden_data';
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    const d = JSON.parse(raw);
+    if (!d.skipped) d.skipped = {};
+    return d;
+  }
+  return { days: {}, skipped: {}, journal: {}, startDate: new Date().toISOString().slice(0, 10) };
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dateStr(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// ─── STREAK CALCULATION ───
+function calcStreak(data) {
+  let streak = 0;
+  const d = new Date();
+  // If today not yet marked, start checking from today (allow marking today still)
+  // If today is marked, include it
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    if (data.days[key]) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else if (key === todayStr()) {
+      // today not yet marked, still check yesterday
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function calcTotal(data) {
+  return Object.values(data.days).filter(Boolean).length;
+}
+
+function calcBestStreak(data) {
+  const sorted = Object.keys(data.days).filter(k => data.days[k]).sort();
+  if (!sorted.length) return 0;
+  let best = 1, cur = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i-1]);
+    const curr = new Date(sorted[i]);
+    const diff = (curr - prev) / 86400000;
+    if (diff === 1) { cur++; best = Math.max(best, cur); }
+    else { cur = 1; }
+  }
+  return best;
+}
+
+// ─── WEEKLY RHYTHM ───
+function getWeekData(data) {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+  
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    const isFuture = d > today;
+    const isToday = key === todayStr();
+    weekDays.push({
+      label: ['M','T','W','T','F','S','S'][i],
+      done: !!data.days[key],
+      skipped: !!data.skipped[key],
+      future: isFuture && !isToday,
+      today: isToday
+    });
+  }
+  return weekDays;
+}
+
+// ─── MILESTONES ───
+function getMilestones(streak, total) {
+  return [
+    { icon: '🌱', name: 'First Seed', desc: 'Complete your first day', threshold: 1, check: total >= 1 },
+    { icon: '🌿', name: 'One Week', desc: '7-day streak', threshold: 7, check: streak >= 7 },
+    { icon: '🌳', name: 'Deep Roots', desc: '30-day streak', threshold: 30, check: streak >= 30 },
+    { icon: '🏔️', name: 'Summit', desc: '90-day streak', threshold: 90, check: streak >= 90 },
+    { icon: '🌸', name: 'Full Bloom', desc: '365 days total', threshold: 365, check: total >= 365 },
+  ];
+}
+
+// ─── QUOTES ───
+const quotes = [
+  { text: "The garden of the mind flourishes with daily attention.", attr: "— Ancient Proverb" },
+  { text: "Discipline is choosing between what you want now and what you want most.", attr: "— Abraham Lincoln" },
+  { text: "A clear mind is the greatest wealth one can possess.", attr: "— Buddhist Wisdom" },
+  { text: "Every day is a new chance to tend your inner garden.", attr: "— Zen Philosophy" },
+  { text: "Mastery is not about perfection. It's about persistence.", attr: "— Unknown" },
+  { text: "The strongest oak was once a little nut that held its ground.", attr: "— Anonymous" },
+  { text: "Peace comes from within. Do not seek it without.", attr: "— Siddhartha Gautama" },
+];
+
+function getQuote() {
+  const idx = new Date().getDate() % quotes.length;
+  return quotes[idx];
+}
+
+// ─── CONFETTI ───
+function fireConfetti() {
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const particles = [];
+  const colors = ['#7cb87c', '#c9b458', '#e8e5df', '#5a9a5a', '#a0d4a0'];
+  
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 12,
+      vy: Math.random() * -14 - 4,
+      size: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      life: 1
+    });
+  }
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    
+    particles.forEach(p => {
+      if (p.life <= 0) return;
+      alive = true;
+      p.x += p.vx;
+      p.vy += 0.3;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      p.life -= 0.012;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+      ctx.restore();
+    });
+    
+    if (alive) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  
+  animate();
+}
+
+// ─── RENDER ───
+let viewYear, viewMonth;
+const now = new Date();
+viewYear = now.getFullYear();
+viewMonth = now.getMonth();
+
+function render() {
+  const data = loadData();
+  const streak = calcStreak(data);
+  const total = calcTotal(data);
+  const best = calcBestStreak(data);
+  const todayDone = !!data.days[todayStr()];
+  const todaySkipped = !!data.skipped[todayStr()];
+  const week = getWeekData(data);
+  const milestones = getMilestones(streak, total);
+  const quote = getQuote();
+  const journal = data.journal[todayStr()] || '';
+
+  // Calendar
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const offset = (firstDay + 6) % 7; // Monday start
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const monthName = new Date(viewYear, viewMonth).toLocaleString('en', { month: 'long', year: 'numeric' });
+
+  let calDays = '';
+  for (let i = 0; i < offset; i++) calDays += `<div class="cal-day empty"></div>`;
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dateStr(viewYear, viewMonth, d);
+    const isToday = key === todayStr();
+    const isFuture = new Date(key) > new Date(todayStr());
+    const done = data.days[key];
+    const skipped = data.skipped[key];
+    const isPast = !isFuture && !isToday;
+    
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (isFuture) cls += ' future';
+    if (done) cls += ' tended';
+    else if (skipped) cls += ' skipped';
+    else if (isPast && key >= data.startDate) cls += ' missed';
+    
+    calDays += `<div class="${cls}" data-date="${key}" ${!isFuture ? `onclick="toggleDay('${key}')"` : ''}>${d}</div>`;
+  }
+
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="header">
+      <div class="logo-area">
+        <div class="logo-icon">🪴</div>
+        <div class="logo-text">
+          <h1>Zen Garden</h1>
+          <span>Daily Clarity Tracker</span>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="header-stat">
+          <div class="value accent">${streak}</div>
+          <div class="label">Current Streak</div>
+        </div>
+        <div class="header-stat">
+          <div class="value gold">${best}</div>
+          <div class="label">Best Streak</div>
+        </div>
+        <div class="header-stat">
+          <div class="value">${total}</div>
+          <div class="label">Total Days</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="streak-banner">
+      <div class="streak-left">
+        <div class="streak-flame">${streak > 0 ? '🔥' : '🌱'}</div>
+        <div class="streak-info">
+          <h2>${streak > 0 ? `<em>${streak}</em> day${streak > 1 ? 's' : ''} of clarity` : 'Start your journey today'}</h2>
+          <p>${todayDone ? 'Garden tended today — well done' : todaySkipped ? 'You broke the discipline. Get back on track tomorrow.' : 'Your garden awaits your attention today'}</p>
+        </div>
+      </div>
+      <div class="streak-right">
+        <div class="btn-group">
+          ${todayDone || todaySkipped ? '' : `<button class="skip-btn" onclick="skipToday()">Didn't Follow It</button>`}
+          ${todaySkipped ? `<button class="skip-btn skipped">✕ Didn't Follow It</button>` : ''}
+          <button class="today-btn ${todayDone ? 'done' : ''}" onclick="${todayDone ? '' : 'markToday()'}">
+            ${todayDone ? '✓ Garden Tended' : 'Tend Garden Today'}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-title">Growth Calendar</div>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">←</button>
+          <h3>${monthName}</h3>
+          <button onclick="changeMonth(1)">→</button>
+        </div>
+        <div class="cal-header">
+          ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<span>${d}</span>`).join('')}
+        </div>
+        <div class="cal-grid">${calDays}</div>
+
+        <div style="margin-top: 24px;">
+          <div class="card-title">Reflections</div>
+          <div class="journal-area">
+            <textarea class="journal-textarea" placeholder="How are you feeling today? What helped you stay focused..." oninput="saveJournal(this.value)">${journal}</textarea>
+            <div class="journal-hint">Private — only you can see this</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="card">
+          <div class="card-title">This Week's Rhythm</div>
+          <div class="rhythm-row">
+            ${week.map(w => `
+              <div class="rhythm-bar">
+                <div class="rhythm-fill ${w.done ? 'full' : w.skipped ? 'skip' : ''}">
+                  <div class="inner" style="height: ${w.done ? '100%' : w.skipped ? '100%' : w.future ? '0%' : '20%'}; ${w.skipped ? 'background: var(--danger); opacity: 0.4;' : ''}"></div>
+                </div>
+                <span class="rhythm-label" style="${w.today ? 'color: var(--accent); font-weight: 500;' : ''}">${w.label}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Milestones</div>
+          <div class="milestones">
+            ${milestones.map(m => `
+              <div class="milestone ${m.check ? 'achieved' : ''}">
+                <div class="milestone-icon">${m.icon}</div>
+                <div class="milestone-info">
+                  <h4>${m.name}</h4>
+                  <p>${m.desc}</p>
+                </div>
+                <span class="milestone-check">${m.check ? '✦' : '○'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Today's Wisdom</div>
+          <div style="padding: 4px 0;">
+            <p style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 15px; color: var(--text-dim); line-height: 1.6;">${quote.text}</p>
+            <p style="font-size: 11px; color: var(--text-faint); margin-top: 8px; letter-spacing: 0.04em;">${quote.attr}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-quote">
+      <p>"A garden is a grand teacher. It teaches patience and careful watchfulness."</p>
+      <div class="attr">— Gertrude Jekyll</div>
+    </div>
+  `;
+}
+
+// ─── ACTIONS ───
+function markToday() {
+  const data = loadData();
+  if (!data.days[todayStr()]) {
+    data.days[todayStr()] = true;
+    delete data.skipped[todayStr()]; // clear skip if they changed mind
+    saveData(data);
+    fireConfetti();
+    render();
+  }
+}
+
+function skipToday() {
+  const data = loadData();
+  if (!data.days[todayStr()] && !data.skipped[todayStr()]) {
+    data.skipped[todayStr()] = true;
+    saveData(data);
+    fireWarning(calcStreak(data));
+    render();
+  }
+}
+
+// ─── WARNING / PUNISHMENT ANIMATION ───
+const warningMessages = [
+  "You had one task. You didn't follow through.",
+  "Discipline lost. The garden wilts.",
+  "Every slip feeds the habit. Break the cycle.",
+  "You're stronger than this. Prove it tomorrow.",
+  "The mind craves what harms it. Fight back.",
+  "A moment of weakness. Don't let it become a pattern.",
+  "You know this doesn't serve you. Reset.",
+];
+
+function fireWarning(streakBefore) {
+  // Shake the entire app
+  const app = document.getElementById('app');
+  app.classList.add('shake');
+  setTimeout(() => app.classList.remove('shake'), 600);
+
+  // Show warning overlay
+  const overlay = document.getElementById('warning-overlay');
+  const msg = warningMessages[Math.floor(Math.random() * warningMessages.length)];
+  const streakText = streakBefore > 0 ? `${streakBefore}-day streak lost` : 'No streak to protect';
+
+  overlay.innerHTML = `
+    <div class="red-flash"></div>
+    <div class="warning-card">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-title">You Didn't Follow It</div>
+      <div class="warning-msg">${msg}</div>
+      <div class="warning-streak-lost">${streakText}</div>
+    </div>
+  `;
+
+  // Fade out after 2.5s
+  setTimeout(() => {
+    const card = overlay.querySelector('.warning-card');
+    if (card) card.classList.add('fade-out');
+    setTimeout(() => { overlay.innerHTML = ''; }, 400);
+  }, 2500);
+}
+
+function toggleDay(key) {
+  const data = loadData();
+  const done = !!data.days[key];
+  const skipped = !!data.skipped[key];
+  const isToday = key === todayStr();
+  
+  const dateObj = new Date(key + 'T12:00:00');
+  const dateLabel = dateObj.toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' });
+  
+  let status = 'Not logged';
+  if (done) status = 'Tended';
+  if (skipped) status = "Didn't follow it";
+
+  // Build popup
+  const backdrop = document.createElement('div');
+  backdrop.className = 'day-popup-backdrop';
+  backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+
+  let btnsHtml = '';
+  if (!done) {
+    btnsHtml += `<button class="popup-btn tend" onclick="dayAction('${key}','tend')">🌿 Tended Garden</button>`;
+  }
+  if (!skipped) {
+    btnsHtml += `<button class="popup-btn skip" onclick="dayAction('${key}','skip')">✕ Didn't Follow It</button>`;
+  }
+  if (done || skipped) {
+    btnsHtml += `<button class="popup-btn clear" onclick="dayAction('${key}','clear')">↩ Clear</button>`;
+  }
+
+  backdrop.innerHTML = `
+    <div class="day-popup">
+      <div class="popup-date">${dateLabel}</div>
+      <div class="popup-status">Currently: ${status}</div>
+      <div class="popup-btns">${btnsHtml}</div>
+      <button class="popup-btn cancel" onclick="this.closest('.day-popup-backdrop').remove()">Cancel</button>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+}
+
+function dayAction(key, action) {
+  const data = loadData();
+  
+  if (action === 'tend') {
+    data.days[key] = true;
+    delete data.skipped[key];
+    saveData(data);
+    fireConfetti();
+  } else if (action === 'skip') {
+    delete data.days[key];
+    data.skipped[key] = true;
+    saveData(data);
+    fireWarning(calcStreak(data));
+  } else if (action === 'clear') {
+    delete data.days[key];
+    delete data.skipped[key];
+    saveData(data);
+  }
+
+  // Remove popup
+  const backdrop = document.querySelector('.day-popup-backdrop');
+  if (backdrop) backdrop.remove();
+  
+  render();
+}
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  render();
+}
+
+function saveJournal(val) {
+  const data = loadData();
+  data.journal[todayStr()] = val;
+  saveData(data);
+}
+
+// ─── INIT ───
+render();
+</script>
+<script src="hub-nav.js"></script>
+</body>
+</html>

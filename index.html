@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRACKERS HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #060810;
+  --surface: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.08);
+  --border-bright: rgba(255,255,255,0.15);
+  --text: #e8eef8;
+  --muted: #4a5568;
+  --muted2: #718096;
+
+  --study: #4f8ef7;
+  --study-g: rgba(79,142,247,0.12);
+  --study-rgb: 79,142,247;
+  --proc:  #00d9f5;
+  --proc-g: rgba(0,217,245,0.12);
+  --proc-rgb: 0,217,245;
+  --zen:   #4ade80;
+  --zen-g: rgba(74,222,128,0.12);
+  --zen-rgb: 74,222,128;
+  --orv:   #f5b800;
+  --orv-g: rgba(245,184,0,0.12);
+  --orv-rgb: 245,184,0;
+
+  --snap: cubic-bezier(.16,1,.3,1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+}
+
+html,body {
+  width:100%; height:100%;
+  background:#060810;
+  color:#e8eef8;
+  font-family:'Space Grotesk',sans-serif;
+  overflow-x:hidden;
+}
+
+/* ── CURSOR ── */
+*,*::before,*::after { cursor: none !important; }
+#cursor {
+  position:fixed; top:0; left:0;
+  pointer-events:none; z-index:9999;
+  will-change:transform;
+  color:rgba(200,215,255,0.5);
+  transition:color .2s ease, opacity .2s ease;
+}
+#cursor svg {
+  display:block; overflow:visible;
+  filter:drop-shadow(0 0 4px currentColor);
+  transition:filter .2s ease, transform .18s var(--snap);
+  transform-origin:center;
+}
+#cursor.on-card svg { transform:scale(1.25); }
+#cursor.on-card svg { filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 18px currentColor); }
+#cursor.hov-study { color:var(--study); }
+#cursor.hov-proc  { color:var(--proc); }
+#cursor.hov-zen   { color:var(--zen); }
+#cursor.hov-orv   { color:var(--orv); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:100px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2);}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+
+/* ── BACKGROUND LAYERS ── */
+#bg-canvas { position:fixed;inset:0;z-index:0; }
+.grid-bg {
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 80%);
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 80%);
+}
+.aurora {
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+}
+.ab {
+  position:absolute;border-radius:50%;
+  filter:blur(120px);opacity:0.06;
+  animation:drift 20s ease-in-out infinite alternate;
+}
+.ab:nth-child(1){width:700px;height:700px;top:-200px;left:-150px;background:#4f8ef7;animation-duration:26s;}
+.ab:nth-child(2){width:600px;height:600px;top:10%;right:-200px;background:#00d9f5;animation-duration:19s;animation-delay:-7s;}
+.ab:nth-child(3){width:800px;height:800px;bottom:-300px;left:10%;background:#f5b800;animation-duration:31s;animation-delay:-14s;}
+.ab:nth-child(4){width:500px;height:500px;top:50%;left:0;background:#4ade80;animation-duration:22s;animation-delay:-10s;}
+@keyframes drift{from{transform:translate(0,0) scale(1);}to{transform:translate(60px,40px) scale(1.1);}}
+
+/* ── PAGE LAYOUT ── */
+.page {
+  position:relative;z-index:1;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 28px 28px;
+  overflow:hidden;
+}
+
+/* ── HEADER ── */
+header {
+  text-align:center;
+  margin-bottom:20px;
+  animation:up .9s var(--snap) both;
+}
+.eyebrow {
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.4em;
+  color:var(--muted2);text-transform:uppercase;margin-bottom:14px;
+}
+.eyebrow::before,.eyebrow::after{content:'';flex:1;max-width:70px;height:1px;}
+.eyebrow::before{background:linear-gradient(90deg,transparent,var(--border-bright));}
+.eyebrow::after{background:linear-gradient(270deg,transparent,var(--border-bright));}
+
+.title-wrap { position:relative;display:inline-block; }
+.title-glow {
+  position:absolute;inset:0;
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(34px,6.5vw,64px);letter-spacing:.07em;line-height:1;
+  background:linear-gradient(135deg,#4f8ef7,#00d9f5,#f5b800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:blur(24px);opacity:.5;
+  animation:gpulse 4s ease infinite alternate;
+  pointer-events:none;white-space:nowrap;
+}
+.title-main {
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(34px,6.5vw,64px);letter-spacing:.07em;line-height:1;
+  background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,.9) 40%,rgba(200,220,255,.5) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  position:relative;z-index:1;white-space:nowrap;
+}
+@keyframes gpulse{from{opacity:.25;filter:blur(24px);}to{opacity:.6;filter:blur(10px);}}
+
+.sub {
+  margin-top:6px;font-size:12px;
+  color:var(--muted);letter-spacing:.12em;font-weight:300;
+}
+.date-pill {
+  display:inline-flex;align-items:center;gap:14px;
+  margin-top:12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border-bright);
+  border-radius:100px;padding:8px 20px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--muted2);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.live-dot {
+  width:7px;height:7px;border-radius:50%;
+  background:#4ade80;box-shadow:0 0 12px #4ade80;
+  animation:lp 2.2s ease infinite;
+}
+@keyframes lp{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.6);}}
+
+/* ── CARDS GRID ── */
+.cards-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:22px;
+  width:100%;max-width:1160px;
+}
+
+/* ── CARD WRAP — each gets its own perspective ── */
+/* ── CARD WRAP — Higher perspective for better depth ── */
+.card-wrap {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+/* ── CARD — Critical 3D Fixes ── */
+.card {
+  position:relative;
+  border-radius:26px;
+  padding:26px 28px 48px;
+  text-decoration:none;
+  display:block;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  
+  /* CRITICAL: This allows the text to "float" above the card */
+  transform-style: preserve-3d; 
+  
+  transform:rotateX(0deg) rotateY(0deg);
+  transition:transform 0.4s var(--snap), box-shadow 0.4s ease, border-color 0.4s ease;
+  animation:up .9s var(--snap) both;
+}
+
+/* ── INNER CONTENT — Makes text float (Parallax effect) ── */
+.c-inner { 
+  position:relative; 
+  z-index:2; 
+  /* This moves the text 40px closer to your eyes than the background */
+  transform: translateZ(40px); 
+  pointer-events: none; 
+}
+.card-wrap:nth-child(1) .card{animation-delay:.05s;}
+.card-wrap:nth-child(2) .card{animation-delay:.15s;}
+.card-wrap:nth-child(3) .card{animation-delay:.25s;}
+.card-wrap:nth-child(4) .card{animation-delay:.35s;}
+
+/* Card type accent vars */
+.card-study{--cc:var(--study);--cg:var(--study-g);--cr:var(--study-rgb);}
+.card-proc {--cc:var(--proc); --cg:var(--proc-g); --cr:var(--proc-rgb);}
+.card-zen  {--cc:var(--zen);  --cg:var(--zen-g);  --cr:var(--zen-rgb);}
+.card-orv  {--cc:var(--orv);  --cg:var(--orv-g);  --cr:var(--orv-rgb);}
+
+/* Mouse-tracking glow */
+.card::before {
+  content:'';position:absolute;inset:0;border-radius:26px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+    rgba(var(--cr),0.18) 0%,
+    rgba(var(--cr),0.07) 35%,
+    transparent 65%);
+  opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:0;
+}
+/* Top edge beam */
+.card::after {
+  content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cc),transparent);
+  opacity:0;transition:opacity .4s ease;z-index:0;
+}
+
+/* Active (hovering) state */
+.card.is-tilting::before { opacity:1; }
+.card.is-tilting::after  { opacity:.7; }
+
+.card-study.is-tilting {
+  border-color:rgba(79,142,247,.5);
+  box-shadow:0 28px 70px rgba(79,142,247,.22),0 0 0 1px rgba(79,142,247,.3),inset 0 1px 0 rgba(79,142,247,.15);
+}
+.card-proc.is-tilting {
+  border-color:rgba(0,217,245,.5);
+  box-shadow:0 28px 70px rgba(0,217,245,.22),0 0 0 1px rgba(0,217,245,.3),inset 0 1px 0 rgba(0,217,245,.15);
+}
+.card-zen.is-tilting {
+  border-color:rgba(74,222,128,.5);
+  box-shadow:0 28px 70px rgba(74,222,128,.22),0 0 0 1px rgba(74,222,128,.3),inset 0 1px 0 rgba(74,222,128,.15);
+}
+.card-orv.is-tilting {
+  border-color:rgba(245,184,0,.5);
+  box-shadow:0 28px 70px rgba(245,184,0,.22),0 0 0 1px rgba(245,184,0,.3),inset 0 1px 0 rgba(245,184,0,.15);
+}
+
+/* Clip mask — wraps visual-only elements so they don't bleed out */
+.card-clip {
+  position:absolute;inset:0;border-radius:26px;
+  overflow:hidden;pointer-events:none;z-index:0;
+}
+
+/* Backdrop blur REMOVED — backdrop-filter creates a stacking context
+   that completely flattens 3D perspective transforms on the parent */
+.card-blur {
+  display: none;
+}
+
+/* Shine overlay tracks mouse */
+.card-shine {
+  position:absolute;inset:0;border-radius:26px;pointer-events:none;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+    rgba(255,255,255,.12) 0%,
+    rgba(255,255,255,.04) 25%,
+    transparent 55%);
+  opacity:0;transition:opacity .2s ease;z-index:1;
+}
+.card.is-tilting .card-shine { opacity:1; }
+
+/* Watermark letter */
+.wm {
+  position:absolute;bottom:-18px;right:6px;
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:130px;line-height:1;letter-spacing:-.05em;
+  color:var(--cc);opacity:.032;
+  pointer-events:none;user-select:none;
+  transition:opacity .4s ease, transform .4s ease;
+}
+.card.is-tilting .card-clip .wm { opacity:.075; transform:scale(1.04); }
+
+/* ── CARD CONTENT ── */
+.c-inner { position:relative;z-index:2; }
+
+.c-head {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:22px;
+}
+.c-icon {
+  width:54px;height:54px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  transition:transform .3s var(--spring), box-shadow .3s ease;
+}
+.card-study .c-icon{background:rgba(79,142,247,.1);box-shadow:0 0 0 1px rgba(79,142,247,.2),0 6px 20px rgba(79,142,247,.1);}
+.card-proc  .c-icon{background:rgba(0,217,245,.1); box-shadow:0 0 0 1px rgba(0,217,245,.2), 0 6px 20px rgba(0,217,245,.1);}
+.card-zen   .c-icon{background:rgba(74,222,128,.1);box-shadow:0 0 0 1px rgba(74,222,128,.2),0 6px 20px rgba(74,222,128,.1);}
+.card-orv   .c-icon{background:rgba(245,184,0,.1); box-shadow:0 0 0 1px rgba(245,184,0,.2), 0 6px 20px rgba(245,184,0,.1);}
+.card:hover .c-icon { transform:scale(1.08) rotate(-4deg); }
+.card-study:hover .c-icon{box-shadow:0 0 0 1px rgba(79,142,247,.4),0 10px 30px rgba(79,142,247,.25);}
+.card-proc:hover  .c-icon{box-shadow:0 0 0 1px rgba(0,217,245,.4), 0 10px 30px rgba(0,217,245,.25);}
+.card-zen:hover   .c-icon{box-shadow:0 0 0 1px rgba(74,222,128,.4),0 10px 30px rgba(74,222,128,.25);}
+.card-orv:hover   .c-icon{box-shadow:0 0 0 1px rgba(245,184,0,.4), 0 10px 30px rgba(245,184,0,.25);}
+
+.c-badge {
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.25em;text-transform:uppercase;
+  padding:5px 12px;border-radius:100px;border:1px solid;
+}
+.card-study .c-badge{color:var(--study);background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.28);}
+.card-proc  .c-badge{color:var(--proc); background:rgba(0,217,245,.08); border-color:rgba(0,217,245,.28);}
+.card-zen   .c-badge{color:var(--zen);  background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.28);}
+.card-orv   .c-badge{color:var(--orv);  background:rgba(245,184,0,.08); border-color:rgba(245,184,0,.28);}
+
+.c-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: .02em;
+  color: var(--text);
+  margin-bottom: 0; /* Changed from 9px to 0 */
+  line-height: 1.25;
+}
+
+.bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 22px; /* This creates the equal distance from the title */
+}
+
+.c-pct {
+  position: absolute;
+  top: -18px;             /* Sits perfectly above the bar */
+  right: 0;               /* Aligns to the right side */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--muted2);   /* Dimmer color so it doesn't distract */
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.c-desc { font-size:13px;color:var(--muted);line-height:1.7;font-weight:300; }
+
+/* Progress bar */
+.c-bar {
+  height: 4px;            /* Back to thin and sleek */
+  background: rgba(255,255,255,0.06);
+  margin: 32px 0 22px 0;  /* Added top margin to make room for the label */
+  border-radius: 100px;
+  position: relative;
+  overflow: visible;      /* Allow the label to float outside the bar */
+  border: none;           /* Remove clunky borders */
+}
+.c-fill {
+  position: absolute;
+  left: 0; top: 0; height: 100%;
+  background: linear-gradient(90deg, var(--cc), #fff);
+  box-shadow: 0 0 12px var(--cc); /* Subtle glow */
+  width: 0%; 
+  transition: width 1.8s var(--snap);
+  border-radius: 100px;
+}
+
+/* Stats */
+/* ── STATS SECTION (Border Removed for cleaner look) ── */
+.c-stats {
+  display: flex;
+  gap: 22px;
+  margin-top: 0; /* Changed from 24px to 0 */
+  padding-top: 0px;
+  border-top: none !important;
+}
+.s-item { display:flex;flex-direction:column;gap:4px; }
+.s-val {
+  font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;line-height:1;
+}
+.s-lbl {
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.15em;color:var(--muted);text-transform:uppercase;
+}
+.card-study .s-val{color:var(--study);}
+.card-proc  .s-val{color:var(--proc);}
+.card-zen   .s-val{color:var(--zen);}
+.card-orv   .s-val{color:var(--orv);}
+
+/* Launch button */
+.c-launch {
+  position:absolute;bottom:28px;right:28px;z-index:3;
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border-bright);
+  color:var(--muted2);font-size:16px;
+  transition:all .3s var(--spring);
+  background:rgba(255,255,255,.04);
+}
+.card-study:hover .c-launch{background:var(--study);border-color:var(--study);color:#fff;box-shadow:0 0 28px rgba(79,142,247,.6);transform:rotate(-45deg);}
+.card-proc:hover  .c-launch{background:var(--proc); border-color:var(--proc); color:#000;box-shadow:0 0 28px rgba(0,217,245,.6); transform:rotate(-45deg);}
+.card-zen:hover   .c-launch{background:var(--zen);  border-color:var(--zen);  color:#000;box-shadow:0 0 28px rgba(74,222,128,.6);transform:rotate(-45deg);}
+.card-orv:hover   .c-launch{background:var(--orv);  border-color:var(--orv);  color:#000;box-shadow:0 0 28px rgba(245,184,0,.6); transform:rotate(-45deg);}
+
+/* ── RIPPLE ── */
+.ripple {
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,.09);
+  transform:scale(0);
+  animation:rip .65s ease-out forwards;
+  pointer-events:none;z-index:10;
+}
+@keyframes rip{to{transform:scale(4);opacity:0;}}
+
+/* ── FOOTER ── */
+.hub-footer {
+  margin-top:auto;padding-top:18px;
+  display:flex;align-items:center;gap:8px;
+  animation:up .9s .55s var(--snap) both;
+}
+.fd { width:8px;height:8px;border-radius:50%;transition:transform .3s var(--spring); }
+.fd:hover{transform:scale(1.7);}
+.fd.study{background:var(--study);box-shadow:0 0 10px var(--study);}
+.fd.proc {background:var(--proc); box-shadow:0 0 10px var(--proc);}
+.fd.zen  {background:var(--zen);  box-shadow:0 0 10px var(--zen);}
+.fd.orv  {background:var(--orv);  box-shadow:0 0 10px var(--orv);}
+.fsep{width:20px;height:1px;background:var(--border);}
+.flbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-left:6px;}
+
+/* ── ANIM ── */
+@keyframes up{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .cards-grid{grid-template-columns:1fr;}
+  .card-wrap{perspective:none;}
+  .page{padding:44px 18px 60px;}
+  .title-glow,.title-main{font-size:36px !important;}
+}
+
+/* Prevent transform override on mobile tap */
+@media(hover:none){
+  .card { transform:none !important; transition:none !important; }
+  .card::before { opacity:0 !important; }
+  .card::after  { opacity:0 !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sci-fi targeting cursor -->
+<div id="cursor">
+  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3,14 L3,3 L14,3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28,3 L39,3 L39,14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M39,28 L39,39 L28,39" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14,39 L3,39 L3,28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="21" cy="21" r="2.2" fill="currentColor"/>
+    <line x1="21" y1="14.5" x2="21" y2="17.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="21" y1="24.5" x2="21" y2="27.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="14.5" y1="21" x2="17.5" y2="21" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="24.5" y1="21" x2="27.5" y2="21" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+  </svg>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"><div class="ab"></div><div class="ab"></div><div class="ab"></div><div class="ab"></div></div>
+<div class="grid-bg"></div>
+
+<div class="page">
+
+  <header>
+    <div class="eyebrow">System Dashboard · v2.0 · All Systems Active</div>
+    <div class="title-wrap">
+      <div class="title-glow" aria-hidden="true">TRACKERS HUB</div>
+      <div class="title-main">TRACKERS HUB</div>
+    </div>
+    <p class="sub">Four systems. One command center.</p>
+    <div class="date-pill">
+      <span class="live-dot"></span>
+      <span id="ld">—</span>
+      <span style="color:rgba(255,255,255,.14)">·</span>
+      <span id="lt">—</span>
+    </div>
+  </header>
+
+  <div class="cards-grid">
+    <!-- STUDY TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-study" href="Study-Schedule-Pro.html">
+        <div class="card-clip"><div class="wm">S</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">📚</div><div class="c-badge">Academics</div></div>
+          <div class="c-title">Study Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+    <div class="s-item">
+        <span class="s-val">0 / 0h</span>
+        <span class="s-lbl">Daily Progress</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">0%</span>
+        <span class="s-lbl">Aggregate Attendance</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">Exams</span>
+        <span class="s-lbl">Countdown</span>
+    </div>
+</div>
+        </div>
+        <div class="c-launch">↗</div>
+      </a>
+    </div>
+
+    <!-- PROCRASTINATION TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-proc" href="Procrastination-Hub.html">
+        <div class="card-clip"><div class="wm">P</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">⚡</div><div class="c-badge">Productivity</div></div>
+          <div class="c-title">Procrastination Tracker</div>
+          <!-- Bar now tracks Weekly Budget -->
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+    <div class="s-item">
+        <span class="s-val">0 / 0h</span>
+        <span class="s-lbl">Weekly Budget</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">0</span>
+        <span class="s-lbl">0 Entries Total</span> <!-- This will show your 982 entries -->
+    </div>
+    <div class="s-item">
+        <span class="s-val">0</span>
+        <span class="s-lbl">0 Entries Done</span> <!-- This will show your finished episodes -->
+    </div>
+</div>
+        </div>
+        <div class="c-launch">↗</div>
+      </a>
+    </div>
+
+    <!-- ZEN GARDEN TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-zen" href="zen-garden-tracker.html">
+        <div class="card-clip"><div class="wm">Z</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">🌿</div><div class="c-badge">Wellness</div></div>
+          <div class="c-title">Zen Garden Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">Day Streak</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Current Month</span></div>
+            <div class="s-item"><span class="s-val">Seeds</span><span class="s-lbl">Milestones</span></div>
+          </div>
+        </div>
+        <div class="c-launch">↗</div>
+      </a>
+    </div>
+
+    <!-- ORV TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-orv" href="ORV-Tracker.html">
+        <div class="card-clip"><div class="wm">O</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">✦</div><div class="c-badge">Star Stream</div></div>
+          <div class="c-title">ORV Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">Ch. Read</span></div>
+            <div class="s-item"><span class="s-val">0/58</span><span class="s-lbl">Sessions</span></div>
+            <div class="s-item"><span class="s-val">33</span><span class="s-lbl">Arcs</span></div>
+          </div>
+        </div>
+        <div class="c-launch">↗</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="hub-footer">
+    <span class="fd study"></span><span class="fsep"></span>
+    <span class="fd proc"></span><span class="fsep"></span>
+    <span class="fd zen"></span><span class="fsep"></span>
+    <span class="fd orv"></span>
+    <span class="fsep"></span>
+    <span class="flbl">4 trackers online</span>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════
+   CLOCK
+══════════════════════════════ */
+(function clock() {
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function tick() {
+    const d = new Date();
+    document.getElementById('ld').textContent =
+      DAYS[d.getDay()] + '  ·  ' + MONS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    document.getElementById('lt').textContent =
+      String(d.getHours()).padStart(2,'0') + ':' +
+      String(d.getMinutes()).padStart(2,'0') + ':' +
+      String(d.getSeconds()).padStart(2,'0');
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ══════════════════════════════
+   STAR FIELD
+══════════════════════════════ */
+(function stars() {
+  const cv = document.getElementById('bg-canvas');
+  const cx = cv.getContext('2d');
+  const COLORS = ['#4f8ef7','#00d9f5','#4ade80','#f5b800','#ffffff'];
+  let S = [];
+  function resize() {
+    cv.width = innerWidth; cv.height = innerHeight;
+    S = [];
+    const n = Math.floor(innerWidth * innerHeight / 7500);
+    for (let i = 0; i < n; i++) S.push({
+      x: Math.random() * cv.width,
+      y: Math.random() * cv.height,
+      r: Math.random() * 1.4 + .2,
+      a: Math.random(),
+      da: (Math.random() - .5) * .005,
+      sp: Math.random() * .2 + .04,
+      c: COLORS[Math.floor(Math.random() * COLORS.length)]
+    });
+  }
+  function draw() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    for (const s of S) {
+      s.a += s.da;
+      if (s.a < 0 || s.a > 1) s.da *= -1;
+      s.y -= s.sp;
+      if (s.y < 0) { s.y = cv.height; s.x = Math.random() * cv.width; }
+      cx.beginPath();
+      cx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      cx.fillStyle = s.c;
+      cx.globalAlpha = s.a * .5;
+      cx.fill();
+    }
+    cx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+  addEventListener('resize', resize);
+  resize(); draw();
+})();
+
+/* ══════════════════════════════
+   CUSTOM CURSOR
+══════════════════════════════ */
+(function cursor() {
+  const el = document.getElementById('cursor');
+  if (!el) return;
+
+  document.addEventListener('mousemove', function(e) {
+    el.style.transform = 'translate(' + (e.clientX - 21) + 'px,' + (e.clientY - 21) + 'px)';
+    const card = e.target.closest('.card');
+    if (card) {
+      const m = card.className.match(/card-(\w+)/);
+      el.className = 'on-card hov-' + (m ? m[1] : '');
+    } else {
+      el.className = '';
+    }
+  });
+
+  document.addEventListener('mouseleave', function() { el.style.opacity = '0'; });
+  document.addEventListener('mouseenter', function() { el.style.opacity = '1'; });
+})();
+
+/* ══════════════════════════════
+   3D CARD TILT  ← rebuilt from scratch
+   Strategy: perspective is on .card-wrap (CSS).
+   JS applies rotateX/rotateY + scale directly on .card.
+   No perspective() in the JS transform string to avoid conflicts.
+══════════════════════════════ */
+(function tilt() {
+  const MAX_ROT = 20;
+
+  let raf = null;
+
+  function applyTilt(card, clientX, clientY) {
+    const r = card.getBoundingClientRect();
+    const x = (clientX - r.left) / r.width  - 0.5;
+    const y = (clientY - r.top)  / r.height - 0.5;
+
+    const rx = -y * MAX_ROT;
+    const ry =  x * MAX_ROT;
+
+    card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale(1.04)';
+
+    card.style.setProperty('--mx', ((x + 0.5) * 100) + '%');
+    card.style.setProperty('--my', ((y + 0.5) * 100) + '%');
+    const shine = card.querySelector('.card-shine');
+    if (shine) {
+      shine.style.setProperty('--mx', ((x + 0.5) * 100) + '%');
+      shine.style.setProperty('--my', ((y + 0.5) * 100) + '%');
+    }
+  }
+
+  function resetCard(card) {
+    card.style.transition = 'transform 400ms cubic-bezier(.16,1,.3,1), box-shadow 400ms ease, border-color 400ms ease';
+    card.style.transform  = 'rotateX(0deg) rotateY(0deg) scale(1)';
+    card.classList.remove('is-tilting');
+  }
+
+  // Attach listeners to each card individually for reliability
+  document.querySelectorAll('.card').forEach(function(card) {
+
+    card.addEventListener('mouseenter', function() {
+      card.style.transition = 'none';
+      card.classList.add('is-tilting');
+    });
+
+    card.addEventListener('mousemove', function(e) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function() {
+        applyTilt(card, e.clientX, e.clientY);
+        raf = null;
+      });
+    });
+
+    card.addEventListener('mouseleave', function() {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      resetCard(card);
+    });
+  });
+})();
+
+/* ══════════════════════════════
+   RIPPLE ON CLICK
+══════════════════════════════ */
+document.querySelectorAll('.card').forEach(function(card) {
+  card.addEventListener('click', function(e) {
+    const r  = card.getBoundingClientRect();
+    const sz = Math.max(r.width, r.height);
+    const rp = document.createElement('span');
+    rp.className = 'ripple';
+    rp.style.cssText =
+      'width:' + sz + 'px;height:' + sz + 'px;' +
+      'left:' + (e.clientX - r.left - sz / 2) + 'px;' +
+      'top:'  + (e.clientY - r.top  - sz / 2) + 'px;';
+    // append into clip container so it stays within card bounds
+    const clip = card.querySelector('.card-clip') || card;
+    clip.appendChild(rp);
+    setTimeout(function() { rp.remove(); }, 700);
+  });
+});
+
+/* ══════════════════════════════
+   ANIMATE PROGRESS BARS
+══════════════════════════════ */
+setTimeout(function() {
+  document.querySelectorAll('.c-fill').forEach(function(el) {
+    el.style.width = el.dataset.w + '%';
+  });
+}, 500);
+/* ══════════════════════════════════════════════════════════════
+   TRACKERS HUB - SYSTEM SYNC ENGINE (v12.0 - EXAM FIX)
+   Verified: Exams, Attendance, Streaks, and cumulative Entries.
+══════════════════════════════════════════════════════════════ */
+
+function syncHubData() {
+    try {
+        // --- 1. STUDY TRACKER (Academics) ---
+        const sSettings = JSON.parse(localStorage.getItem('settings_v4') || '{"dailyGoal": 8}');
+        const sData = JSON.parse(localStorage.getItem('todosState_v4') || '{"todayStats":{"studied":0}}');
+        const sAtt = JSON.parse(localStorage.getItem('attendanceState_v1') || '{"subjects":[]}');
+        const sExams = JSON.parse(localStorage.getItem('exams_v1') || '[]');
+        const sCard = document.querySelector('.card-study');
+
+        if(sCard) {
+            // Daily Goal Logic
+            const actualHrs = (sData.todayStats?.studied || 0) / 3600;
+            const goalHrs = parseFloat(sSettings.dailyGoal) || 8;
+            const sPct = Math.min(100, Math.round((actualHrs / goalHrs) * 100));
+
+            // Aggregate Attendance Logic
+            let totalP = 0, totalHeld = 0;
+            sAtt.subjects.forEach(s => { 
+                if(!s.archived){ 
+                    totalP += (parseInt(s.currentPresent || s.present || 0)); 
+                    totalHeld += (parseInt(s.currentTotal || s.total || 0)); 
+                }
+            });
+            const attPct = totalHeld > 0 ? Math.round((totalP / totalHeld) * 100) : 0;
+
+            // EXAM COUNTDOWN LOGIC (Verified)
+            let examText = "No Exams";
+            if (sExams.length > 0) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Reset time to midnight for clean day counting
+                
+                const upcoming = sExams
+                    .map(e => ({...e, ts: new Date(e.date + 'T00:00:00').getTime()}))
+                    .filter(e => e.ts >= today.getTime())
+                    .sort((a, b) => a.ts - b.ts);
+                
+                if (upcoming.length > 0) {
+                    const diffTime = upcoming[0].ts - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 0) examText = "TODAY";
+                    else if (diffDays === 1) examText = "Tomorrow";
+                    else examText = `${diffDays} Days`;
+                }
+            }
+
+            sCard.querySelector('.c-fill').style.width = sPct + '%';
+            sCard.querySelector('.c-pct').textContent = sPct + '% OF DAILY GOAL';
+            const sVals = sCard.querySelectorAll('.s-val');
+            sVals[0].textContent = `${actualHrs.toFixed(1)} / ${goalHrs}h`;
+            sVals[1].textContent = `${attPct}%`;
+            sVals[2].textContent = examText;
+        }
+
+        // --- 2. PROCRASTINATION TRACKER (Productivity) ---
+        const pBudget = JSON.parse(localStorage.getItem('phub_budget') || '{"weeklyHours":10, "usedMinutes":0}');
+        const pLib = JSON.parse(localStorage.getItem('phub_library') || '[]');
+        const pTasks = JSON.parse(localStorage.getItem('phub_tasks') || '[]');
+        const pCard = document.querySelector('.card-proc');
+
+        if(pCard) {
+            const usedHrs = (parseFloat(pBudget.usedMinutes) || 0) / 60;
+            const totalBudget = parseFloat(pBudget.weeklyHours) || 10;
+            const pPct = Math.min(100, Math.round((usedHrs / totalBudget) * 100));
+            
+            const seriesCount = pLib.length;
+            const completedSeries = pLib.filter(i => i.status === 'completed' || (i.totalEpisodes > 0 && i.watchedEpisodes?.length >= i.totalEpisodes)).length;
+
+            let totalEntries = 0;
+            let watchedEntries = 0;
+            pLib.forEach(item => {
+                totalEntries += (parseInt(item.totalEpisodes) || 0);
+                if (Array.isArray(item.watchedEpisodes)) watchedEntries += item.watchedEpisodes.length;
+            });
+            
+            // Add Process Queue tasks to entries count
+            const taskDoneCount = pTasks.filter(t => t.completed).length;
+
+            const fill = pCard.querySelector('.c-fill');
+            fill.style.width = pPct + '%';
+            fill.style.background = usedHrs >= totalBudget ? '#ff3b6b' : 'var(--proc)';
+            
+            const pVals = pCard.querySelectorAll('.s-val');
+            const pLbls = pCard.querySelectorAll('.s-lbl');
+            pVals[0].textContent = `${usedHrs.toFixed(1)} / ${totalBudget}h`;
+            pVals[1].textContent = seriesCount + pTasks.length;
+            pLbls[1].textContent = `${totalEntries + pTasks.length} Entries Total`;
+            pVals[2].textContent = completedSeries + taskDoneCount;
+            pLbls[2].textContent = `${watchedEntries + taskDoneCount} Entries Done`;
+        }
+
+        // --- 3. ZEN GARDEN TRACKER (Wellness) ---
+const zData = JSON.parse(localStorage.getItem('zen_garden_data') || '{"days":{}}');
+const zCard = document.querySelector('.card-zen');
+
+if(zCard) {
+    let streak = 0;
+    let checkDate = new Date();
+    const todayStr = checkDate.toISOString().slice(0, 10);
+    if (!zData.days[todayStr]) checkDate.setDate(checkDate.getDate() - 1);
+
+    while (true) {
+        const key = checkDate.toISOString().slice(0, 10);
+        if (zData.days[key]) { streak++; checkDate.setDate(checkDate.getDate() - 1); } 
+        else { break; }
+    }
+
+    // NEW: Dynamic Milestone Scaling
+    let streakGoal = 30; // Default goal
+    let milestoneLabel = "HARVEST READY";
+
+    if (streak > 30 && streak <= 100) {
+        streakGoal = 100;
+        milestoneLabel = "ELITE STREAK";
+    } else if (streak > 100) {
+        streakGoal = 365;
+        milestoneLabel = "ZEN MASTER";
+    }
+
+    const zPct = Math.min(100, Math.round((streak / streakGoal) * 100));
+    const totalSeeds = Object.values(zData.days).filter(val => val === true).length;
+    
+    // Update the line
+    zCard.querySelector('.c-fill').style.width = zPct + '%';
+    
+    // Update the label to show your current milestone progress
+    zCard.querySelector('.c-pct').textContent = `${zPct}% TO ${streakGoal} DAYS (${milestoneLabel})`;
+    
+    const zVals = zCard.querySelectorAll('.s-val');
+    zVals[0].textContent = streak;
+    zVals[1].textContent = new Date().toLocaleString('en-us', { month: 'short' }).toUpperCase();
+    zVals[2].textContent = totalSeeds;
+}
+
+        // --- 4. ORV TRACKER (Star Stream) ---
+        const oDone = JSON.parse(localStorage.getItem('orv-d') || '[]');
+        const oCard = document.querySelector('.card-orv');
+
+        if(oCard) {
+            const chCounts = [15,4,8,9,6,11,9,10,10,10,8,10,5,11,7,6,6,6,10,8,9,11,10,10,11,12,11,7,8,5,8,7,12,9,5,11,12,12,8,8,10,7,9,11,9,7,7,10,10,9,9,11,10,10,11,11,10,35];
+            let totalChapters = 0;
+            oDone.forEach(idx => { if(chCounts[idx]) totalChapters += chCounts[idx]; });
+
+            const oPct = Math.round((oDone.length / 58) * 100);
+            oCard.querySelector('.c-fill').style.width = oPct + '%';
+            const oVals = oCard.querySelectorAll('.s-val');
+            oVals[0].textContent = totalChapters; 
+            oVals[1].textContent = `${oDone.length}/58`;
+        }
+
+    } catch(err) { console.error("Sync Logic Error:", err); }
+}
+
+(function engine() {
+    const tick = () => {
+        const d = new Date(), mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        document.getElementById('ld').textContent = `${days[d.getDay()]} · ${mons[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        document.getElementById('lt').textContent = d.toTimeString().split(' ')[0];
+    };
+    setInterval(tick, 1000); tick();
+
+    const cursorEl = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+        cursorEl.style.transform = `translate(${e.clientX-21}px, ${e.clientY-21}px)`;
+        const c = e.target.closest('.card');
+        cursorEl.className = c ? 'on-card hov-' + c.className.match(/card-(\w+)/)[1] : '';
+        if(c) {
+            const r = c.getBoundingClientRect();
+            const x = e.clientX - r.left, y = e.clientY - r.top;
+            const rx = (y - r.height/2) / (r.height/2) * -10, ry = (x - r.width/2) / (r.width/2) * 10;
+            c.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.04, 1.04, 1.04)`;
+        }
+    });
+    document.querySelectorAll('.card').forEach(card => card.addEventListener('mouseleave', () => card.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`));
+
+    const cv = document.getElementById('bg-canvas'), cx = cv.getContext('2d');
+    let S = [];
+    const res = () => { cv.width=innerWidth; cv.height=innerHeight; S=[]; for(let i=0;i<120;i++) S.push({x:Math.random()*cv.width, y:Math.random()*cv.height, r:Math.random()*1.1, sp:Math.random()*0.1+0.05}); };
+    const draw = () => { cx.clearRect(0,0,cv.width,cv.height); cx.fillStyle='#fff'; cx.globalAlpha=0.3; S.forEach(s=>{ s.y-=s.sp; if(s.y<0) s.y=cv.height; cx.beginPath(); cx.arc(s.x,s.y,s.r,0,Math.PI*2); cx.fill(); }); requestAnimationFrame(draw); };
+    addEventListener('resize', res); res(); draw();
+
+    syncHubData();
+    setInterval(syncHubData, 3000); 
+})();
+</script>
+<script src="hub-nav.js"></script>
+</body>
+</html>

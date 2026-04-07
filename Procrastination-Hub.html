@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PROC//HUB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4656,6 +4658,63 @@
     transition: all 150ms;
   }
   .sched-add-btn:hover { border-color: var(--accent-cool); color: var(--accent-cool); }
+
+  /* ════════════════════════════════════════════════════════════════
+     MOBILE / TOUCH RESPONSIVE
+  ════════════════════════════════════════════════════════════════ */
+
+  /* Restore cursors on touch devices — custom cursor doesn't work on touch */
+  @media (hover: none), (pointer: coarse) {
+    /* Hide custom cursor elements */
+    .cursor-dot, .cursor-ring { display: none !important; }
+
+    /* Restore default cursors */
+    *, *::before, *::after { cursor: auto !important; }
+    a, button, [role=button], .bn-item, .card,
+    input, select, textarea, label,
+    .btn-primary, .btn-ghost, .btn-danger,
+    [onclick], [data-section], [data-tab] { cursor: pointer !important; }
+
+    /* Ensure minimum touch target sizes */
+    .bn-item { min-width: 44px; min-height: 44px; }
+    .btn-primary, .btn-ghost, .btn-danger { min-height: 44px; }
+    button { min-height: 44px; }
+
+    /* Disable hover-only transforms that feel wrong on touch */
+    .card:hover { transform: none; }
+    .stat-card:hover { transform: none; }
+  }
+
+  /* Small screen layout fixes */
+  @media (max-width: 600px) {
+    /* Bottom nav: ensure it fits on small screens */
+    #bottom-nav {
+      bottom: 10px;
+      padding: 4px 4px;
+      gap: 0;
+      border-radius: 20px;
+    }
+    .bn-item { width: 38px; height: 38px; }
+
+    /* Stat cards: 2-column on mobile */
+    .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+    /* Library grid: single column */
+    .lib-grid { grid-template-columns: 1fr !important; }
+
+    /* Modal: full width on mobile */
+    .modal-box {
+      width: calc(100% - 24px);
+      padding: 24px 20px 20px;
+      border-radius: var(--radius-md);
+    }
+
+    /* Detail hero: stack on mobile */
+    .detail-hero { grid-template-columns: 1fr !important; }
+
+    /* Overflow: allow body scroll on mobile */
+    html, body { overflow: auto !important; }
+  }
 
   </style>
 </head>
@@ -12004,6 +12063,13 @@
   function initCursor() {
     const dot  = document.getElementById('cursor-dot')
     const ring = document.getElementById('cursor-ring')
+
+    // Skip custom cursor on touch/pointer-coarse devices
+    if (window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+      if (dot)  dot.style.display  = 'none'
+      if (ring) ring.style.display = 'none'
+      return
+    }
 
     // Change 32: only hide cursor after confirming elements are in DOM
     if (dot && ring) {

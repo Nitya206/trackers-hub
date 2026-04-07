@@ -10500,7 +10500,7 @@ All code is well-commented and organized by feature.
 
         // Process recurring todos - creates new instances if needed
         function processRecurringTodos() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const dayOfWeek = new Date().getDay();
             const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
             
@@ -11020,10 +11020,10 @@ All code is well-commented and organized by feature.
             if (currentFilter === 'urgent') {
                 filteredTodos = filteredTodos.filter(t => t.priority === 'High' && !t.completed);
             } else if (currentFilter === 'today') {
-                const today = new Date().toISOString().split('T')[0];
+                const today = localDate();
                 filteredTodos = filteredTodos.filter(t => t.dueDate === today && !t.completed);
             } else if (currentFilter === 'overdue') {
-                const today = new Date().toISOString().split('T')[0];
+                const today = localDate();
                 filteredTodos = filteredTodos.filter(t => t.dueDate && t.dueDate < today && !t.completed);
             }
             
@@ -11605,7 +11605,7 @@ All code is well-commented and organized by feature.
                     text: notes,
                     rating: currentSessionRating,
                     duration: totalSeconds,
-                    timestamp: new Date().toISOString()
+                    timestamp: localDate() + 'T' + new Date().toTimeString().slice(0,8)
                 });
             }
             
@@ -11876,7 +11876,7 @@ All code is well-commented and organized by feature.
             for (let i = 0; i < 365; i++) { // Check up to 1 year back
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = localDate(date);
                 const dayData = dailyHistory.find(d => d.date === dateStr);
                 
                 if (dayData && dayData.hours >= dailyGoalHours) {
@@ -11889,7 +11889,7 @@ All code is well-commented and organized by feature.
                     // Check if yesterday met the goal
                     const yesterday = new Date(today);
                     yesterday.setDate(yesterday.getDate() - 1);
-                    const yesterdayStr = yesterday.toISOString().split('T')[0];
+                    const yesterdayStr = localDate(yesterday);
                     const yesterdayData = dailyHistory.find(d => d.date === yesterdayStr);
                     
                     if (!yesterdayData || yesterdayData.hours < dailyGoalHours) {
@@ -11906,7 +11906,7 @@ All code is well-commented and organized by feature.
             // Update last study date if we have a streak
             if (streak > 0) {
                 const lastStreakDay = new Date(today);
-                const todayStr = today.toISOString().split('T')[0];
+                const todayStr = today; // already a localDate() string
                 const todayData = dailyHistory.find(d => d.date === todayStr);
                 
                 if (!todayData || todayData.hours < dailyGoalHours) {
@@ -12464,7 +12464,7 @@ All code is well-commented and organized by feature.
             for (let i = 6; i >= 0; i--) {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
-                days.push(date.toISOString().split('T')[0]);
+                days.push(localDate(date));
             }
             return days;
         }
@@ -12473,13 +12473,13 @@ All code is well-commented and organized by feature.
             const session = {
                 subject,
                 duration: durationSeconds,
-                timestamp: new Date().toISOString()
+                timestamp: localDate() + 'T' + new Date().toTimeString().slice(0,8)
             };
             
             currentWeekSessions.push(session);
             
             // Update daily history
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const todayData = dailyHistory.find(d => d.date === today);
             const hours = durationSeconds / 3600;
             
@@ -12504,7 +12504,7 @@ All code is well-commented and organized by feature.
             if (!logEl) return;
             
             // Get today's sessions
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const todaySessions = currentWeekSessions.filter(s => 
                 s.timestamp.startsWith(today)
             );
@@ -13496,7 +13496,7 @@ All code is well-commented and organized by feature.
             ] : [{ text: `Intensive review - ${exam.subject}`, daysBefore: daysLeft }];
             tasks.forEach(task => {
                 const dueDate = new Date(examDate); dueDate.setDate(dueDate.getDate() - task.daysBefore);
-                todos.push({ id: Date.now() + Math.random(), task: task.text, subject: exam.subject, priority: task.daysBefore <= 2 ? 'High' : 'Medium', dueDate: dueDate.toISOString().split('T')[0], completed: false, accumulatedSeconds: 0, createdAt: new Date().toISOString(), subtasks: [] });
+                todos.push({ id: Date.now() + Math.random(), task: task.text, subject: exam.subject, priority: task.daysBefore <= 2 ? 'High' : 'Medium', dueDate: localDate(dueDate), completed: false, accumulatedSeconds: 0, createdAt: new Date().toISOString(), subtasks: [] });
             });
             saveTodosState(); renderTodos();
             showToast(`Created ${tasks.length} study tasks!`, 'success');
@@ -13505,7 +13505,7 @@ All code is well-commented and organized by feature.
         // ==================== PART 1: DAILY GOAL PROGRESS ====================
         function updateDailyGoalProgress() {
             const dailyGoalHours = settings.dailyGoal || 6;
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             let todayHours = 0;
             const todayData = dailyHistory.find(d => d.date === today);
             if (todayData) todayHours = todayData.hours;
@@ -13547,7 +13547,7 @@ All code is well-commented and organized by feature.
             const today = new Date(); const cells = [];
             for (let i = 34; i >= 0; i--) {
                 const date = new Date(today); date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = localDate(date);
                 const dayData = dailyHistory.find(d => d.date === dateStr);
                 const hours = dayData ? dayData.hours : 0;
                 const level = hours === 0 ? 0 : hours < 2 ? 1 : hours < 4 ? 2 : hours < 6 ? 3 : 4;
@@ -13635,7 +13635,7 @@ All code is well-commented and organized by feature.
         
         function recordStudyHour() {
             const hour = new Date().getHours();
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const key = `${today}-${hour}`;
             hourlyStudyData[key] = (hourlyStudyData[key] || 0) + 1;
             saveHourlyData();
@@ -13754,11 +13754,11 @@ All code is well-commented and organized by feature.
             if (saved) {
                 try {
                     distractions = JSON.parse(saved);
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = localDate();
                     if (distractions.date !== today) {
                         distractions = { count: 0, date: today, log: [] };
                     }
-                } catch(e) { distractions = { count: 0, date: new Date().toISOString().split('T')[0], log: [] }; }
+                } catch(e) { distractions = { count: 0, date: localDate(), log: [] }; }
             }
             updateDistractionDisplay();
         }
@@ -13791,7 +13791,7 @@ All code is well-commented and organized by feature.
             if (!autoDailyReview) return;
             
             const hour = new Date().getHours();
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const lastReview = localStorage.getItem('lastDailyReview');
             
             // Show review prompt at 9pm if not shown today
@@ -13803,7 +13803,7 @@ All code is well-commented and organized by feature.
         
         function showDailyReviewPrompt() {
             // Calculate today's stats
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const todayData = dailyHistory.find(d => d.date === today);
             const hoursStudied = todayData ? todayData.hours.toFixed(1) : '0';
             const tasksDone = todos.filter(t => t.completed && t.createdAt?.startsWith(today)).length;
@@ -13855,11 +13855,11 @@ All code is well-commented and organized by feature.
         function saveDailyReview() {
             const wentWell = document.getElementById('reviewWentWell')?.value || '';
             const toImprove = document.getElementById('reviewToImprove')?.value || '';
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             
             // Save review
             let reviews = JSON.parse(localStorage.getItem('dailyReviews_v1') || '[]');
-            reviews.push({ date: today, wentWell, toImprove, timestamp: new Date().toISOString() });
+            reviews.push({ date: today, wentWell, toImprove, timestamp: localDate() + 'T' + new Date().toTimeString().slice(0,8) });
             if (reviews.length > 30) reviews = reviews.slice(-30);
             localStorage.setItem('dailyReviews_v1', JSON.stringify(reviews));
             localStorage.setItem('lastDailyReview', today);
@@ -13869,7 +13869,7 @@ All code is well-commented and organized by feature.
         }
         
         function skipDailyReview() {
-            localStorage.setItem('lastDailyReview', new Date().toISOString().split('T')[0]);
+            localStorage.setItem('lastDailyReview', localDate());
             document.getElementById('dailyReviewModal')?.remove();
         }
 
@@ -13964,7 +13964,7 @@ All code is well-commented and organized by feature.
         function addToTimerHistory(subject, task, duration) {
             timerHistory.push({
                 subject, task, duration,
-                timestamp: new Date().toISOString()
+                timestamp: localDate() + 'T' + new Date().toTimeString().slice(0,8)
             });
             saveTimerHistory();
             renderTimerHistory();
@@ -13974,7 +13974,7 @@ All code is well-commented and organized by feature.
             const container = document.getElementById('timerHistoryList');
             if (!container) return;
             
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const todayHistory = timerHistory.filter(h => h.timestamp.startsWith(today)).reverse();
             
             if (todayHistory.length === 0) {
@@ -14059,7 +14059,7 @@ All code is well-commented and organized by feature.
                     subject: t.subject,
                     priority: t.priority,
                     category: t.category || null,
-                    dueDate: new Date().toISOString().split('T')[0],
+                    dueDate: localDate(),
                     completed: false,
                     accumulatedSeconds: 0,
                     createdAt: new Date().toISOString(),
@@ -14158,7 +14158,7 @@ All code is well-commented and organized by feature.
             for (let i = 0; i < 30; i++) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = localDate(date);
                 const dayData = dailyHistory.find(d => d.date === dateStr);
                 
                 // Only count day if daily goal was met
@@ -14173,7 +14173,7 @@ All code is well-commented and organized by feature.
 
         // ==================== PART 3: POMODORO STATS ====================
         function updatePomodoroStats() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDate();
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
             
@@ -14874,7 +14874,7 @@ All code is well-commented and organized by feature.
             container.innerHTML = days.map((day, idx) => {
                 const date = new Date(today);
                 date.setDate(date.getDate() - todayIdx + idx);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = localDate(date);
                 const dayData = dailyHistory.find(d => d.date === dateStr);
                 
                 let value = 0;
@@ -14949,7 +14949,7 @@ All code is well-commented and organized by feature.
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `time-report-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `time-report-${localDate()}.csv`;
             a.click();
             URL.revokeObjectURL(url);
             
@@ -15049,7 +15049,7 @@ All code is well-commented and organized by feature.
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 
                 // Second: overdue first
-                const today = new Date().toISOString().split('T')[0];
+                const today = localDate();
                 const aOverdue = a.dueDate && a.dueDate < today;
                 const bOverdue = b.dueDate && b.dueDate < today;
                 if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
@@ -15309,7 +15309,7 @@ All code is well-commented and organized by feature.
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `weekly-report-${new Date().toISOString().split('T')[0]}.txt`;
+            a.download = `weekly-report-${localDate()}.txt`;
             a.click();
             URL.revokeObjectURL(url);
             
@@ -15702,7 +15702,7 @@ All code is well-commented and organized by feature.
                 duration,
                 rating: currentSessionRating,
                 note,
-                timestamp: new Date().toISOString()
+                timestamp: localDate() + 'T' + new Date().toTimeString().slice(0,8)
             };
             
             let sessionRatings = [];
@@ -16669,6 +16669,12 @@ All code is well-commented and organized by feature.
             applyTheme();
         }
 
+        // ── Local date helper — avoids UTC timezone shift ──
+        function localDate(d) {
+            const dt = d || new Date();
+            return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+        }
+
         function loadSettings() {
             const saved = localStorage.getItem('settings_v4');
             if (saved) {
@@ -16916,7 +16922,7 @@ All code is well-commented and organized by feature.
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `study-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `study-app-backup-${localDate()}.json`;
             a.click();
             URL.revokeObjectURL(url);
             

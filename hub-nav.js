@@ -370,6 +370,8 @@
     transition:transform .22s cubic-bezier(.34,1.56,.64,1),
                border-color .2s,box-shadow .2s,color .2s;
     position:relative;overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
   .hn-pill::before{
     content:'';position:absolute;inset:0;border-radius:100px;
@@ -610,6 +612,24 @@
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
     border-radius:4px;padding:2px 5px;
   }
+
+  /* ── TOUCH / MOBILE ── */
+  .hn-result{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .hn-app-row{-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:44px;}
+  .hn-result{min-height:44px;}
+
+  @media(max-width:600px){
+    #hn-root{bottom:80px;right:14px;gap:7px;}
+    .hn-pill{height:36px;padding:0 12px;font-size:11px;}
+    #hn-sw-popup{min-width:180px;border-radius:14px;}
+    #hn-search-overlay{padding:5vh 12px 20px;}
+    #hn-search-box{border-radius:16px;}
+    #hn-s-input{font-size:16px;}
+    #hn-s-results{max-height:55vh;}
+    .hn-result{min-height:48px;}
+    .hn-app-row{min-height:48px;}
+    #hn-s-footer{display:none;}
+  }
   `;
 
   const styleEl = document.createElement('style');
@@ -678,33 +698,46 @@
     if (e && e.stopPropagation) e.stopPropagation();
     swOpen = !swOpen;
     if (swOpen) {
-      // Position popup relative to the trigger element
-      const trigger = e && e.currentTarget ? e.currentTarget : swPill;
-      const r = trigger.getBoundingClientRect();
-      const popupW = 220;
-      const isLeftSide = r.left < window.innerWidth / 2;
-
-      if (isLeftSide) {
-        // Sidebar trigger — open to the RIGHT of the item
-        swPopup.style.left = (r.right + 12) + 'px';
+      const isMobile = window.innerWidth <= 600;
+      if (isMobile) {
+        // On mobile: center the popup above the bottom of the screen
+        swPopup.style.left = '50%';
         swPopup.style.right = 'auto';
-        
-        // Handle vertical overflow: flip upwards if in bottom half of screen
-        if (r.top > window.innerHeight / 2) {
-          swPopup.style.bottom = (window.innerHeight - r.bottom) + 'px';
-          swPopup.style.top = 'auto';
-        } else {
-          swPopup.style.top = Math.max(10, r.top - 20) + 'px';
-          swPopup.style.bottom = 'auto';
-        }
-      } else {
-        // Bottom-right trigger — open ABOVE centered
-        let left = r.left + r.width / 2 - popupW / 2;
-        left = Math.max(10, Math.min(left, window.innerWidth - popupW - 10));
-        swPopup.style.left = left + 'px';
-        swPopup.style.bottom = (window.innerHeight - r.top + 10) + 'px';
-        swPopup.style.right = 'auto';
+        swPopup.style.bottom = '90px';
         swPopup.style.top = 'auto';
+        swPopup.style.transform = 'translateX(-50%)';
+        swPopup.style.minWidth = '220px';
+        swPopup.style.maxWidth = 'calc(100vw - 28px)';
+      } else {
+        swPopup.style.transform = '';
+        // Position popup relative to the trigger element
+        const trigger = e && e.currentTarget ? e.currentTarget : swPill;
+        const r = trigger.getBoundingClientRect();
+        const popupW = 220;
+        const isLeftSide = r.left < window.innerWidth / 2;
+
+        if (isLeftSide) {
+          // Sidebar trigger — open to the RIGHT of the item
+          swPopup.style.left = (r.right + 12) + 'px';
+          swPopup.style.right = 'auto';
+          
+          // Handle vertical overflow: flip upwards if in bottom half of screen
+          if (r.top > window.innerHeight / 2) {
+            swPopup.style.bottom = (window.innerHeight - r.bottom) + 'px';
+            swPopup.style.top = 'auto';
+          } else {
+            swPopup.style.top = Math.max(10, r.top - 20) + 'px';
+            swPopup.style.bottom = 'auto';
+          }
+        } else {
+          // Bottom-right trigger — open ABOVE centered
+          let left = r.left + r.width / 2 - popupW / 2;
+          left = Math.max(10, Math.min(left, window.innerWidth - popupW - 10));
+          swPopup.style.left = left + 'px';
+          swPopup.style.bottom = (window.innerHeight - r.top + 10) + 'px';
+          swPopup.style.right = 'auto';
+          swPopup.style.top = 'auto';
+        }
       }
     }
     swPopup.classList.toggle('hn-open', swOpen);

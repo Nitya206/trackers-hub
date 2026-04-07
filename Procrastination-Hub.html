@@ -4964,6 +4964,12 @@
     localStorage.setItem(key, JSON.stringify(data))
   }
 
+  // Always use LOCAL date string to avoid UTC timezone shift
+  function localDateStr(d) {
+    var dt = d || new Date()
+    return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0')
+  }
+
   function generateId(title) {
     // Date.now() alone can collide on rapid adds — append random hex for uniqueness
     var rand = Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0')
@@ -4975,7 +4981,11 @@
 
   function logEvent(text) {
     const log = loadData(KEYS.log, [])
-    log.unshift({ id: generateId('log'), timestamp: new Date().toISOString(), text })
+    // Store full ISO timestamp for time display, but prefix with local date so grouping is correct
+    const now = new Date()
+    const localPrefix = localDateStr(now)
+    const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0')
+    log.unshift({ id: generateId('log'), timestamp: localPrefix + 'T' + timeStr + 'Z', text })
     saveData(KEYS.log, log)
     if (window.__refreshLog) window.__refreshLog()
   }
@@ -5002,7 +5012,7 @@
     const d   = new Date(date)
     const day = d.getDay()
     d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
-    return d.toISOString().split('T')[0]
+    return localDateStr(d)
   }
 
   function getDefaultBudget() {
@@ -6494,7 +6504,7 @@
     const tomorrowIdx  = (new Date().getDay() + 6 + 1) % 7
     const tomorrowName = DAYS_FULL_DASH[tomorrowIdx]
     const schedule     = loadData(KEYS.schedule, {})
-    const todayDateKey = new Date().toISOString().split('T')[0]
+    const todayDateKey = localDateStr()
     const todaySchedEntries = schedule[todayDateKey] || []
 
     let mission = null
@@ -8861,7 +8871,7 @@
         var it5  = lib5.find(function(i) { return i.id === id })
         if (it5) {
           it5.status = 'graveyard'
-          it5.graveyardDate = new Date().toISOString().split('T')[0]
+          it5.graveyardDate = localDateStr()
           saveData(KEYS.library, lib5)
           logEvent('Dropped ' + item.title + ' to graveyard')
         }
@@ -10067,7 +10077,7 @@
         var t  = ts.find(function(x) { return x.id === task.id })
         if (t) {
           t.completed    = true
-          t.completedDate = new Date().toISOString().split('T')[0]
+          t.completedDate = localDateStr()
           saveData(KEYS.tasks, ts)
           var mins = t.timerMinutes ? ' (' + Math.round(t.timerMinutes) + ' min)' : ''
           logEvent('Completed task: ' + t.name + mins)
@@ -10608,7 +10618,7 @@
     for (var i = 0; i < lookaheadDays; i++) {
       var d = new Date()
       d.setDate(d.getDate() + i)
-      var dk = d.toISOString().split('T')[0]
+      var dk = localDateStr(d)
       var opt = document.createElement('option')
       opt.value = dk
       var lbl = (i === 0 ? 'Today, ' : '') + d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })
@@ -10628,7 +10638,7 @@
     var customWrap = document.createElement('div')
     customWrap.id = 'sched-custom-date-wrap-sel'
     customWrap.style.cssText = 'display:none;margin-top:8px;'
-    var todayStr = new Date().toISOString().split('T')[0]
+    var todayStr = localDateStr()
     customWrap.innerHTML = '<input type="date" id="sched-custom-date-inp-sel" min="' + todayStr + '" style="width:100%;background:var(--surface-2);border:1px solid var(--border-bright);border-radius:var(--radius-sm);color:var(--text-1);font:14px var(--font-mono);padding:8px 10px;outline:none;cursor:default;" />'
     dSel.parentNode.appendChild(customWrap)
 
@@ -10957,7 +10967,7 @@
       for (var i = 0; i < lookaheadDays; i++) {
         var d = new Date();
         d.setDate(d.getDate() + i);
-        var dk = d.toISOString().split('T')[0];
+        var dk = localDateStr(d);
         var opt = document.createElement('option');
         opt.value = dk;
         var lbl = (i === 0 ? 'Today, ' : '') + d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
@@ -10977,7 +10987,7 @@
       var customWrap = document.createElement('div');
       customWrap.id = 'sched-custom-date-wrap';
       customWrap.style.cssText = 'display:none;margin-top:8px;';
-      var todayStr = new Date().toISOString().split('T')[0];
+      var todayStr = localDateStr();
       customWrap.innerHTML = '<input type="date" id="sched-custom-date-inp" min="' + todayStr + '" style="width:100%;background:var(--surface-2);border:1px solid var(--border-bright);border-radius:var(--radius-sm);color:var(--text-1);font:14px var(--font-mono);padding:8px 10px;outline:none;cursor:default;" />';
       dSel.parentNode.appendChild(customWrap);
 
@@ -11137,8 +11147,9 @@
     for (var di = 0; di < 7; di++) {
       var d = new Date()
       d.setDate(d.getDate() + (weekOffset * 7) + di)
-      var dateKey = d.toISOString().split('T')[0]
-      var todayKey = new Date().toISOString().split('T')[0]
+      // Use local date (not UTC) to avoid timezone shift
+      var dateKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
+      var todayKey = (function(){ var t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); })()
       var isToday = dateKey === todayKey
       var dayShort = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
       var dateNum  = d.getDate()

@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Zen Garden — Daily Clarity Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
@@ -31,6 +33,7 @@
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Subtle animated grain */
@@ -47,6 +50,7 @@
     max-width: 1320px;
     margin: 0 auto;
     padding: 48px 56px 80px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   /* ─── Header ─── */
@@ -839,6 +843,65 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ─── Mobile Responsive ─── */
+  @media (max-width: 768px) {
+    .app { padding: 24px 16px 80px; }
+
+    .header {
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .header-stats {
+      gap: 20px;
+      justify-content: flex-start;
+    }
+    .header-stat .value { font-size: 28px; }
+
+    .streak-banner {
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px;
+    }
+    .streak-right { width: 100%; }
+    .btn-group { flex-direction: column; width: 100%; }
+    .today-btn, .skip-btn { width: 100%; text-align: center; justify-content: center; }
+
+    .main-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .card { padding: 20px; }
+
+    /* Touch targets */
+    .today-btn, .skip-btn { min-height: 48px; font-size: 15px; }
+    .month-nav button { min-width: 44px; min-height: 44px; }
+    .cal-day { min-height: 36px; font-size: 13px; }
+
+    /* Popup: full width on mobile */
+    .day-popup { min-width: calc(100vw - 48px); padding: 20px 20px; }
+    .day-popup .popup-btns { flex-wrap: wrap; }
+    .day-popup .popup-btn { flex: 1; min-height: 44px; }
+  }
+
+  @media (max-width: 480px) {
+    .app { padding: 16px 12px 80px; }
+    .header-stats { gap: 14px; }
+    .header-stat .value { font-size: 24px; }
+    .streak-info h2 { font-size: 22px; }
+    .cal-day { font-size: 12px; }
+  }
+
+  /* Touch devices — disable hover-only effects */
+  @media (hover: none), (pointer: coarse) {
+    .today-btn:hover { transform: none; box-shadow: none; }
+    .skip-btn:hover { background: transparent; }
+    .card:hover { transform: none; }
+    .milestone:hover { transform: none; }
+    .month-nav button:hover { border-color: var(--border); color: var(--text-dim); }
+  }
 </style>
 </head>
 <body>

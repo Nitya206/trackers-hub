@@ -71,6 +71,7 @@
       --type-show:    #60a5fa;
       --type-movie:   #fbbf24;
       --type-novel:   #f472b6;
+      --type-social:  #ff4d4d;
 
       /* ── TYPOGRAPHY ── */
       --font-display: 'Orbitron', 'Bebas Neue', 'Impact', sans-serif;
@@ -226,6 +227,7 @@
     .badge[data-type="show"]   { background: rgba(96,165,250,0.12);  color: var(--type-show);   border: 1px solid rgba(96,165,250,0.3);  box-shadow: 0 0 12px rgba(96,165,250,0.15), inset 0 0 12px rgba(96,165,250,0.05); text-shadow: 0 0 8px rgba(96,165,250,0.4); }
     .badge[data-type="movie"]  { background: rgba(251,191,36,0.12);  color: var(--type-movie);  border: 1px solid rgba(251,191,36,0.3);  box-shadow: 0 0 12px rgba(251,191,36,0.15), inset 0 0 12px rgba(251,191,36,0.05); text-shadow: 0 0 8px rgba(251,191,36,0.4); }
     .badge[data-type="novel"]  { background: rgba(244,114,182,0.12);  color: var(--type-novel);  border: 1px solid rgba(244,114,182,0.3);  box-shadow: 0 0 12px rgba(244,114,182,0.15), inset 0 0 12px rgba(244,114,182,0.05); text-shadow: 0 0 8px rgba(244,114,182,0.4); }
+    .badge[data-type="social"] { background: rgba(255,77,77,0.12);    color: var(--type-social); border: 1px solid rgba(255,77,77,0.3);    box-shadow: 0 0 12px rgba(255,77,77,0.15),  inset 0 0 12px rgba(255,77,77,0.05);  text-shadow: 0 0 8px rgba(255,77,77,0.4); }
 
     /* ── .btn-primary ── */
     .btn-primary {
@@ -940,6 +942,7 @@
       top: 0;
       bottom: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 28px 36px 96px;
       z-index: 1;
     }
@@ -1399,7 +1402,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--space-3);
+      gap: var(--space-4);
+      padding: 6px 0 2px;
     }
     .budget-arc-svg { overflow: visible; }
     .budget-arc-center {
@@ -1408,26 +1412,46 @@
     }
     .budget-below {
       text-align: center;
+      width: min(280px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
     }
     .budget-remaining {
-      font: var(--text-sm) var(--font-mono);
+      font: 600 13px var(--font-mono);
       color: var(--text-2);
+      letter-spacing: 0.04em;
     }
     .budget-reset-note {
-      font: var(--text-xs) var(--font-mono);
+      font: 500 10px var(--font-mono);
       color: var(--text-3);
-      margin-top: var(--space-1);
+      margin-top: 0;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.88;
+    }
+    .budget-alltime {
+      font: 600 11px var(--font-mono);
+      color: var(--accent-cool);
+      letter-spacing: 0.05em;
+      margin-top: 2px;
     }
     .budget-edit-row {
       display: flex;
       align-items: center;
       gap: var(--space-2);
       justify-content: center;
-      margin-top: var(--space-2);
+      margin-top: 8px;
+      padding-top: 8px;
+      width: 100%;
+      border-top: 1px dashed rgba(120,140,255,0.2);
     }
     .budget-hours-display {
-      font: var(--text-xs) var(--font-mono);
+      font: 600 10px var(--font-mono);
       color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     .budget-edit-btn {
       background: transparent;
@@ -2189,6 +2213,169 @@
 
     /* ── PART 4: DETAIL VIEW STYLES ── */
 
+    /* ── SOCIAL MEDIA DETAIL VIEW ── */
+    .social-detail-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+      margin-top: var(--space-6);
+    }
+    .social-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) 320px;
+      gap: clamp(16px, 2vw, 28px);
+      align-items: start;
+    }
+    .social-left-col {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .social-hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      align-items: start;
+      margin-bottom: 0;
+      min-width: 0;
+    }
+    .social-hero > :first-child {
+      background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+      border-radius: var(--radius-md);
+      padding: clamp(14px, 2vw, 24px);
+      min-height: 180px;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, transparent)) {
+      .social-hero > :first-child {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+      }
+    }
+    @media (max-width: 980px) {
+      .social-layout { grid-template-columns: 1fr; }
+      .social-sidebar { position: static; top: auto; }
+    }
+
+    /* Hero LEFT */
+    .social-platform-label {
+      font: 700 10px var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--type-social); margin-bottom: var(--space-2);
+    }
+    .social-title {
+      font: 800 clamp(24px, 3.3vw, 36px) var(--font-mono); color: var(--text-1);
+      letter-spacing: 0.01em; line-height: 1.08; margin-bottom: var(--space-4);
+      text-wrap: balance;
+    }
+    .social-stats-row {
+      display: flex; gap: var(--space-5); flex-wrap: wrap; margin-bottom: var(--space-4);
+    }
+    .social-stat { display: flex; flex-direction: column; gap: 3px; }
+    .social-stat-val { font: 700 clamp(18px, 2.1vw, 24px) var(--font-mono); color: var(--accent-cool); }
+    .social-stat-lbl { font: 500 10px var(--font-mono); color: var(--text-3); letter-spacing: 0.1em; text-transform: uppercase; }
+    .social-progress-bar { height: 7px; background: var(--border); border-radius: 99px; margin-bottom: 0; overflow: hidden; }
+    .social-progress-fill { height: 100%; border-radius: 99px; transition: width 600ms var(--ease-out); }
+
+    /* Hero RIGHT — sidebar column */
+    .social-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      position: sticky;
+      top: var(--space-4);
+    }
+    .social-timer-card {
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .social-timer-label { font: 700 10px var(--font-mono); color: var(--text-3); letter-spacing: 0.14em; text-transform: uppercase; }
+    .social-timer-display {
+      font: 700 28px var(--font-mono); color: var(--accent-cool); letter-spacing: 0.04em;
+      text-shadow: none; display: none;
+    }
+
+    /* Video list area */
+    .social-section-header {
+      font: 700 11px var(--font-mono); color: var(--text-3); letter-spacing: 0.14em;
+      text-transform: uppercase; padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--border); margin-bottom: var(--space-2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .social-video-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 2px 0;
+    }
+    .social-video-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      cursor: none; transition: border-color 150ms, background 150ms;
+      position: relative;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, transparent)) {
+      .social-video-row { background: var(--surface-2); }
+    }
+    .social-video-row:hover { border-color: var(--border-bright); background: var(--surface-3); }
+    .social-video-row.watched { opacity: 0.72; }
+    .social-video-idx {
+      font: 700 10px var(--font-mono); color: var(--text-3); min-width: 24px; text-align: center;
+    }
+    .social-video-title {
+      font: 500 13px var(--font-mono); color: var(--text-1); flex: 1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .social-video-check {
+      width: 20px; height: 20px; border-radius: 5px; border: 1px solid var(--border);
+      background: transparent; cursor: none; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center; font-size: 12px; color: var(--success);
+      transition: all 150ms;
+    }
+    .social-video-check.done { background: rgba(0,255,136,0.12); border-color: var(--success); }
+    .social-video-del {
+      background: transparent; border: none; color: var(--text-3); font-size: 13px;
+      cursor: none; padding: 2px 4px; transition: color 150ms; flex-shrink: 0;
+    }
+    .social-video-del:hover { color: var(--danger); }
+    .social-add-row {
+      display: flex;
+      gap: 10px;
+      margin: 0 0 var(--space-2);
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, transparent)) {
+      .social-add-row { background: transparent; }
+    }
+    .social-add-input {
+      flex: 1; background: color-mix(in srgb, var(--surface-2) 72%, rgba(8,10,20,0.86)); border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+      border-radius: var(--radius-sm); color: var(--text-1); font: 500 13px var(--font-mono);
+      padding: 10px 14px; outline: none; transition: border-color 150ms;
+    }
+    .social-add-input:focus { border-color: var(--accent-cool); }
+    .social-add-input::placeholder { color: var(--text-3); }
+    .social-rec-wrap {
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px; background: var(--surface);
+    }
+    .social-rec-header {
+      font: 700 10px var(--font-mono); color: var(--accent-cool); letter-spacing: 0.14em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    /* Sidebar action buttons */
+    .social-sidebar-actions {
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .social-sidebar-actions .btn-danger {
+      opacity: 0.92;
+      text-align: left;
+      padding-left: 14px;
+    }
+
     /* Back button row */
     .detail-back-row {
       margin-bottom: var(--space-6);
@@ -2201,6 +2388,10 @@
       gap: 40px;
       margin-bottom: 0;
       align-items: start;
+    }
+    .detail-hero-left,
+    #detail-content-area {
+      min-width: 0;
     }
 
     /* .detail-hero-left {} removed: empty ruleset */
@@ -2300,6 +2491,87 @@
       
       box-shadow: var(--glow-card);
     }
+    /* More compact notes card inside social sidebar */
+    .social-sidebar .detail-notes-card {
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface-2);
+    }
+    .social-sidebar .detail-notes-textarea {
+      min-height: 80px;
+      max-height: 140px;
+    }
+    .social-sidebar .detail-notes-label {
+      font-size: 11px;
+      margin-bottom: var(--space-1);
+    }
+    .social-schedule-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+      padding: 10px 14px 10px;
+      margin: 4px 0 2px;
+      min-width: 0;
+      width: calc(100% - 10px);
+      margin-right: auto;
+    }
+    .social-schedule-card .social-section-header {
+      margin-bottom: var(--space-2);
+      padding-bottom: var(--space-2);
+    }
+    .social-schedule-scroll {
+      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      background: color-mix(in srgb, var(--surface-3) 40%, transparent);
+      max-height: min(26vh, 180px);
+      overflow-y: auto;
+    }
+    .social-schedule-card.is-empty .social-schedule-scroll {
+      max-height: none;
+      overflow: visible;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, transparent)) {
+      .social-schedule-scroll {
+        border: 1px solid var(--border);
+        background: var(--surface-3);
+      }
+    }
+    #social-sched-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 0;
+      max-height: none;
+      overflow: visible;
+    }
+    .social-sched-empty {
+      font: 500 11px var(--font-mono);
+      color: var(--text-3);
+      text-align: center;
+      padding: 10px 8px;
+      border: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      letter-spacing: 0.03em;
+      max-width: 72%;
+      margin: 0 auto;
+    }
+    #social-sched-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    #social-sched-btns .sched-add-btn {
+      margin-top: 0;
+      width: auto;
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
     .detail-notes-label { font: 700 14px var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: var(--space-2); }
     .detail-notes-textarea {
       width: 100%;
@@ -2344,8 +2616,33 @@
     .detail-season-tabs {
       display: flex;
       gap: 0;
+      flex-wrap: wrap;
+      align-items: center;
+      row-gap: 6px;
       border-bottom: 1px solid var(--border);
       margin-bottom: var(--space-5);
+    }
+    .detail-bulk-select-row {
+      display: flex;
+      gap: var(--space-2);
+      margin: calc(var(--space-3) * -1) 0 var(--space-4);
+      flex-wrap: wrap;
+    }
+    .detail-bulk-select-btn {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text-2);
+      border-radius: var(--radius-pill);
+      font: 600 10px var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      cursor: none;
+      transition: all 140ms var(--ease-snap);
+    }
+    .detail-bulk-select-btn:hover {
+      border-color: var(--accent-cool);
+      color: var(--accent-cool);
     }
     .detail-season-tab {
       background: transparent;
@@ -2406,12 +2703,14 @@
     /* Arc navigation dropdown */
     .arc-nav-select {
       flex: 1;
+      min-width: 0;
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text-1);
       font: 500 var(--text-sm) var(--font-mono);
       padding: 6px 10px;
+      width: 100%;
       cursor: pointer;
       letter-spacing: 0.04em;
       outline: none;
@@ -4619,10 +4918,13 @@
   .sched-modal-cancel:hover { border-color: var(--danger); color: var(--danger); }
   /* Scheduled entries list in detail view */
   .sched-entries-list {
-    margin-top: var(--space-3);
+    margin-top: var(--space-1);
     display: flex;
     flex-direction: column;
     gap: 5px;
+    max-height: 140px;
+    overflow-y: auto;
+    padding-right: 2px;
   }
   .sched-entry-row {
     display: flex;
@@ -4862,7 +5164,7 @@
     detailConfirmActions: true,
     defaultNewSeasonPrefix: 'Season',
     autoFocusDetailNav: true,
-    budgetDefaultWeeklyHours: 10,
+    budgetDefaultDailyHours: 4,
     tasksDefaultDurationMin: 45,
     overviewDateLookaheadDays: 14,
     quickAddPlaceholder: 'One Piece | anime | 1122 eps',
@@ -4943,7 +5245,7 @@
   /* ─────────────────────────────────────────────────────────────────
      BUDGET SCHEMA
   ─────────────────────────────────────────────────────────────────
-    { weeklyHours: 10, usedMinutes: 0, resetDate: "YYYY-MM-DD" }
+    { dailyHours: 4, usedMinutes: 0, resetDate: "YYYY-MM-DD" }
   */
 
   /* ─────────────────────────────────────────────────────────────────
@@ -4991,18 +5293,29 @@
   }
 
   function addTimerMinutes(mins) {
-    const budget = loadData(KEYS.budget, getDefaultBudget())
-    budget.usedMinutes += mins
+    const budget = checkBudgetReset()
+    budget.usedMinutes = (Number(budget.usedMinutes) || 0) + (Number(mins) || 0)
     saveData(KEYS.budget, budget)
     if (window.__refreshBudget) window.__refreshBudget()
+    if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
   }
 
   function checkBudgetReset() {
-    const budget     = loadData(KEYS.budget, getDefaultBudget())
-    const lastMonday = getLastMonday(new Date())
-    if (budget.resetDate !== lastMonday) {
+    const budget = loadData(KEYS.budget, getDefaultBudget())
+    // Migrate old weeklyHours key → dailyHours
+    if (budget.weeklyHours !== undefined && budget.dailyHours === undefined) {
+      budget.dailyHours = budget.weeklyHours
+      delete budget.weeklyHours
+      saveData(KEYS.budget, budget)
+    }
+    // Ensure dailyHours is always set
+    if (!budget.dailyHours) {
+      budget.dailyHours = parseInt(getAppSettings().budgetDefaultDailyHours, 10) || 4
+    }
+    const today = localDateStr()
+    if (budget.resetDate !== today) {
       budget.usedMinutes = 0
-      budget.resetDate   = lastMonday
+      budget.resetDate   = today
       saveData(KEYS.budget, budget)
     }
     return budget
@@ -5016,8 +5329,8 @@
   }
 
   function getDefaultBudget() {
-    var weekly = parseInt(getAppSettings().budgetDefaultWeeklyHours, 10) || 10
-    return { weeklyHours: weekly, usedMinutes: 0, resetDate: getLastMonday(new Date()) }
+    var daily = parseInt(getAppSettings().budgetDefaultDailyHours, 10) || 4
+    return { dailyHours: daily, usedMinutes: 0, resetDate: localDateStr() }
   }
 
   function getTodayName() {
@@ -6296,6 +6609,43 @@
       saveData(KEYS.budget, getDefaultBudget())
     }
     checkBudgetReset()
+
+    // Auto-promote upcoming → watching if release date passed OR episodes already watched
+    ;(function() {
+      var _lib = loadData(KEYS.library, [])
+      var _today = localDateStr()
+      var _changed = false
+      _lib.forEach(function(it) {
+        if (it.status !== 'upcoming') return
+        var hasWatched = it.watchedEpisodes && it.watchedEpisodes.length > 0
+        // Check if release date in schedule has passed
+        var sched = loadData(KEYS.schedule, {})
+        var releasePassed = Object.keys(sched).some(function(dk) {
+          if (dk >= _today) return false
+          return (sched[dk] || []).some(function(e) { return e.id === it.id && e.eps === 'Releases' })
+        })
+        if (hasWatched || releasePassed) {
+          it.status = 'watching'
+          _changed = true
+        }
+      })
+      if (_changed) saveData(KEYS.library, _lib)
+    })()
+
+    // Clean up orphaned schedule entries (pointing to deleted items)
+    ;(function() {
+      var _lib = loadData(KEYS.library, [])
+      var _ids = new Set(_lib.map(function(i) { return i.id }))
+      var _sched = loadData(KEYS.schedule, {})
+      var _changed = false
+      Object.keys(_sched).forEach(function(dk) {
+        var before = _sched[dk].length
+        _sched[dk] = _sched[dk].filter(function(e) { return _ids.has(e.id) })
+        if (_sched[dk].length !== before) _changed = true
+        if (_sched[dk].length === 0) delete _sched[dk]
+      })
+      if (_changed) saveData(KEYS.schedule, _sched)
+    })()
   }
 
   /* ─────────────────────────────────────────────────────────────────
@@ -6389,7 +6739,7 @@
   function refreshSidebarBudget() {
     const budget    = checkBudgetReset()
     const usedHrs   = budget.usedMinutes / 60
-    const totalHrs  = budget.weeklyHours
+    const totalHrs  = budget.dailyHours
     const pct       = Math.min(usedHrs / totalHrs, 1.2)
     const color     = getBudgetColor(usedHrs / totalHrs)
 
@@ -6399,7 +6749,7 @@
 
     fill.style.width      = (Math.min(pct, 1) * 100) + '%'
     fill.style.background = color
-    text.textContent      = `${usedHrs.toFixed(1)} / ${totalHrs}h`
+    text.textContent      = `${fmtMins(budget.usedMinutes) || '0m'} / ${totalHrs}h today`
     text.style.color      = usedHrs > totalHrs ? '#ff3355' : ''
   }
 
@@ -6428,9 +6778,9 @@
     const autoExclude = lastMood[mood] ? [lastMood[mood]] : []
     const allExclude  = [...new Set([...autoExclude, ...excludeIds])]
 
-    // Only recommend currently-watching items — completed items are done, graveyard is dropped
+    // Only recommend currently-watching items — completed items are done, graveyard is dropped, social media excluded
     const candidates = library
-      .filter(i => i.moodTags && i.moodTags.includes(mood) && i.status === 'watching')
+      .filter(i => i.moodTags && i.moodTags.includes(mood) && i.status === 'watching' && i.type !== 'social')
       .filter(i => !allExclude.includes(i.id))
       .sort((a, b) => {
         // Sort by fewest episodes remaining — prioritise what you are closest to finishing
@@ -6487,11 +6837,21 @@
       .toUpperCase().replace(',', ' ·').replace(',', ' ·')
 
     // ── Stats ──
-    const totalItems      = library.length
-    const totalEpsInLib   = library.reduce((acc, i) => acc + (i.totalEpisodes || 0), 0)
-    const totalWatched    = library.reduce((acc, i) => acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0), 0)
+    const totalItems      = library.filter(i => i.status !== 'graveyard').length
+    const totalEpsInLib   = library.reduce((acc, i) => {
+      if (i.status === 'graveyard') return acc
+      if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.length : 0)
+      return acc + (i.totalEpisodes || 0)
+    }, 0)
+    const totalWatched    = library.reduce((acc, i) => {
+      if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
+      return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
+    }, 0)
     const totalComplete   = library.filter(i => i.status === 'completed').length
-    const totalEpsDone    = library.reduce((acc, i) => acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0), 0)
+    const totalEpsDone    = library.reduce((acc, i) => {
+      if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
+      return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
+    }, 0)
     const pendingTasks    = tasks.filter(t => !t.completed).length
     // Smart progress label based on what types are in the library
     const _libTypes = new Set(library.map(i => i.type))
@@ -6541,7 +6901,7 @@
     // 5. Round-robin suggestion — cycles through all watching items in stable order
     if (!mission) {
       const watching = library
-        .filter(i => i.status === 'watching')
+        .filter(i => i.status === 'watching' && i.type !== 'social')
       const suggestMode = getAppSettings().dashboardSuggestionMode || 'oldest'
       if (suggestMode === 'newest') {
         watching.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
@@ -6596,9 +6956,73 @@
         </div>
         <div class="stat-card">
           <div class="stat-card-number" id="stat-3" data-target="${pendingTasks}">0</div>
+          <div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${tasks.filter(t=>t.completed).length} done</div>
           <div class="stat-card-label">Pending Tasks</div>
         </div>
       </div>`
+
+    // [BLOCK 2.5] Missed Episodes
+    var bMissedContainer = makeBlock()
+    bMissedContainer.id = 'dash-missed-block'
+
+    function renderMissedBlock() {
+      var container = document.getElementById('dash-missed-block')
+      if (!container) return
+      container.innerHTML = ''
+      var lib2 = loadData(KEYS.library, [])
+      var sched = loadData(KEYS.schedule, {})
+      var todayKey2 = localDateStr()
+      var missed = []
+      Object.keys(sched).sort().forEach(function(dateKey) {
+        if (dateKey >= todayKey2) return
+        ;(sched[dateKey] || []).forEach(function(entry) {
+          var libItem = lib2.find(function(i) { return i.id === entry.id })
+          if (libItem && libItem.status !== 'completed' && libItem.status !== 'graveyard') {
+            missed.push({ dateKey: dateKey, entry: entry, libItem: libItem })
+          }
+        })
+      })
+      if (missed.length === 0) { container.style.display = 'none'; return }
+      container.style.display = ''
+      var missedHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">' +
+        '<div style="font:700 11px var(--font-mono);color:var(--danger);letter-spacing:0.12em;">⚠ MISSED SCHEDULE · ' + missed.length + ' EPISODE' + (missed.length > 1 ? 'S' : '') + '</div>' +
+        '<button id="dash-clear-missed" style="background:transparent;border:1px solid var(--border);color:var(--text-3);font:600 10px var(--font-mono);padding:3px 10px;border-radius:var(--radius-pill);cursor:none;transition:color 150ms,border-color 150ms;" title="Clear all missed entries">CLEAR ALL</button>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">'
+      missed.forEach(function(m) {
+        var d = new Date(m.dateKey + 'T00:00:00')
+        var dateLabel = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })
+        missedHTML += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);border:1px solid rgba(255,59,107,0.2);border-radius:var(--radius-sm);cursor:none;" onclick="navigateTo(\'detail\',\'' + m.entry.id + '\')">' +
+          '<span style="font:600 10px var(--font-mono);color:var(--danger);min-width:70px;">' + dateLabel + '</span>' +
+          '<span style="font:600 12px var(--font-mono);color:var(--text-1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.entry.title + '</span>' +
+          (m.entry.eps ? '<span style="font:500 10px var(--font-mono);color:var(--text-3);">' + m.entry.eps + '</span>' : '') +
+          '</div>'
+      })
+      missedHTML += '</div>'
+      container.innerHTML = missedHTML
+      var clearBtn = document.getElementById('dash-clear-missed')
+      if (clearBtn) {
+        clearBtn.addEventListener('mouseenter', function() { clearBtn.style.color = 'var(--danger)'; clearBtn.style.borderColor = 'var(--danger)' })
+        clearBtn.addEventListener('mouseleave', function() { clearBtn.style.color = 'var(--text-3)'; clearBtn.style.borderColor = 'var(--border)' })
+        clearBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation()
+          var sched2 = loadData(KEYS.schedule, {})
+          missed.forEach(function(m) {
+            if (sched2[m.dateKey]) {
+              sched2[m.dateKey] = sched2[m.dateKey].filter(function(e) { return e.id !== m.entry.id })
+              if (sched2[m.dateKey].length === 0) delete sched2[m.dateKey]
+            }
+          })
+          saveData(KEYS.schedule, sched2)
+          logEvent('Cleared ' + missed.length + ' missed schedule entries')
+          renderMissedBlock()
+        })
+      }
+    }
+
+    renderMissedBlock()
+    // Expose so detail view delete can refresh this live
+    window.__refreshMissed = renderMissedBlock
 
     // [BLOCK 3] Next mission
     const b3 = makeBlock()
@@ -6689,7 +7113,7 @@
           <div id="mood-widget-body"></div>
         </div>
         <div class="card" id="dash-budget-card">
-          <div class="mood-widget-header">Weekly Budget</div>
+          <div class="mood-widget-header">Daily Budget</div>
           <div id="dash-budget-body"></div>
         </div>
       </div>`
@@ -6913,10 +7337,16 @@
     const CY     = SIZE / 2
     const CIRC   = 2 * Math.PI * R
     const usedHrs = budget.usedMinutes / 60
-    const totalHrs = budget.weeklyHours
+    const totalHrs = budget.dailyHours
     const pct      = usedHrs / totalHrs
     const color    = getBudgetColor(pct)
     const remaining = Math.max(totalHrs - usedHrs, 0)
+    const library = loadData(KEYS.library, [])
+    const tasks   = loadData(KEYS.tasks, [])
+    const totalTimedMins = library.reduce((acc, i) => acc + (i.timerMinutes || 0), 0)
+                        + tasks.reduce((acc, t) => acc + (t.timerMinutes || 0), 0)
+    const usedLabel = fmtMins(budget.usedMinutes) || '0m'
+    const remLabel = remaining >= 1 ? (remaining.toFixed(1) + ' hours remaining today') : (Math.round(remaining * 60) + 'm remaining today')
 
     container.innerHTML = `
       <div class="budget-arc-wrap">
@@ -6936,18 +7366,18 @@
           <!-- Center text -->
           <text x="${CX}" y="${CY - 8}" class="budget-arc-center"
             font-family="'Courier New',monospace" font-size="26" fill="var(--text-1)" font-weight="700"
-            id="dash-arc-used-label">${usedHrs.toFixed(1)}h</text>
+            id="dash-arc-used-label">${usedLabel}</text>
           <text x="${CX}" y="${CY + 12}" class="budget-arc-center"
             font-family="'Courier New',monospace" font-size="14" fill="var(--text-3)"
-            id="dash-arc-total-label">of ${totalHrs}h</text>
+            id="dash-arc-total-label">of ${totalHrs}h today</text>
         </svg>
         <div class="budget-below">
           <div class="budget-remaining" id="dash-arc-remaining">
-            ${remaining.toFixed(1)} hours remaining
+            ${remLabel}
           </div>
-          <div class="budget-reset-note">Budget resets Monday</div>
+          <div class="budget-alltime">All-time timed: ${fmtMins(totalTimedMins) || '0m'}</div>
           <div class="budget-edit-row">
-            <span class="budget-hours-display" id="dash-arc-hours-disp">${totalHrs}h weekly</span>
+            <span class="budget-hours-display" id="dash-arc-hours-disp">${totalHrs}h daily</span>
             <button class="budget-edit-btn" id="dash-arc-edit-btn" title="Edit weekly budget">✎</button>
           </div>
         </div>
@@ -6969,7 +7399,7 @@
     document.getElementById('dash-arc-edit-btn')?.addEventListener('click', () => {
       const dispEl = document.getElementById('dash-arc-hours-disp')
       const editBtn = document.getElementById('dash-arc-edit-btn')
-      const currentVal = budget.weeklyHours
+      const currentVal = budget.dailyHours
       const input = document.createElement('input')
       input.type      = 'number'
       input.min       = '1'
@@ -6983,9 +7413,9 @@
       const save = () => {
         const newVal = Math.max(1, Math.min(168, parseInt(input.value, 10) || currentVal))
         const b = checkBudgetReset()
-        b.weeklyHours = newVal
+        b.dailyHours = newVal
         saveData(KEYS.budget, b)
-        logEvent(`Set weekly budget to ${newVal} hours`)
+        logEvent(`Set daily budget to ${newVal} hours`)
         // Re-render arc with new data
         renderDashboardBudgetArc(containerId, b)
         refreshSidebarBudget()
@@ -6996,8 +7426,11 @@
 
     // Expose dashboard budget refresh for window.__refreshBudget
     window.__refreshDashboardBudget = () => {
-      renderDashboardBudgetArc(containerId, checkBudgetReset())
+      // Always use 'dash-budget-body' directly — containerId may be stale after re-render
+      const freshContainer = document.getElementById('dash-budget-body')
+      if (freshContainer) renderDashboardBudgetArc('dash-budget-body', checkBudgetReset())
     }
+  } // end renderDashboardBudgetArc
 
   // Expose a lightweight dashboard refresher. Updates the three small stat cards
   // in the dashboard if present, without re-rendering the entire page.
@@ -7005,17 +7438,21 @@
     try {
       const library = loadData(KEYS.library, [])
       const tasks   = loadData(KEYS.tasks, [])
-      const totalItems      = library.length
-    const totalEpsInLib   = library.reduce((acc, i) => acc + (i.totalEpisodes || 0), 0)
-    
-    // FIX: Count items that are explicitly 'completed' OR have 100% progress
-    const totalComplete   = library.filter(i => 
-      i.status === 'completed' || 
-      (i.totalEpisodes > 0 && (i.watchedEpisodes && i.watchedEpisodes.length >= i.totalEpisodes))
-    ).length
-
-    const totalEpsDone    = library.reduce((acc, i) => acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0), 0)
-    const pendingTasks    = tasks.filter(t => !t.completed).length
+      const totalItems      = library.filter(i => i.status !== 'graveyard').length
+      const totalEpsInLib   = library.reduce((acc, i) => {
+        if (i.status === 'graveyard') return acc
+        if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.length : 0)
+        return acc + (i.totalEpisodes || 0)
+      }, 0)
+      const totalComplete   = library.filter(i =>
+        i.status === 'completed' ||
+        (i.totalEpisodes > 0 && (i.watchedEpisodes && i.watchedEpisodes.length >= i.totalEpisodes))
+      ).length
+      const totalEpsDone    = library.reduce((acc, i) => {
+        if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
+        return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
+      }, 0)
+      const pendingTasks    = tasks.filter(t => !t.completed).length
 
       var el0 = document.getElementById('stat-0')
       if (el0 && el0.closest('.stat-card')) {
@@ -7037,10 +7474,40 @@
       if (el3 && el3.closest('.stat-card')) {
         var card3 = el3.closest('.stat-card')
         card3.innerHTML = `<div class="stat-card-number" data-target="${pendingTasks}" id="stat-3">${pendingTasks === 0 ? '<span style="color:var(--text-3)">0</span>' : pendingTasks}</div>` +
+                          `<div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${tasks.filter(t=>t.completed).length} done</div>` +
                           `<div class="stat-card-label">Pending Tasks</div>`
       }
+
+      // Update time-spent leaderboard block
+      var leaderWrap = document.getElementById('dash-time-leaderboard')
+      if (leaderWrap) {
+        var timed2 = library.filter(function(i) { return i.timerMinutes && i.timerMinutes >= 1 })
+        if (timed2.length === 0) { leaderWrap.style.display = 'none' }
+        else {
+          leaderWrap.style.display = ''
+          timed2.sort(function(a, b) { return (b.timerMinutes || 0) - (a.timerMinutes || 0) })
+          var top2 = timed2.slice(0, 5)
+          var maxMins2 = top2[0].timerMinutes
+          leaderWrap.innerHTML = '<div style="font:700 11px var(--font-mono);color:var(--text-3);letter-spacing:0.12em;margin-bottom:var(--space-3);">\u23f1 TIME SPENT</div>' +
+            '<div style="display:flex;flex-direction:column;gap:8px;">' +
+            top2.map(function(item) {
+              var pct2 = Math.round((item.timerMinutes / maxMins2) * 100)
+              var ac2 = (item.themeStyles && item.themeStyles['--accent-cool']) ? item.themeStyles['--accent-cool'] : 'var(--accent-cool)'
+              return '<div style="cursor:none;" onclick="navigateTo(\'detail\',\'' + item.id + '\')">' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
+                  '<span style="font:600 11px var(--font-mono);color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">' + item.title + '</span>' +
+                  '<span style="font:600 11px var(--font-mono);color:' + ac2 + ';">' + fmtMins(item.timerMinutes) + '</span>' +
+                '</div>' +
+                '<div style="height:3px;background:var(--border);border-radius:99px;">' +
+                  '<div style="height:100%;width:' + pct2 + '%;background:' + ac2 + ';border-radius:99px;"></div>' +
+                '</div></div>'
+            }).join('') + '</div>'
+        }
+      }
+
+      // Refresh missed block
+      if (typeof window.__refreshMissed === 'function') window.__refreshMissed()
     } catch (e) { console.warn('refreshDashboard error', e) }
-  }
   }
 
   /* ─────────────────────────────────────────────────────────────────
@@ -7332,7 +7799,7 @@
     row1.innerHTML =
       '<div class="lib-topbar-row1-left">' +
         '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">CONTENT MATRIX</div>' +
-        '<span class="lib-count-badge" id="lib-file-count">[' + library.length + ' FILES]</span>' +
+        '<span class="lib-count-badge" id="lib-file-count">[' + library.filter(function(i){return i.status!=='graveyard'}).length + ' FILES]</span>' +
       '</div>' +
       '<div style="display:flex;gap:8px;align-items:center;">' +
         '<button class="btn-ghost" id="lib-settings-btn" style="font-size:var(--text-xs);">Settings</button>' +
@@ -7343,7 +7810,7 @@
     // Filter pills
     const filterRow = document.createElement('div')
     filterRow.className = 'lib-filter-row'
-    const TYPES = ['all','anime','manga','manhwa','show','movie','novel']
+    const TYPES = ['all','anime','manga','manhwa','show','movie','novel','social']
     TYPES.forEach(function(t) {
       const pill = document.createElement('button')
       pill.className = 'lib-filter-pill' + (t === 'all' ? ' active' : '')
@@ -7496,9 +7963,10 @@
       var visible = 0
       var q       = searchQuery.toLowerCase()
       cards.forEach(function(card) {
-        var typeOk  = activeType === 'all' || card.dataset.type === activeType
-        var titleOk = !q || card.dataset.title.includes(q)
-        var show    = typeOk && titleOk
+        var typeOk    = activeType === 'all' || card.dataset.type === activeType
+        var titleOk   = !q || card.dataset.title.includes(q)
+        var notGrave  = card.dataset.status !== 'graveyard'
+        var show      = typeOk && titleOk && notGrave
         card.style.display = show ? '' : 'none'
         if (show) visible++
       })
@@ -7531,6 +7999,7 @@
       lib.unshift(newItem)
       saveData(KEYS.library, lib)
       logEvent('Added ' + title + ' to library')
+      if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
       e.target.value = ''
       showQuickConfirmWithUndo('CONTENT CREATED: ' + title.toUpperCase(), newItem.id)
       // Inject card directly
@@ -7602,8 +8071,9 @@
   function buildLibraryCard(item, idx, moodColors) {
     const card = document.createElement('div')
     card.className     = 'library-card'
-    card.dataset.type  = item.type
-    card.dataset.title = (item.title || '').toLowerCase()
+    card.dataset.type   = item.type
+    card.dataset.title  = (item.title || '').toLowerCase()
+    card.dataset.status = item.status || 'watching'
     card.dataset.idx   = idx
 
     const accentColor = (item.themeStyles && item.themeStyles['--accent-cool'])
@@ -7623,6 +8093,12 @@
     const total   = item.totalEpisodes || 0
     const pct     = total > 0 ? (watched / total) * 100 : 0
     const unit    = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'ch' : 'eps'
+
+    // Social media: use video list instead of episode progress
+    var socialVideos = item.type === 'social' ? (item.socialVideos || []) : null
+    var socialWatched = socialVideos ? socialVideos.filter(function(v){return v.watched}).length : 0
+    var socialTotal   = socialVideos ? socialVideos.length : 0
+    var socialPct     = socialTotal > 0 ? (socialWatched / socialTotal) * 100 : 0
 
     const moodChipsHTML = (item.moodTags || []).map(function(tag) {
       const color = moodColors[tag] || 'var(--text-3)'
@@ -7653,15 +8129,15 @@
       '<div class="lib-card-title">' + item.title + '</div>' +
       '<div>' +
         '<div class="progress-bar">' +
-          '<div class="progress-bar-fill" style="width:' + pct + '%;background:' + accentColor + ';"></div>' +
+          '<div class="progress-bar-fill" style="width:' + (item.type==='social'?socialPct:pct) + '%;background:' + accentColor + ';"></div>' +
         '</div>' +
-        '<div class="lib-card-progress-text">' + watched + ' of ' + total + ' ' + unit + '</div>' +
+        '<div class="lib-card-progress-text">' + (item.type==='social' ? (socialWatched+' of '+socialTotal+' videos · \u23f1 '+fmtMins(item.timerMinutes || 0)) : (watched + ' of ' + total + ' ' + unit + ' · ⏱ ' + fmtMins(item.timerMinutes || 0))) + '</div>' +
       '</div>' +
       (moodChipsHTML ? '<div class="lib-card-moods">' + moodChipsHTML + '</div>' : '') +
       '<div class="lib-card-footer">' +
         '<div class="lib-card-footer-left">' +
           '<span class="lib-status-dot ' + (statusClass === 'watching' && watched === 0 ? 'not-started' : statusClass) + '"></span>' +
-          '<span class="lib-status-label ' + (statusClass === 'watching' && watched === 0 ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? (watched === 0 ? 'NOT STARTED' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass.toUpperCase()) + '</span>' +
+          '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass.toUpperCase()) + '</span>' +
           dayHTML +
         '</div>' +
         '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File \u2192</button>' +
@@ -7852,7 +8328,7 @@
       '<div class="sched-modal-field"><div class="sched-modal-label">Confirm toast duration (ms)</div><input class="sched-modal-input" id="set-confirm-ms" type="number" min="1000" step="500"/></div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">Default Task Duration (min)</div><input class="sched-modal-input" id="set-task-default-min" type="number" min="1" step="1"/></div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">Overview Quick Date Range (days)</div><input class="sched-modal-input" id="set-overview-days" type="number" min="7" step="1"/></div>' +
-      '<div class="sched-modal-field"><div class="sched-modal-label">Default Weekly Budget (hours)</div><input class="sched-modal-input" id="set-budget-hours" type="number" min="1" step="1"/></div>' +
+      '<div class="sched-modal-field"><div class="sched-modal-label">Default Daily Budget (hours)</div><input class="sched-modal-input" id="set-budget-hours" type="number" min="1" step="1"/></div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">Library Quick Add Placeholder</div><input class="sched-modal-input" id="set-quickadd-placeholder" type="text"/></div>' +
       '<div class="sched-modal-field"><label style="display:flex;gap:8px;align-items:center;font:500 11px var(--font-mono);color:var(--text-2);"><input id="set-detail-confirm" type="checkbox" style="accent-color:var(--accent-cool);"/> Ask confirmation for destructive detail actions</label></div>' +
       '</div>' +
@@ -7869,7 +8345,7 @@
     box.querySelector('#set-confirm-ms').value = settings.quickConfirmMs
     box.querySelector('#set-task-default-min').value = settings.tasksDefaultDurationMin || 45
     box.querySelector('#set-overview-days').value = settings.overviewDateLookaheadDays || 14
-    box.querySelector('#set-budget-hours').value = settings.budgetDefaultWeeklyHours || 10
+    box.querySelector('#set-budget-hours').value = settings.budgetDefaultDailyHours || 4
     box.querySelector('#set-quickadd-placeholder').value = settings.quickAddPlaceholder || 'One Piece | anime | 1122 eps'
     box.querySelector('#set-detail-confirm').checked = !!settings.detailConfirmActions
 
@@ -7896,12 +8372,12 @@
       next.quickConfirmMs = Math.max(1000, parseInt(box.querySelector('#set-confirm-ms').value, 10) || 3500)
       next.tasksDefaultDurationMin = Math.max(1, parseInt(box.querySelector('#set-task-default-min').value, 10) || 45)
       next.overviewDateLookaheadDays = Math.max(7, parseInt(box.querySelector('#set-overview-days').value, 10) || 14)
-      next.budgetDefaultWeeklyHours = Math.max(1, parseInt(box.querySelector('#set-budget-hours').value, 10) || 10)
+      next.budgetDefaultDailyHours = Math.max(1, parseInt(box.querySelector('#set-budget-hours').value, 10) || 4)
       next.quickAddPlaceholder = (box.querySelector('#set-quickadd-placeholder').value || '').trim() || APP_SETTINGS_DEFAULTS.quickAddPlaceholder
       next.detailConfirmActions = !!box.querySelector('#set-detail-confirm').checked
       saveAppSettings(next)
       var b = loadData(KEYS.budget, getDefaultBudget())
-      b.weeklyHours = next.budgetDefaultWeeklyHours
+      b.dailyHours = next.budgetDefaultDailyHours
       saveData(KEYS.budget, b)
       applyUiDensitySettings()
       logEvent('Settings updated')
@@ -8034,6 +8510,7 @@
         '<option value="show">Show</option>' +
         '<option value="movie">Movie</option>' +
         '<option value="novel">Novel</option>' +
+        '<option value="social">Social Media</option>' +
       '</select>' +
 
       '<label class="modal-field-label">Total Episodes / Chapters</label>' +
@@ -8048,12 +8525,12 @@
       '</div>' +
       '<div class="modal-section-card" id="modal-schedule-card">' +
       '<div class="modal-section-title">Schedule</div>' +
-      '<div id="modal-release-wrap" style="display:none;margin-top:8px;">' +
+      '<div id="modal-release-wrap" style="margin-top:8px;">' +
         '<label class="modal-field-label">Release / Air Date</label>' +
         '<input class="modal-input" id="modal-release-date" type="date" autocomplete="off"/>' +
         '<div class="modal-helper-text">Will auto-schedule this release to your Overview calendar.</div>' +
       '</div>' +
-      '<div id="modal-recurring-wrap" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-top:10px;background:var(--surface);">' +
+      '<div id="modal-recurring-wrap" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-top:10px;background:var(--surface);">' +
         '<div style="font:700 10px var(--font-mono);color:var(--accent-cool);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;">Smart Weekly Schedule</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;">' +
           '<div><label class="modal-field-label" style="margin:0 0 4px 0;">Airs Every</label><select class="modal-select" id="modal-rec-day"><option value="">— Pick day —</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>' +
@@ -8263,7 +8740,7 @@
       const lib = loadData(KEYS.library, [])
       lib.unshift(newItem)
       saveData(KEYS.library, lib)
-      if (newItem.status === 'upcoming' && releaseDate) {
+      if (releaseDate) {
         var sched = loadData(KEYS.schedule, {})
         if (!sched[releaseDate]) sched[releaseDate] = []
         var existingIdx = sched[releaseDate].findIndex(function(x) { return x.id === newItem.id })
@@ -8273,7 +8750,7 @@
         saveData(KEYS.schedule, sched)
         logEvent('Scheduled release of ' + title + ' on ' + releaseDate)
       }
-      if (newItem.status === 'upcoming' && recDay && recStart && recEnd) {
+      if (recDay && recStart && recEnd) {
         var isReadingType = (newItem.type === 'manga' || newItem.type === 'manhwa' || newItem.type === 'novel')
         var recDates = getWeeklyDates(recDay, recStart, recEnd)
         if (recDates.length > 0) {
@@ -8289,6 +8766,7 @@
         }
       }
       logEvent('Added ' + title + ' to library')
+      if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
       closeModal()
       if (onSuccess) onSuccess(newItem)
       setTimeout(function() { showQuickConfirmWithUndo('CONTENT CREATED: ' + title.toUpperCase(), newItem.id) }, 100)
@@ -8300,9 +8778,8 @@
     if (modalStatusSel) modalStatusSel.value = getAppSettings().defaultNewContentStatus || 'watching'
     if (modalStatusSel && modalReleaseWrap && modalRecurringWrap) {
       var syncReleaseVisibility = function() {
-        var isUpcoming = modalStatusSel.value === 'upcoming'
-        modalReleaseWrap.style.display = isUpcoming ? 'block' : 'none'
-        modalRecurringWrap.style.display = (isUpcoming && getAppSettings().autoShowRecurringForUpcoming) ? 'block' : 'none'
+        modalReleaseWrap.style.display = 'block'
+        modalRecurringWrap.style.display = 'block'
       }
       modalStatusSel.addEventListener('change', syncReleaseVisibility)
       syncReleaseVisibility()
@@ -8317,7 +8794,7 @@
       var typeNow = box.querySelector('#modal-type').value
       if (!preview) return
       if (!day || !start || !end) {
-        preview.textContent = 'Optional: set weekly recurrence for upcoming episodes.'
+        preview.textContent = 'Optional: set weekly recurrence for episodes.'
         preview.style.color = 'var(--text-3)'
         return
       }
@@ -8407,6 +8884,506 @@
     updateSeasonPreview()
   }
   /* -----------------------------------------------------------------
+     PART 3.5: SOCIAL MEDIA DETAIL VIEW -- renderSocialDetail(id)
+     Custom detail for YouTube / social media channels.
+     Videos are stored in item.socialVideos = [{id, title, watched, addedDate}]
+  ----------------------------------------------------------------- */
+  function renderSocialDetail(id) {
+    var main    = document.getElementById('app-main')
+    var library = loadData(KEYS.library, [])
+    var item    = library.find(function(i) { return i.id === id })
+    if (!item) {
+      main.innerHTML = '<div class="detail-error"><div class="detail-error-title">FILE NOT FOUND</div><button class="btn-ghost" onclick="navigateTo(\'library\')">Back to Library</button></div>'
+      return
+    }
+
+    // Theme
+    var _cssOriginals = {}
+    if (item.themeStyles && Object.keys(item.themeStyles).length > 0) {
+      Object.keys(item.themeStyles).forEach(function(key) {
+        _cssOriginals[key] = document.documentElement.style.getPropertyValue(key)
+        document.documentElement.style.setProperty(key, item.themeStyles[key])
+      })
+    }
+    var _themeClass = item.themeClass || null
+    if (_themeClass) {
+      var _stale = document.body.className.split(' ').filter(function(c) { return c.startsWith('theme-') })
+      _stale.forEach(function(c) { document.body.classList.remove(c) })
+      document.body.classList.add(_themeClass)
+    }
+
+    // Timer state
+    var timerInterval = null
+    var timerStart    = null
+    function getElapsedStr(start) {
+      var e = Math.floor((Date.now() - start) / 1000)
+      var h = Math.floor(e / 3600), m = Math.floor((e % 3600) / 60), s = e % 60
+      return (h > 0 ? String(h).padStart(2,'0') + ':' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0')
+    }
+    function startSocialTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
+      timerStart = Date.now()
+      var dispEl = document.getElementById('social-timer-display')
+      var btn    = document.getElementById('social-timer-btn')
+      if (dispEl) dispEl.style.display = 'block'
+      if (btn)   { btn.textContent = '\u25a0 END SESSION'; btn.className = 'btn-danger'; btn.style.cssText = 'font-size:11px;padding:7px 16px;letter-spacing:0.08em;width:100%;' }
+      var accentCol = (item.themeStyles && item.themeStyles['--accent-cool']) ? item.themeStyles['--accent-cool'] : 'var(--accent-cool)'
+      var overlay = document.getElementById('session-overlay')
+      if (overlay) {
+        var overlaySeries = document.getElementById('session-overlay-series')
+        if (overlaySeries) { overlaySeries.textContent = item.title; overlaySeries.style.color = accentCol; overlaySeries.style.textShadow = '0 0 30px ' + accentCol + ', 0 0 60px ' + accentCol }
+        var subEl = overlay.querySelector('.session-overlay-sub')
+        if (subEl) subEl.textContent = 'Initiating scroll protocol'
+        var ringArc = document.getElementById('session-ring-arc')
+        if (ringArc) { ringArc.style.stroke = accentCol; ringArc.style.filter = 'drop-shadow(0 0 10px ' + accentCol + ')' }
+        overlay.classList.add('active')
+        var stopBtn = document.getElementById('session-overlay-stop-btn')
+        if (stopBtn) stopBtn.onclick = function() { stopSocialTimer(); overlay.classList.remove('active') }
+      }
+      timerInterval = setInterval(function() {
+        var el = getElapsedStr(timerStart)
+        var dispEl2 = document.getElementById('social-timer-display')
+        if (dispEl2) dispEl2.textContent = el
+        var ot = document.getElementById('session-overlay-time')
+        if (ot) ot.textContent = el
+      }, 1000)
+    }
+    function stopSocialTimer() {
+      if (!timerInterval) return
+      clearInterval(timerInterval); timerInterval = null
+      var elapsed = (Date.now() - timerStart) / 60000; timerStart = null
+      var lib2 = loadData(KEYS.library, [])
+      var it2  = lib2.find(function(i) { return i.id === id })
+      if (it2) { it2.timerMinutes = (it2.timerMinutes || 0) + elapsed; saveData(KEYS.library, lib2) }
+      addTimerMinutes(elapsed)
+      logEvent('Timed ' + Math.round(elapsed) + ' min on ' + item.title)
+      var dispEl = document.getElementById('social-timer-display')
+      var btn    = document.getElementById('social-timer-btn')
+      if (dispEl) { dispEl.textContent = ''; dispEl.style.display = 'none' }
+      if (btn)   { btn.textContent = '\u25b6 START SESSION'; btn.className = 'btn-primary'; btn.style.cssText = 'font-size:11px;padding:7px 16px;letter-spacing:0.08em;width:100%;' }
+      var tl = document.getElementById('social-total-time')
+      if (tl && it2) { tl.textContent = '\u23f1 ' + (fmtMins(it2.timerMinutes) || '0m') + ' total'; tl.style.display = '' }
+      if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
+      var overlay = document.getElementById('session-overlay')
+      if (overlay) overlay.classList.remove('active')
+    }
+
+    window.__detailCleanup = function() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; if (timerStart) { var _e = (Date.now()-timerStart)/60000; timerStart=null; var _l=loadData(KEYS.library,[]); var _it=_l.find(function(i){return i.id===id}); if(_it){_it.timerMinutes=(_it.timerMinutes||0)+_e;saveData(KEYS.library,_l)} addTimerMinutes(_e); logEvent('Session ended (navigated away) — '+Math.round(_e)+' min on '+item.title) } }
+      Object.keys(_cssOriginals).forEach(function(key) { if (_cssOriginals[key]) document.documentElement.style.setProperty(key, _cssOriginals[key]); else document.documentElement.style.removeProperty(key) })
+      if (_themeClass) document.body.classList.remove(_themeClass)
+    }
+
+    var accentCol = (item.themeStyles && item.themeStyles['--accent-cool']) ? item.themeStyles['--accent-cool'] : '#ff4d4d'
+
+    // Helper: reload item fresh
+    function freshItem() { return (loadData(KEYS.library, [])).find(function(i) { return i.id === id }) || item }
+    function saveItem(updated) { var lib = loadData(KEYS.library, []); var idx = lib.findIndex(function(i){return i.id===id}); if(idx>=0){lib[idx]=updated;saveData(KEYS.library,lib)} }
+
+    // ── BACK ──
+    var backRow = document.createElement('div')
+    backRow.className = 'detail-back-row'
+    var backBtn = document.createElement('button')
+    backBtn.className = 'btn-ghost'
+    backBtn.innerHTML = '\u2190 CONTENT MATRIX'
+    backBtn.addEventListener('click', function() { if(timerInterval)stopSocialTimer(); window.__detailCleanup&&window.__detailCleanup(); window.__detailCleanup=null; navigateTo('library') })
+    backRow.appendChild(backBtn)
+    main.appendChild(backRow)
+
+    var socialLayout = document.createElement('div')
+    socialLayout.className = 'social-layout'
+    var socialLeftCol = document.createElement('div')
+    socialLeftCol.className = 'social-left-col'
+
+    // ── HERO ──
+    var hero = document.createElement('div')
+    hero.className = 'social-hero'
+
+    // Hero LEFT — title + stats + progress only (no schedule here)
+    var heroLeft = document.createElement('div')
+    heroLeft.style.minWidth = '0'
+
+    var titleEl = document.createElement('div')
+    titleEl.className = 'social-title'
+    titleEl.textContent = item.title
+    heroLeft.appendChild(titleEl)
+
+    function renderStats() {
+      var fi = freshItem()
+      var videos = fi.socialVideos || []
+      var watched = videos.filter(function(v){return v.watched}).length
+      var total   = videos.length
+      var pct     = total > 0 ? Math.round((watched/total)*100) : 0
+      var statsRow = document.getElementById('social-stats-row')
+      if (statsRow) {
+        statsRow.innerHTML =
+          '<div class="social-stat"><div class="social-stat-val" style="color:'+accentCol+'">'+total+'</div><div class="social-stat-lbl">Videos</div></div>' +
+          '<div class="social-stat"><div class="social-stat-val">'+watched+'</div><div class="social-stat-lbl">Watched</div></div>' +
+          '<div class="social-stat"><div class="social-stat-val" style="color:var(--text-3)">'+pct+'%</div><div class="social-stat-lbl">Progress</div></div>' +
+          (fi.timerMinutes && fi.timerMinutes >= 1 ? '<div class="social-stat"><div class="social-stat-val" style="color:var(--accent-cool)">\u23f1 '+fmtMins(fi.timerMinutes)+'</div><div class="social-stat-lbl">Timed</div></div>' : '')
+      }
+      var fill = document.getElementById('social-prog-fill')
+      if (fill) { fill.style.width = pct + '%'; fill.style.background = accentCol }
+    }
+
+    var statsRow = document.createElement('div')
+    statsRow.className = 'social-stats-row'
+    statsRow.id = 'social-stats-row'
+    heroLeft.appendChild(statsRow)
+
+    var progBar = document.createElement('div')
+    progBar.className = 'social-progress-bar'
+    progBar.innerHTML = '<div class="social-progress-fill" id="social-prog-fill" style="width:0%"></div>'
+    heroLeft.appendChild(progBar)
+
+    hero.appendChild(heroLeft)
+
+    // Hero RIGHT — sidebar with timer, notes, actions
+    var heroRight = document.createElement('div')
+    heroRight.className = 'social-sidebar'
+
+    var timerCard = document.createElement('div')
+    timerCard.className = 'social-timer-card'
+    timerCard.style.borderColor = 'rgba(255,77,77,0.25)'
+    timerCard.innerHTML =
+      '<div class="social-timer-label">Session Timer</div>' +
+      (item.timerMinutes && item.timerMinutes >= 1 ? '<div id="social-total-time" style="font:600 11px var(--font-mono);color:'+accentCol+';letter-spacing:0.06em;">\u23f1 '+fmtMins(item.timerMinutes)+' total</div>' : '<div id="social-total-time" style="font:600 11px var(--font-mono);color:'+accentCol+';letter-spacing:0.06em;display:none;"></div>') +
+      '<div class="social-timer-display" id="social-timer-display"></div>' +
+      '<button class="btn-primary" id="social-timer-btn" style="font-size:11px;padding:8px 16px;letter-spacing:0.08em;width:100%;">\u25b6 START SESSION</button>'
+    heroRight.appendChild(timerCard)
+
+    // Notes card
+    var notesCard = document.createElement('div')
+    notesCard.className = 'detail-notes-card'
+    notesCard.innerHTML = '<div class="detail-notes-label">Notes</div><textarea class="detail-notes-textarea" id="social-notes" placeholder="Notes / thoughts...">' + (item.notes||'') + '</textarea>'
+    heroRight.appendChild(notesCard)
+
+    // Graveyard / delete — grouped in sidebar-actions
+    var gravWrap = document.createElement('div')
+    gravWrap.className = 'social-sidebar-actions'
+    var gravBtn = document.createElement('button'); gravBtn.className = 'btn-danger'; gravBtn.style.width = '100%'; gravBtn.textContent = '\u26b0 Drop to Graveyard'
+    gravBtn.addEventListener('click', function() {
+      var lib = loadData(KEYS.library,[]); var it = lib.find(function(i){return i.id===id})
+      if(it){
+        it.status='graveyard'; it.graveyardDate=localDateStr(); saveData(KEYS.library,lib)
+        var sched=loadData(KEYS.schedule,{}); Object.keys(sched).forEach(function(dk){sched[dk]=sched[dk].filter(function(e){return e.id!==id}); if(!sched[dk].length)delete sched[dk]}); saveData(KEYS.schedule,sched)
+        if(window.__refreshMissed)window.__refreshMissed()
+        logEvent('Dropped '+item.title+' to graveyard'); navigateTo('library')
+      }
+    })
+    gravWrap.appendChild(gravBtn)
+    var delBtn2 = document.createElement('button'); delBtn2.className = 'btn-danger'; delBtn2.style.width = '100%'; delBtn2.textContent = '\u2715 DELETE (permanent)'
+    delBtn2.addEventListener('click', function() {
+      if (!getAppSettings().detailConfirmActions || confirm('Delete "'+item.title+'"?')) {
+        var lib = loadData(KEYS.library,[]); saveData(KEYS.library, lib.filter(function(i){return i.id!==id})); logEvent('Deleted '+item.title); navigateTo('library')
+      }
+    })
+    gravWrap.appendChild(delBtn2)
+    heroRight.appendChild(gravWrap)
+
+    // ── VIDEO LIST ──
+    var videoSection = document.createElement('div')
+    videoSection.className = 'social-detail-wrap'
+
+    var videoHdr = document.createElement('div')
+    videoHdr.className = 'social-section-header'
+    videoHdr.id = 'social-video-hdr'
+
+    var videoGrid = document.createElement('div')
+    videoGrid.className = 'social-video-grid'
+    videoGrid.id = 'social-video-grid'
+
+    // Multi-select state for recurring schedule
+    var selectMode = false
+    var selectedVideos = []
+
+    function renderVideoGrid() {
+      var fi = freshItem()
+      var videos = fi.socialVideos || []
+      videoGrid.innerHTML = ''
+      selectedVideos = []
+
+      // Header with count + select toggle
+      var watchedCount = videos.filter(function(v){return v.watched}).length
+      videoHdr.innerHTML = ''
+      videoHdr.style.justifyContent = 'space-between'
+      videoHdr.style.gap = ''
+      videoHdr.style.flexWrap = ''
+      var hdrLeft = document.createElement('span')
+      hdrLeft.textContent = 'VIDEOS · ' + videos.length + ' total · ' + watchedCount + ' watched'
+      var hdrRight = document.createElement('div')
+      hdrRight.style.cssText = 'display:flex;align-items:center;gap:8px;'
+      var selCountBadge = document.createElement('span')
+      selCountBadge.style.cssText = 'font:600 11px var(--font-mono);color:var(--accent-warm);display:none;letter-spacing:0.08em;'
+      var selBtn = document.createElement('button')
+      selBtn.className = 'btn-ghost'
+      selBtn.style.cssText = 'font-size:11px;padding:6px 14px;letter-spacing:0.1em;min-width:82px;display:inline-flex;align-items:center;justify-content:center;line-height:1;'
+      selBtn.textContent = selectMode ? 'CANCEL' : 'SELECT'
+      if (selectMode) selBtn.style.color = 'var(--accent-warm)'
+      selBtn.addEventListener('click', function() {
+        selectMode = !selectMode
+        selectedVideos = []
+        selBtn.textContent = selectMode ? 'CANCEL' : 'SELECT'
+        selBtn.style.color = selectMode ? 'var(--accent-warm)' : ''
+        selCountBadge.style.display = 'none'
+        videoGrid.querySelectorAll('.social-video-row').forEach(function(r){r.style.outline=''})
+        var recBar = document.getElementById('social-rec-bar')
+        if (recBar) recBar.style.display = 'none'
+      })
+      if (selectMode && videos.length > 0) {
+        var allBtn = document.createElement('button')
+        allBtn.className = 'btn-ghost'
+        allBtn.style.cssText = 'font-size:11px;padding:6px 14px;letter-spacing:0.1em;min-width:62px;display:inline-flex;align-items:center;justify-content:center;line-height:1;'
+        allBtn.textContent = 'ALL'
+        allBtn.addEventListener('click', function() {
+          selectedVideos = videos.map(function(v) { return v.id })
+          videoGrid.querySelectorAll('.social-video-row').forEach(function(r) { r.style.outline = '1px solid var(--accent-cool)' })
+          selCountBadge.textContent = selectedVideos.length + ' selected'
+          selCountBadge.style.display = ''
+          var recBar = document.getElementById('social-rec-bar')
+          if (recBar) recBar.style.display = 'flex'
+        })
+        hdrRight.appendChild(allBtn)
+      }
+      hdrRight.appendChild(selBtn)
+      hdrRight.appendChild(selCountBadge)
+      videoHdr.appendChild(hdrLeft)
+      videoHdr.appendChild(hdrRight)
+
+      // Select mode toggled by clicking rows directly (no button needed)
+
+      if (videos.length === 0) {
+        var empty = document.createElement('div')
+        empty.style.cssText = 'font:500 12px var(--font-mono);color:var(--text-3);padding:var(--space-4) 0;text-align:center;'
+        empty.textContent = 'No videos added yet. Add one below.'
+        videoGrid.appendChild(empty)
+      }
+
+      videos.forEach(function(video, idx) {
+        var row = document.createElement('div')
+        row.className = 'social-video-row' + (video.watched ? ' watched' : '')
+        row.dataset.vid = video.id
+
+        var idxEl = document.createElement('div'); idxEl.className = 'social-video-idx'; idxEl.textContent = (idx+1)
+        var titleEl2 = document.createElement('div'); titleEl2.className = 'social-video-title'; titleEl2.textContent = video.title
+
+        var checkBtn = document.createElement('button')
+        checkBtn.className = 'social-video-check' + (video.watched ? ' done' : '')
+        checkBtn.title = video.watched ? 'Mark unwatched' : 'Mark watched'
+        checkBtn.textContent = video.watched ? '\u2713' : ''
+        checkBtn.addEventListener('click', function(e) {
+          e.stopPropagation()
+          if (selectMode) { toggleSelect(video.id, row); return }
+          var fi2 = freshItem()
+          var vids = fi2.socialVideos || []
+          var v = vids.find(function(x){return x.id===video.id})
+          if (v) { v.watched = !v.watched; saveItem(fi2); logEvent((v.watched?'Watched':'Unwatched')+': '+video.title+' ('+item.title+')'); renderVideoGrid(); renderStats() }
+        })
+
+        var delVid = document.createElement('button'); delVid.className = 'social-video-del'; delVid.textContent = '\u2715'
+        delVid.addEventListener('click', function(e) {
+          e.stopPropagation()
+          var fi2 = freshItem()
+          fi2.socialVideos = (fi2.socialVideos||[]).filter(function(x){return x.id!==video.id})
+          saveItem(fi2); logEvent('Removed video: '+video.title+' from '+item.title); renderVideoGrid(); renderStats()
+        })
+
+        row.appendChild(idxEl); row.appendChild(titleEl2); row.appendChild(checkBtn); row.appendChild(delVid)
+
+        // Select mode highlight
+        row.addEventListener('click', function() { if (selectMode) toggleSelect(video.id, row) })
+        videoGrid.appendChild(row)
+      })
+
+      // Select mode logic
+      function toggleSelect(vid, row) {
+        var i = selectedVideos.indexOf(vid)
+        if (i === -1) { selectedVideos.push(vid); row.style.outline = '1px solid var(--accent-cool)' }
+        else { selectedVideos.splice(i,1); row.style.outline = '' }
+        selCountBadge.textContent = selectedVideos.length + ' selected'
+        selCountBadge.style.display = selectedVideos.length > 0 ? '' : 'none'
+        // Show/hide recurring bar
+        var recBar = document.getElementById('social-rec-bar')
+        if (recBar) recBar.style.display = selectedVideos.length > 0 ? 'flex' : 'none'
+      }
+
+      // No select button — rows are clickable in select mode when recBar is open
+    }
+
+    // ── ADD VIDEO INPUT (above video list) ──
+    var addRow = document.createElement('div')
+    addRow.className = 'social-add-row'
+    var addInput = document.createElement('input')
+    addInput.className = 'social-add-input'
+    addInput.placeholder = 'Video title... press Enter to add'
+    addInput.autocomplete = 'off'
+    var addBtn2 = document.createElement('button')
+    addBtn2.className = 'btn-primary'
+    addBtn2.style.cssText = 'font-size:11px;padding:7px 14px;white-space:nowrap;'
+    addBtn2.textContent = '+ ADD'
+    function addVideo() {
+      var title = addInput.value.trim()
+      if (!title) { addInput.style.borderColor = 'var(--danger)'; setTimeout(function(){addInput.style.borderColor=''},800); return }
+      var fi = freshItem()
+      if (!fi.socialVideos) fi.socialVideos = []
+      fi.socialVideos.push({ id: generateId(title), title: title, watched: false, addedDate: localDateStr() })
+      saveItem(fi)
+      logEvent('Added video: '+title+' to '+item.title)
+      addInput.value = ''
+      renderVideoGrid(); renderStats()
+    }
+    addInput.addEventListener('keydown', function(e){ if(e.key==='Enter') addVideo() })
+    addBtn2.addEventListener('click', addVideo)
+    addRow.appendChild(addInput); addRow.appendChild(addBtn2)
+
+    videoSection.appendChild(videoHdr)
+    videoSection.appendChild(addRow)
+    videoSection.appendChild(videoGrid)
+
+    // ── RECURRING SCHEDULE BAR (shown when videos selected) ──
+    var recBar = document.createElement('div')
+    recBar.id = 'social-rec-bar'
+    recBar.style.cssText = 'display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);margin-top:var(--space-2);flex-wrap:wrap;'
+    recBar.innerHTML =
+      '<span style="font:600 11px var(--font-mono);color:var(--type-social);">\u26a1 WEEKLY SCHEDULE</span>' +
+      '<select class="modal-select" id="srec-day" style="flex:1;min-width:100px;"><option value="">— Day —</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>' +
+      '<input class="modal-input" id="srec-start" type="date" style="flex:1;min-width:120px;" placeholder="Start date"/>' +
+      '<button class="btn-primary" id="srec-apply" style="font-size:11px;padding:6px 14px;white-space:nowrap;">\u26a1 APPLY</button>' +
+      '<div id="srec-preview" style="width:100%;font:400 10px var(--font-mono);color:var(--text-3);"></div>'
+    videoSection.appendChild(recBar)
+
+    // ── SCHEDULE SECTION (middle content, scrollable list) ──
+    var schedSection = document.createElement('div')
+    schedSection.className = 'social-schedule-card'
+    schedSection.id = 'social-schedule-card'
+    var schedHdr = document.createElement('div')
+    schedHdr.className = 'social-section-header'
+    schedHdr.innerHTML = '<span>SCHEDULE</span>'
+    schedSection.appendChild(schedHdr)
+    var schedScroll = document.createElement('div')
+    schedScroll.className = 'social-schedule-scroll'
+    var schedEntries = document.createElement('div')
+    schedEntries.id = 'social-sched-entries'
+    schedEntries.className = 'sched-entries-list'
+    schedScroll.appendChild(schedEntries)
+    schedSection.appendChild(schedScroll)
+    var schedBtnsWrap = document.createElement('div')
+    schedBtnsWrap.id = 'social-sched-btns'
+    schedSection.appendChild(schedBtnsWrap)
+
+    function renderSchedEntries() {
+      var wrap = document.getElementById('social-sched-entries')
+      var btns = document.getElementById('social-sched-btns')
+      var card = document.getElementById('social-schedule-card')
+      if (!wrap) return
+      wrap.innerHTML = ''
+      if (btns) btns.innerHTML = ''
+      var sched = loadData(KEYS.schedule, {})
+      var todayKey = localDateStr()
+      var results = []
+      Object.keys(sched).sort().forEach(function(dk) {
+        var entry = (sched[dk]||[]).find(function(e){return e.id===id})
+        if (entry) results.push({date:dk, eps:entry.eps})
+      })
+      results.forEach(function(entry) {
+        var isPast = entry.date < todayKey
+        var row = document.createElement('div'); row.className = 'sched-entry-row'
+        if (isPast) row.style.opacity = '0.5'
+        var dateEl = document.createElement('span'); dateEl.className = 'sched-entry-date'
+        var d = new Date(entry.date+'T00:00:00')
+        dateEl.textContent = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + (isPast?' · MISSED':'')
+        if (isPast) dateEl.style.color = 'var(--danger)'
+        var epsEl = document.createElement('span'); epsEl.className = 'sched-entry-eps'
+        epsEl.textContent = entry.eps || 'session'
+        var delBtn = document.createElement('button'); delBtn.className = 'sched-entry-del'; delBtn.textContent = '\u2715'
+        ;(function(dk2) { delBtn.addEventListener('click', function() { var s=loadData(KEYS.schedule,{}); if(s[dk2]){s[dk2]=s[dk2].filter(function(e){return e.id!==id}); if(!s[dk2].length)delete s[dk2]; saveData(KEYS.schedule,s)} logEvent('Removed schedule entry for '+item.title+' on '+dk2); if(window.__refreshMissed)window.__refreshMissed(); renderSchedEntries() }) })(entry.date)
+        row.appendChild(dateEl); row.appendChild(epsEl); row.appendChild(delBtn)
+        wrap.appendChild(row)
+      })
+      if (results.length === 0) {
+        if (card) card.classList.add('is-empty')
+        var emptyRow = document.createElement('div')
+        emptyRow.className = 'social-sched-empty'
+        emptyRow.textContent = 'No sessions scheduled yet.'
+        wrap.appendChild(emptyRow)
+      } else if (card) {
+        card.classList.remove('is-empty')
+      }
+      var target = btns || wrap
+      var addBtn = document.createElement('button'); addBtn.className = 'sched-add-btn'; addBtn.textContent = '+ ADD TO SCHEDULE'
+      addBtn.addEventListener('click', function() { openSchedModal(null,null,null,function(){renderSchedEntries()}) })
+      target.appendChild(addBtn)
+      var recBtn = document.createElement('button'); recBtn.className = 'sched-add-btn'
+      recBtn.style.cssText = 'margin-top:4px;color:var(--text-2);opacity:0.9;'
+      recBtn.textContent = '\u26a1 AUTO-SCHEDULE WEEKLY SESSIONS'
+      recBtn.addEventListener('click', function() { openRecurringSchedForItem(id, item, function(){renderSchedEntries()}) })
+      target.appendChild(recBtn)
+    }
+
+    setTimeout(function() {
+      var applyBtn = document.getElementById('srec-apply')
+      if (applyBtn) {
+        applyBtn.addEventListener('click', function() {
+          var day   = document.getElementById('srec-day').value
+          var start = document.getElementById('srec-start').value
+          if (!day || !start || selectedVideos.length === 0) {
+            document.getElementById('srec-preview').textContent = 'Pick a day, start date, and select videos first.'
+            document.getElementById('srec-preview').style.color = 'var(--accent-warm)'
+            return
+          }
+          var fi = freshItem()
+          var vids = fi.socialVideos || []
+          var dates = getWeeklyDatesFromStart ? getWeeklyDatesFromStart(day, start, selectedVideos.length) : (function(){
+            var res=[]; var d=new Date(start+'T00:00:00'); var dayMap={Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6,Sunday:0}; var td=dayMap[day]
+            while(d.getDay()!==td) d.setDate(d.getDate()+1)
+            for(var i=0;i<selectedVideos.length;i++){res.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));d.setDate(d.getDate()+7)}
+            return res
+          })()
+          var sched = loadData(KEYS.schedule, {})
+          selectedVideos.forEach(function(vid, i) {
+            var v = vids.find(function(x){return x.id===vid})
+            if (!v || !dates[i]) return
+            if (!sched[dates[i]]) sched[dates[i]] = []
+            var existing = sched[dates[i]].findIndex(function(e){return e.id===id && e.eps===v.title})
+            if (existing === -1) sched[dates[i]].push({id:id, title:item.title, type:'social', eps:v.title})
+          })
+          saveData(KEYS.schedule, sched)
+          logEvent('Scheduled '+selectedVideos.length+' videos from '+item.title+' weekly from '+start)
+          document.getElementById('srec-preview').innerHTML = '<span style="color:var(--accent-green)">\u2713 Scheduled '+selectedVideos.length+' videos every '+day+' from '+formatDateShort(dates[0])+'</span>'
+          renderSchedEntries()
+        })
+      }
+    }, 0)
+
+    socialLeftCol.appendChild(hero)
+    socialLeftCol.appendChild(schedSection)
+    socialLayout.appendChild(socialLeftCol)
+    socialLayout.appendChild(heroRight)
+    main.appendChild(socialLayout)
+    main.appendChild(videoSection)
+
+    // Init renders
+    renderStats()
+    renderVideoGrid()
+    renderSchedEntries()
+
+    // Wire timer button
+    setTimeout(function() {
+      var btn = document.getElementById('social-timer-btn')
+      if (btn) btn.addEventListener('click', function() {
+        if (timerInterval) stopSocialTimer(); else startSocialTimer()
+      })
+      // Notes autosave
+      var notesEl = document.getElementById('social-notes')
+      if (notesEl) {
+        notesEl.addEventListener('input', function() {
+          var fi = freshItem(); fi.notes = notesEl.value; saveItem(fi)
+        })
+      }
+    }, 0)
+  }
+
+  /* -----------------------------------------------------------------
      PART 4: DETAIL VIEW -- renderDetail(id)
      Full-page transformation. The app becomes the content.
   ----------------------------------------------------------------- */
@@ -8414,6 +9391,8 @@
     const main    = document.getElementById('app-main')
     const library = loadData(KEYS.library, [])
     const item    = library.find(function(i) { return i.id === id })
+    // Route social media items to their own detail view
+    if (item && item.type === 'social') { renderSocialDetail(id); return }
 
     // -- File not found --
     if (!item) {
@@ -8553,6 +9532,21 @@
       if (dispEl) { dispEl.textContent = ''; dispEl.style.display = 'none' }
       if (epEl)   { epEl.textContent = ''; epEl.style.display = 'none' }
       if (btn)    { btn.textContent = '\u25b6 START SESSION'; btn.className = 'btn-primary'; btn.style.cssText = 'font-size:11px;padding:7px 16px;letter-spacing:0.08em;' }
+      // Update total time label live
+      var totalLabel = document.getElementById('detail-total-time')
+      if (totalLabel && item2) totalLabel.textContent = '⏱ ' + (fmtMins(item2.timerMinutes) || '0m') + ' total'
+      else if (!totalLabel && item2 && item2.timerMinutes >= 1) {
+        var timerLbl = document.querySelector('.detail-timer-label')
+        if (timerLbl) {
+          var tl = document.createElement('div')
+          tl.id = 'detail-total-time'
+          tl.style.cssText = 'font:600 11px var(--font-mono);color:var(--accent-cool);letter-spacing:0.06em;margin-bottom:var(--space-2);'
+          tl.textContent = '⏱ ' + fmtMins(item2.timerMinutes) + ' total'
+          timerLbl.insertAdjacentElement('afterend', tl)
+        }
+      }
+      // Refresh dashboard stat cards if visible
+      if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
       // Dismiss overlay if visible
       var overlay = document.getElementById('session-overlay')
       if (overlay) overlay.classList.remove('active')
@@ -8628,7 +9622,8 @@
         '</div>' +
       '</div>' +
       '<div class="detail-day-label">Schedule</div>' +
-      '<div id="detail-sched-entries" class="sched-entries-list"></div>'
+      '<div id="detail-sched-entries" class="sched-entries-list"></div>' +
+      '<div id="detail-sched-btns"></div>'
 
     // Animate progress bar
     setTimeout(function() {
@@ -8675,16 +9670,22 @@
 
       function renderEntries() {
         var wrap = document.getElementById('detail-sched-entries')
+        var btns = document.getElementById('detail-sched-btns')
         if (!wrap) return
         wrap.innerHTML = ''
+        if (btns) btns.innerHTML = ''
         var entries = getEntriesForItem()
 
+        var todayKey = localDateStr()
         entries.forEach(function(entry) {
+          var isPast = entry.date < todayKey
           var row = document.createElement('div')
           row.className = 'sched-entry-row'
+          if (isPast) row.style.cssText = 'opacity:0.5;'
           var dateEl = document.createElement('span')
           dateEl.className = 'sched-entry-date'
-          dateEl.textContent = formatDateDisplay(entry.date)
+          dateEl.textContent = formatDateDisplay(entry.date) + (isPast ? ' · MISSED' : '')
+          if (isPast) dateEl.style.color = 'var(--danger)'
           var epsEl = document.createElement('span')
           epsEl.className = 'sched-entry-eps'
           epsEl.textContent = entry.eps || 'no episodes specified'
@@ -8696,6 +9697,7 @@
             removeEntry(entry.date)
             renderEntries()
             logEvent('Removed schedule entry for ' + item.title + ' on ' + entry.date)
+            if (window.__refreshMissed) window.__refreshMissed()
           })
           row.appendChild(dateEl)
           row.appendChild(epsEl)
@@ -8703,13 +9705,14 @@
           wrap.appendChild(row)
         })
 
+        var target = btns || wrap
         var addBtn = document.createElement('button')
         addBtn.className = 'sched-add-btn'
         addBtn.textContent = '+ ADD TO SCHEDULE'
         addBtn.addEventListener('click', function() {
           openSchedModal(null, null, null, function() { renderEntries() })
         })
-        wrap.appendChild(addBtn)
+        target.appendChild(addBtn)
 
         var recurBtn = document.createElement('button')
         recurBtn.className = 'sched-add-btn'
@@ -8718,7 +9721,7 @@
         recurBtn.addEventListener('click', function() {
           openRecurringSchedForItem(id, item, function() { renderEntries() })
         })
-        wrap.appendChild(recurBtn)
+        target.appendChild(recurBtn)
       }
 
       renderEntries()
@@ -8726,7 +9729,7 @@
 
     // Select mode toggle
     var selectWrap = document.createElement('div')
-    selectWrap.style.marginTop = 'var(--space-1)'
+    selectWrap.style.marginTop = 'var(--space-4)'
     selectWrap.style.marginBottom = 'var(--space-3)'
     var selectBtn = document.createElement('button')
     selectBtn.className = 'btn-ghost'
@@ -8736,7 +9739,7 @@
     selectCountBadge.style.cssText = 'font:var(--text-xs) var(--font-mono);color:var(--accent-warm);margin-left:var(--space-3);display:none;'
     selectWrap.appendChild(selectBtn)
     selectWrap.appendChild(selectCountBadge)
-    heroLeft.appendChild(selectWrap)
+    if (!(hasSeasonsData || hasArcsData)) heroLeft.appendChild(selectWrap)
     hero.appendChild(heroLeft)
 
     // --- Hero RIGHT ---
@@ -8748,6 +9751,7 @@
     timerCard.className = 'detail-timer-card'
     timerCard.innerHTML =
       '<div class="detail-timer-label">Session Timer</div>' +
+      (item.timerMinutes && item.timerMinutes >= 1 ? '<div id="detail-total-time" style="font:600 11px var(--font-mono);color:var(--accent-cool);letter-spacing:0.06em;margin-bottom:var(--space-2);">⏱ ' + fmtMins(item.timerMinutes) + ' total</div>' : '') +
       '<div class="detail-timer-ep" id="detail-timer-ep" style="font:var(--text-xs) var(--font-mono);color:var(--text-3);margin-bottom:var(--space-1);display:none;"></div>' +
       '<div class="detail-timer-display" id="detail-timer-display" style="display:none;"></div>' +
       '<button class="btn-primary" id="detail-timer-btn" style="font-size:11px;padding:7px 16px;letter-spacing:0.08em;">\u25b6 START SESSION</button>'
@@ -8785,7 +9789,15 @@
         var lib = loadData(KEYS.library, [])
         lib = lib.filter(function(i) { return i.id !== id })
         saveData(KEYS.library, lib)
+        // Clean up all schedule entries for this item
+        var sched = loadData(KEYS.schedule, {})
+        Object.keys(sched).forEach(function(dk) {
+          sched[dk] = sched[dk].filter(function(e) { return e.id !== id })
+          if (sched[dk].length === 0) delete sched[dk]
+        })
+        saveData(KEYS.schedule, sched)
         logEvent('Deleted ' + item.title + ' from library')
+        if (window.__refreshMissed) window.__refreshMissed()
         navigateTo('library')
         showQuickConfirmWithUndo('DELETED: ' + item.title.toUpperCase(), null)
       }
@@ -8873,6 +9885,14 @@
           it5.status = 'graveyard'
           it5.graveyardDate = localDateStr()
           saveData(KEYS.library, lib5)
+          // Clean up all schedule entries for this item
+          var sched5 = loadData(KEYS.schedule, {})
+          Object.keys(sched5).forEach(function(dk) {
+            sched5[dk] = sched5[dk].filter(function(e) { return e.id !== id })
+            if (sched5[dk].length === 0) delete sched5[dk]
+          })
+          saveData(KEYS.schedule, sched5)
+          if (window.__refreshMissed) window.__refreshMissed()
           logEvent('Dropped ' + item.title + ' to graveyard')
         }
         window.__detailCleanup && window.__detailCleanup()
@@ -8903,6 +9923,65 @@
       renderFlatGrid(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
     }
 
+    function addUniqueSelected(list) {
+      list.forEach(function(n) { if (selectedEps.indexOf(n) === -1) selectedEps.push(n) })
+      var count = selectedEps.length
+      selectCountBadge.textContent = count + ' SELECTED'
+      selectCountBadge.style.display = count > 0 ? 'inline' : 'none'
+      updateSelectBar(true, selectedEps, id, item.title, selectBtn, selectCountBadge)
+      contentArea.innerHTML = ''
+      if (hasSeasonsData) {
+        var a = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
+        renderSeasonTabs(contentArea, item, isNaN(a) ? 0 : a, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      } else if (hasArcsData) {
+        var b = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
+        renderArcTabs(contentArea, item, isNaN(b) ? 0 : b, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      } else {
+        renderFlatGrid(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      }
+    }
+
+    var bulkSelectRow = document.createElement('div')
+    bulkSelectRow.className = 'detail-bulk-select-row'
+    bulkSelectRow.style.display = 'none'
+    var bulkCurrentBtn = document.createElement('button')
+    bulkCurrentBtn.className = 'detail-bulk-select-btn'
+    bulkCurrentBtn.textContent = hasArcsData ? 'SELECT ARC' : 'SELECT SEASON'
+    bulkCurrentBtn.addEventListener('click', function() {
+      if (!selectMode) return
+      if (hasSeasonsData) {
+        var si = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
+        var season = item.seasons && item.seasons[isNaN(si) ? 0 : si]
+        if (!season) return
+        addUniqueSelected((season.episodes || []).map(function(ep) { return ep.number }))
+      } else if (hasArcsData) {
+        var ai = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
+        var arc = item.arcs && item.arcs[isNaN(ai) ? 0 : ai]
+        if (!arc) return
+        var nums = []
+        for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
+        addUniqueSelected(nums)
+      }
+    })
+    var bulkAllBtn = document.createElement('button')
+    bulkAllBtn.className = 'detail-bulk-select-btn'
+    bulkAllBtn.textContent = hasArcsData ? 'SELECT ALL ARCS' : 'SELECT ALL SEASONS'
+    bulkAllBtn.addEventListener('click', function() {
+      if (!selectMode) return
+      if (hasSeasonsData) {
+        var nums1 = []
+        ;(item.seasons || []).forEach(function(s) { (s.episodes || []).forEach(function(ep) { nums1.push(ep.number) }) })
+        addUniqueSelected(nums1)
+      } else if (hasArcsData) {
+        var nums2 = []
+        ;(item.arcs || []).forEach(function(a) { for (var n = a.chapterStart; n <= a.chapterEnd; n++) nums2.push(n) })
+        addUniqueSelected(nums2)
+      }
+    })
+    bulkSelectRow.appendChild(bulkCurrentBtn)
+    if (hasSeasonsData || hasArcsData) bulkSelectRow.appendChild(bulkAllBtn)
+    heroLeft.appendChild(bulkSelectRow)
+
     // -- Select mode toggle --
     selectBtn.addEventListener('click', function() {
       selectMode    = !selectMode
@@ -8911,10 +9990,12 @@
         selectBtn.textContent = '✕ CANCEL'
         selectBtn.style.borderColor = 'var(--accent-warm)'
         selectBtn.style.color       = 'var(--accent-warm)'
+        bulkSelectRow.style.display = (hasSeasonsData || hasArcsData) ? 'flex' : 'none'
       } else {
         selectBtn.textContent = 'SELECT'
         selectBtn.style.borderColor = ''
         selectBtn.style.color       = ''
+        bulkSelectRow.style.display = 'none'
       }
       selectCountBadge.style.display = 'none'
       updateSelectBar(selectMode, selectedEps, id, item.title, selectBtn, selectCountBadge)
@@ -8934,6 +10015,8 @@
      PART 4: SEASON TABS RENDERER
   ----------------------------------------------------------------- */
   function renderSeasonTabs(container, item, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer) {
+    container.dataset.activeSeasonIdx = String(activeIdx)
+    container.dataset.activeArcIdx = ''
     // Tab row with arrow buttons
     var navRow = document.createElement('div')
     navRow.className = 'detail-season-tabs'
@@ -8961,11 +10044,28 @@
       tab.className = 'detail-season-tab' + (i === activeIdx ? ' active' : '')
       tab.textContent = season.name
       tab.addEventListener('click', function() {
+        if (selectMode && i === activeIdx) {
+          var nums = (season.episodes || []).map(function(ep) { return ep.number })
+          nums.forEach(function(n) { if (selectedEps.indexOf(n) === -1) selectedEps.push(n) })
+          var c = selectedEps.length
+          selectCountBadge.textContent = c + ' SELECTED'
+          selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
+          updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge)
+          container.innerHTML = ''
+          renderSeasonTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+          return
+        }
         container.innerHTML = ''
         renderSeasonTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
       })
       navRow.appendChild(tab)
     })
+
+    var selectInlineWrap = document.createElement('div')
+    selectInlineWrap.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:8px;padding-left:var(--space-2);flex-shrink:0;'
+    selectInlineWrap.appendChild(selectBtn)
+    selectInlineWrap.appendChild(selectCountBadge)
+    navRow.appendChild(selectInlineWrap)
 
     if (!hideArrows) {
       var nextBtn = document.createElement('button')
@@ -9021,13 +10121,15 @@
   }
 
   function renderArcTabs(container, item, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer) {
+    container.dataset.activeArcIdx = String(activeIdx)
+    container.dataset.activeSeasonIdx = ''
     // Use tab row for ≤6 arcs, dropdown select for more (e.g. manhwa with 31 arcs)
     var useDropdown = item.arcs.length > 6
     var hideArrows = (item.type === 'anime' || item.type === 'show')
 
     if (useDropdown) {
       var navRow = document.createElement('div')
-      navRow.style.cssText = 'display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-5);border-bottom:1px solid var(--border);padding-bottom:var(--space-4);'
+      navRow.style.cssText = 'display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-5);border-bottom:1px solid var(--border);padding-bottom:var(--space-4);'
 
       var prevBtn = null
       if (!hideArrows) {
@@ -9041,6 +10143,7 @@
 
       var sel = document.createElement('select')
       sel.className = 'arc-nav-select'
+      sel.style.flex = '1 1 360px'
       sel.tabIndex = -1; // Prevent select from stealing focus
       item.arcs.forEach(function(arc, i) {
         var opt = document.createElement('option')
@@ -9078,6 +10181,11 @@
       if (prevBtn) navRow.appendChild(prevBtn)
       navRow.appendChild(sel)
       if (nextBtn) navRow.appendChild(nextBtn)
+      var selectInlineWrap = document.createElement('div')
+      selectInlineWrap.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:8px;padding-left:var(--space-2);min-width:0;'
+      selectInlineWrap.appendChild(selectBtn)
+      selectInlineWrap.appendChild(selectCountBadge)
+      navRow.appendChild(selectInlineWrap)
       container.appendChild(navRow)
 
       // Keyboard navigation for arcs (dropdown mode) — single handler
@@ -9122,11 +10230,29 @@
         tab.title = 'Ch. ' + arc.chapterStart + '\u2013' + arc.chapterEnd
         tab.style.cssText = 'white-space:nowrap;flex-shrink:0;'
         tab.addEventListener('click', function() {
+          if (selectMode && i === activeIdx) {
+            var nums = []
+            for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
+            nums.forEach(function(v) { if (selectedEps.indexOf(v) === -1) selectedEps.push(v) })
+            var c = selectedEps.length
+            selectCountBadge.textContent = c + ' SELECTED'
+            selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
+            updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge)
+            container.innerHTML = ''
+            renderArcTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+            return
+          }
           container.innerHTML = ''
           renderArcTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
         })
         navRow.appendChild(tab)
       })
+
+      var selectInlineWrap = document.createElement('div')
+      selectInlineWrap.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:8px;padding-left:var(--space-2);min-width:0;'
+      selectInlineWrap.appendChild(selectBtn)
+      selectInlineWrap.appendChild(selectCountBadge)
+      navRow.appendChild(selectInlineWrap)
 
       if (!hideArrows) {
         var nextBtn = document.createElement('button')
@@ -9403,12 +10529,48 @@
       } else {
         it.watchedEpisodes.push(epKey)
         tile.classList.add('watched')
+        // Auto-promote upcoming → watching when first episode is marked watched
+        if (it.status === 'upcoming') {
+          it.status = 'watching'
+          item.status = 'watching'
+          logEvent('Status updated: ' + item.title + ' → watching')
+        }
         logEvent((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel' ? 'Read ch ' : 'Watched ep ') + ep.number + ' of ' + item.title)
       }
 
       // Sync back to the live item reference
       item.watchedEpisodes = it.watchedEpisodes.slice()
       saveData(KEYS.library, lib)
+
+      // If just marked watched, auto-clear any past schedule entry for this episode
+      if (!wasWatched) {
+        var sched = loadData(KEYS.schedule, {})
+        var todayKey = localDateStr()
+        var epNum = ep.number
+        var isReading = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel')
+        var epLabelVariants = [
+          (isReading ? 'Ch. ' : 'Ep. ') + epNum,
+          (isReading ? 'Ch.' : 'Ep.') + epNum,
+          String(epNum)
+        ]
+        var schedChanged = false
+        Object.keys(sched).forEach(function(dk) {
+          if (dk >= todayKey) return // only past entries
+          var before = sched[dk].length
+          sched[dk] = sched[dk].filter(function(e) {
+            if (e.id !== it.id) return true
+            return !epLabelVariants.some(function(v) { return e.eps === v })
+          })
+          if (sched[dk].length !== before) {
+            schedChanged = true
+            if (sched[dk].length === 0) delete sched[dk]
+          }
+        })
+        if (schedChanged) {
+          saveData(KEYS.schedule, sched)
+          if (window.__refreshMissed) window.__refreshMissed()
+        }
+      }
 
       // Update hero progress bar live (no re-render)
       var fill       = document.getElementById('detail-prog-fill')
@@ -9419,6 +10581,15 @@
       if (fill)      fill.style.width = newPct + '%'
       if (progLabel) progLabel.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' +
         ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'chapters' : 'eps') + ' ' + ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'read' : 'watched')
+      // Update library card progress bar live if it exists in the grid
+      var libCard = document.querySelector('.library-card[data-title="' + it.title.toLowerCase() + '"]')
+      if (libCard) {
+        var libFill = libCard.querySelector('.progress-bar-fill')
+        var libProg = libCard.querySelector('.lib-card-progress-text')
+        var unit2 = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'ch' : 'eps'
+        if (libFill) libFill.style.width = newPct + '%'
+        if (libProg) libProg.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' + unit2 + (it.timerMinutes && it.timerMinutes >= 1 ? ' · \u23f1 ' + fmtMins(it.timerMinutes) : '')
+      }
       checkSeasonCompletion(it, beforeCount, tile)
       // Notify season panel to refresh its stat cards
       document.dispatchEvent(new CustomEvent('ep-toggled', { detail: { itemId: item.id, watchedEpisodes: it.watchedEpisodes } }))
@@ -9610,6 +10781,17 @@
         item.status = 'completed'
         saveData(KEYS.library, lib)
         logEvent('Completed ' + item.title)
+        // Update dashboard stats and library card status live
+        if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
+        // Update the library card's data-status so filterCards hides it from graveyard filter
+        var libCard = document.querySelector('.library-card[data-title="' + item.title.toLowerCase() + '"]')
+        if (libCard) {
+          libCard.dataset.status = 'completed'
+          var statusDot = libCard.querySelector('.lib-status-dot')
+          var statusLbl = libCard.querySelector('.lib-status-label')
+          if (statusDot) { statusDot.className = 'lib-status-dot completed' }
+          if (statusLbl) { statusLbl.className = 'lib-status-label completed'; statusLbl.textContent = 'DONE' }
+        }
       }
       fireCompletionCelebration(item.title)
       return
@@ -9811,7 +10993,14 @@
       if (t) { t.timerMinutes = (t.timerMinutes || 0) + elapsed; saveData(KEYS.tasks, ts) }
       addTimerMinutes(elapsed)
       logEvent('Timed ' + Math.round(elapsed) + ' min on task: ' + (t ? t.name : 'unknown'))
-      return elapsed
+      // Update the task card's time display live
+      var dispEl = document.getElementById('task-timer-' + tid)
+      if (dispEl && t && t.timerMinutes >= 1) {
+        dispEl.textContent = '\u23f1 ' + fmtMins(t.timerMinutes)
+        dispEl.style.color = 'var(--accent-cool)'
+      } else if (dispEl) {
+        dispEl.textContent = ''
+      }
     }
 
     function startTaskTimer(taskId) {
@@ -10032,6 +11221,13 @@
       doneDate.textContent = 'Done ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
       metaEl.appendChild(doneDate)
     }
+    if (task.timerMinutes && task.timerMinutes >= 1) {
+      var timeSpan = document.createElement('span')
+      timeSpan.className = 'task-duration'
+      timeSpan.style.color = 'var(--accent-cool)'
+      timeSpan.textContent = '⏱ ' + fmtMins(task.timerMinutes)
+      metaEl.appendChild(timeSpan)
+    }
     center.appendChild(metaEl)
     // Timer display
     var timerDisp = document.createElement('div')
@@ -10081,6 +11277,7 @@
           saveData(KEYS.tasks, ts)
           var mins = t.timerMinutes ? ' (' + Math.round(t.timerMinutes) + ' min)' : ''
           logEvent('Completed task: ' + t.name + mins)
+          if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
         }
         card.classList.add('completing')
         setTimeout(function() { if (onRefresh) onRefresh() }, 320)
@@ -10469,6 +11666,16 @@
       cur.setDate(cur.getDate() + 7)
     }
     return results
+  }
+
+  /* Format minutes into "Xh Ym" or "Ym" string */
+  function fmtMins(mins) {
+    if (!mins || mins < 1) return null
+    var h = Math.floor(mins / 60)
+    var m = Math.round(mins % 60)
+    if (h > 0 && m > 0) return h + 'h ' + m + 'm'
+    if (h > 0) return h + 'h'
+    return m + 'm'
   }
 
   function formatDateShort(dateStr) {
@@ -11173,6 +12380,8 @@
       } else {
         entries.forEach(function(entry) {
           var libItem = library.find(function(i) { return i.id === entry.id })
+          // Skip entries for graveyard or deleted items
+          if (!libItem || libItem.status === 'graveyard') return
           var accentCol = (libItem && libItem.themeStyles && libItem.themeStyles['--accent-cool'])
             ? libItem.themeStyles['--accent-cool'] : 'var(--accent-cool)'
           var unit = (libItem && (libItem.type==='manga'||libItem.type==='manhwa'||libItem.type==='novel')) ? 'ch' : 'ep'
@@ -11185,6 +12394,7 @@
           card.innerHTML =
             '<span class="sched-entry-title">' + (entry.title || '—') + '</span>' +
             (entry.eps ? '<div class="sched-entry-eps">▸ ' + entry.eps + '</div>' : '') +
+            (libItem && libItem.timerMinutes && libItem.timerMinutes >= 1 ? '<div class="sched-entry-meta">⏱ ' + fmtMins(libItem.timerMinutes) + ' timed</div>' : '') +
             (remaining !== null && remaining > 0 ? '<div class="sched-entry-meta">' + remaining + ' ' + unit + ' left</div>' : '')
           card.addEventListener('click', function() {
             if (libItem) navigateTo('detail', libItem.id)
@@ -11251,7 +12461,7 @@
     // Type values:   library content types + 'task' for task-only view
     var LIBRARY_STATUS_PILLS = ['all','watching','reading','not started','upcoming','completed','graveyard']
     var TASK_STATUS_PILLS    = ['active','done']
-    var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel']
+    var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel','social']
 
     // Row 1: Library status (cyan accent)
     var row1 = document.createElement('div'); row1.className = 'overview-filter-row'
@@ -11330,10 +12540,11 @@
         entries.push({ kind: 'task', item: task, sortStatus: task.completed ? 'done' : 'active' })
       })
 
-      // Filter
+      // Filter — "all" excludes graveyard (they live in the Graveyard section)
       var filtered = entries.filter(function(e) {
         var statusOk = true
         var typeOk   = true
+        if (e.kind === 'library' && e.item.status === 'graveyard' && activeStatus === 'all') return false
         if (activeStatus !== 'all') {
           if (e.kind === 'library') {
             var w = (e.item.watchedEpisodes || []).length
@@ -11655,6 +12866,13 @@
         yesBtn.addEventListener('click', function() {
           var lib = loadData(KEYS.library, [])
           saveData(KEYS.library, lib.filter(function(x) { return x.id !== item.id }))
+          // Clean up schedule entries
+          var sched = loadData(KEYS.schedule, {})
+          Object.keys(sched).forEach(function(dk) {
+            sched[dk] = sched[dk].filter(function(e) { return e.id !== item.id })
+            if (sched[dk].length === 0) delete sched[dk]
+          })
+          saveData(KEYS.schedule, sched)
           logEvent('Permanently deleted ' + item.title)
           card.style.maxHeight = card.scrollHeight + 'px'
           requestAnimationFrame(function() {

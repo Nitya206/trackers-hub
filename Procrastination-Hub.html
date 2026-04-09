@@ -524,7 +524,7 @@
       background: #fff;
       border-radius: 50%;
       pointer-events: none;
-      z-index: 20001;
+      z-index: 2147483647;
       will-change: transform;
       transform: translate(calc(var(--cx, -300px) - 1.5px), calc(var(--cy, -300px) - 1.5px));
       box-shadow: 0 0 6px #fff, 0 0 14px var(--accent-cool), 0 0 30px rgba(168,85,247,0.3);
@@ -536,7 +536,7 @@
       border: 1px solid rgba(0,229,255,0.4);
       border-radius: 50%;
       pointer-events: none;
-      z-index: 20001;
+      z-index: 2147483647;
       will-change: transform;
       transform: translate(calc(var(--rx, -300px) - 13px), calc(var(--ry, -300px) - 13px)) scale(1);
       transition: transform 0ms, border-color 150ms var(--ease-snap), width 200ms var(--ease-spring), height 200ms var(--ease-spring);
@@ -6755,6 +6755,7 @@
 
   // Wire up global refresh hook immediately (Part 1 calls addTimerMinutes which uses this)
   window.__refreshBudget = function() {
+    if (typeof window.__fixLegacyBudgetTooltips === 'function') window.__fixLegacyBudgetTooltips()
     refreshSidebarBudget()
     // If dashboard is currently rendered, also refresh its arc
     if (typeof window.__refreshDashboardBudget === 'function') {
@@ -7378,7 +7379,7 @@
           <div class="budget-alltime">All-time timed: ${fmtMins(totalTimedMins) || '0m'}</div>
           <div class="budget-edit-row">
             <span class="budget-hours-display" id="dash-arc-hours-disp">${totalHrs}h daily</span>
-            <button class="budget-edit-btn" id="dash-arc-edit-btn" title="Edit weekly budget">✎</button>
+            <button class="budget-edit-btn" id="dash-arc-edit-btn" title="Edit daily budget" aria-label="Edit daily budget">✎</button>
           </div>
         </div>
       </div>`
@@ -7395,8 +7396,14 @@
       }, 60)
     })
 
-    // Edit weekly hours inline
-    document.getElementById('dash-arc-edit-btn')?.addEventListener('click', () => {
+    // Edit daily hours inline
+    var __editBtn = document.getElementById('dash-arc-edit-btn')
+    if (__editBtn) {
+      // Hard guard: kill any stale legacy tooltip text.
+      __editBtn.setAttribute('title', 'Edit daily budget')
+      __editBtn.setAttribute('aria-label', 'Edit daily budget')
+    }
+    __editBtn?.addEventListener('click', () => {
       const dispEl = document.getElementById('dash-arc-hours-disp')
       const editBtn = document.getElementById('dash-arc-edit-btn')
       const currentVal = budget.dailyHours
@@ -7431,6 +7438,19 @@
       if (freshContainer) renderDashboardBudgetArc('dash-budget-body', checkBudgetReset())
     }
   } // end renderDashboardBudgetArc
+
+  // Global legacy-tooltip sanitizer (covers stale rendered nodes from older versions)
+  window.__fixLegacyBudgetTooltips = function() {
+    try {
+      document.querySelectorAll('[title]').forEach(function(el) {
+        var t = (el.getAttribute('title') || '').toLowerCase()
+        if (t.indexOf('weekly budget') !== -1) {
+          el.setAttribute('title', 'Edit daily budget')
+          el.setAttribute('aria-label', 'Edit daily budget')
+        }
+      })
+    } catch (e) {}
+  }
 
   // Expose a lightweight dashboard refresher. Updates the three small stat cards
   // in the dashboard if present, without re-rendering the entire page.
@@ -13391,7 +13411,7 @@
 
       const spark = document.createElement('div')
       spark.style.cssText = `
-        position:fixed; pointer-events:none; z-index:20000;
+        position:fixed; pointer-events:none; z-index:2147483647;
         width:2px; height:2px; border-radius:50%;
         left:${e.clientX}px; top:${e.clientY}px;
         background:${Math.random()>0.5 ? 'var(--accent-cool)' : 'var(--accent-violet)'};

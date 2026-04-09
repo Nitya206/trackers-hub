@@ -539,7 +539,7 @@ header {
         <div class="c-inner">
           <div class="c-head"><div class="c-icon">⚡</div><div class="c-badge">Productivity</div></div>
           <div class="c-title">Procrastination Tracker</div>
-          <!-- Bar now tracks Weekly Budget -->
+          <!-- Bar now tracks Daily Budget -->
 <div class="c-bar">
   <div class="c-fill"></div>
   <span class="c-pct">0% SYNCHRONIZED</span>
@@ -547,7 +547,7 @@ header {
           <div class="c-stats">
     <div class="s-item">
         <span class="s-val">0 / 0h</span>
-        <span class="s-lbl">Weekly Budget</span>
+        <span class="s-lbl">Daily Budget</span>
     </div>
     <div class="s-item">
         <span class="s-val">0</span>
@@ -855,24 +855,47 @@ function syncHubData() {
         }
 
         // --- 2. PROCRASTINATION TRACKER (Productivity) ---
-        const pBudget = JSON.parse(localStorage.getItem('phub_budget') || '{"weeklyHours":10, "usedMinutes":0}');
+        const pBudgetRaw = JSON.parse(localStorage.getItem('phub_budget') || '{"dailyHours":4, "usedMinutes":0}');
+        // Migrate weeklyHours → dailyHours if needed
+        if (pBudgetRaw.weeklyHours !== undefined && pBudgetRaw.dailyHours === undefined) {
+            pBudgetRaw.dailyHours = pBudgetRaw.weeklyHours;
+            delete pBudgetRaw.weeklyHours;
+            localStorage.setItem('phub_budget', JSON.stringify(pBudgetRaw));
+        }
+        // Daily reset check — if the stored resetDate isn't today, zero out usedMinutes
+        const _todayStr = (function() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+        if (pBudgetRaw.resetDate && pBudgetRaw.resetDate !== _todayStr) {
+            pBudgetRaw.usedMinutes = 0;
+            pBudgetRaw.resetDate = _todayStr;
+            localStorage.setItem('phub_budget', JSON.stringify(pBudgetRaw));
+        }
+        const pBudget = pBudgetRaw;
         const pLib = JSON.parse(localStorage.getItem('phub_library') || '[]');
         const pTasks = JSON.parse(localStorage.getItem('phub_tasks') || '[]');
         const pCard = document.querySelector('.card-proc');
 
         if(pCard) {
-            const usedHrs = (parseFloat(pBudget.usedMinutes) || 0) / 60;
-            const totalBudget = parseFloat(pBudget.weeklyHours) || 10;
+            // Daily budget must reflect today's tracked minutes only.
+            const usedMins = parseFloat(pBudget.usedMinutes) || 0;
+            const usedHrs = usedMins / 60;
+            const totalBudget = parseFloat(pBudget.dailyHours) || 4;
             const pPct = Math.min(100, Math.round((usedHrs / totalBudget) * 100));
             
-            const seriesCount = pLib.length;
+            const seriesCount = pLib.filter(i => i.status !== 'graveyard' && i.type !== 'social').length;
             const completedSeries = pLib.filter(i => i.status === 'completed' || (i.totalEpisodes > 0 && i.watchedEpisodes?.length >= i.totalEpisodes)).length;
 
             let totalEntries = 0;
             let watchedEntries = 0;
             pLib.forEach(item => {
-                totalEntries += (parseInt(item.totalEpisodes) || 0);
-                if (Array.isArray(item.watchedEpisodes)) watchedEntries += item.watchedEpisodes.length;
+                if (item.status === 'graveyard') return;
+                if (item.type === 'social') {
+                    const vids = item.socialVideos || [];
+                    totalEntries += vids.length;
+                    watchedEntries += vids.filter(v => v.watched).length;
+                } else {
+                    totalEntries += (parseInt(item.totalEpisodes) || 0);
+                    if (Array.isArray(item.watchedEpisodes)) watchedEntries += item.watchedEpisodes.length;
+                }
             });
             
             // Add Process Queue tasks to entries count
@@ -881,6 +904,9 @@ function syncHubData() {
             const fill = pCard.querySelector('.c-fill');
             fill.style.width = pPct + '%';
             fill.style.background = usedHrs >= totalBudget ? '#ff3b6b' : 'var(--proc)';
+
+            const pctLabel = pCard.querySelector('.c-pct');
+            if (pctLabel) pctLabel.textContent = pPct + '% OF DAILY BUDGET';
             
             const pVals = pCard.querySelectorAll('.s-val');
             const pLbls = pCard.querySelectorAll('.s-lbl');

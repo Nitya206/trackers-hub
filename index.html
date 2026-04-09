@@ -47,7 +47,7 @@ html,body {
 *,*::before,*::after { cursor: none !important; }
 #cursor {
   position:fixed; top:0; left:0;
-  pointer-events:none; z-index:9999;
+  pointer-events:none; z-index:2147483647;
   will-change:transform;
   color:rgba(200,215,255,0.5);
   transition:color .2s ease, opacity .2s ease;
@@ -102,20 +102,20 @@ html,body {
   position:relative;z-index:1;
   min-height:100vh;
   display:flex;flex-direction:column;align-items:center;
-  padding:32px 28px 28px;
+  padding:18px 22px 14px;
   overflow:hidden;
 }
 
 /* ── HEADER ── */
 header {
   text-align:center;
-  margin-bottom:20px;
+  margin-bottom:12px;
   animation:up .9s var(--snap) both;
 }
 .eyebrow {
   display:flex;align-items:center;justify-content:center;gap:16px;
   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.4em;
-  color:var(--muted2);text-transform:uppercase;margin-bottom:14px;
+  color:var(--muted2);text-transform:uppercase;margin-bottom:10px;
 }
 .eyebrow::before,.eyebrow::after{content:'';flex:1;max-width:70px;height:1px;}
 .eyebrow::before{background:linear-gradient(90deg,transparent,var(--border-bright));}
@@ -147,10 +147,10 @@ header {
 }
 .date-pill {
   display:inline-flex;align-items:center;gap:14px;
-  margin-top:12px;
+  margin-top:8px;
   background:rgba(255,255,255,0.04);
   border:1px solid var(--border-bright);
-  border-radius:100px;padding:8px 20px;
+  border-radius:100px;padding:6px 16px;
   font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--muted2);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }
@@ -165,7 +165,7 @@ header {
 .cards-grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:22px;
+  gap:14px;
   width:100%;max-width:1160px;
 }
 
@@ -180,7 +180,7 @@ header {
 .card {
   position:relative;
   border-radius:26px;
-  padding:26px 28px 48px;
+  padding:20px 22px 34px;
   text-decoration:none;
   display:block;
   background:rgba(255,255,255,0.04);
@@ -289,7 +289,7 @@ header {
 
 .c-head {
   display:flex;align-items:flex-start;justify-content:space-between;
-  margin-bottom:22px;
+  margin-bottom:14px;
 }
 .c-icon {
   width:54px;height:54px;border-radius:16px;
@@ -330,7 +330,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 22px; /* This creates the equal distance from the title */
+  margin-top: 14px; /* tighter to keep full page in viewport */
 }
 
 .c-pct {
@@ -351,7 +351,7 @@ header {
 .c-bar {
   height: 4px;            /* Back to thin and sleek */
   background: rgba(255,255,255,0.06);
-  margin: 32px 0 22px 0;  /* Added top margin to make room for the label */
+  margin: 24px 0 14px 0;  /* compact spacing for one-screen layout */
   border-radius: 100px;
   position: relative;
   overflow: visible;      /* Allow the label to float outside the bar */
@@ -371,7 +371,7 @@ header {
 /* ── STATS SECTION (Border Removed for cleaner look) ── */
 .c-stats {
   display: flex;
-  gap: 22px;
+  gap: 16px;
   margin-top: 0; /* Changed from 24px to 0 */
   padding-top: 0px;
   border-top: none !important;
@@ -391,7 +391,7 @@ header {
 
 /* Launch button */
 .c-launch {
-  position:absolute;bottom:28px;right:28px;z-index:3;
+  position:absolute;bottom:18px;right:18px;z-index:3;
   width:42px;height:42px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   border:1px solid var(--border-bright);
@@ -416,7 +416,7 @@ header {
 
 /* ── FOOTER ── */
 .hub-footer {
-  margin-top:auto;padding-top:18px;
+  margin-top:auto;padding-top:10px;
   display:flex;align-items:center;gap:8px;
   animation:up .9s .55s var(--snap) both;
 }

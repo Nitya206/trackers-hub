@@ -2125,6 +2125,13 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .lib-card-personal-rating {
+      font: 600 12px var(--font-mono);
+      color: var(--accent-warm);
+      margin-top: 4px;
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
     .lib-card-header {
       display: flex;
       align-items: center;
@@ -2565,6 +2572,33 @@
       letter-spacing: 0.08em;
       text-shadow: 0 1px 6px rgba(0,200,255,0.08);
     }
+    .detail-personal-rating-wrap {
+      margin: var(--space-3) 0;
+    }
+    .detail-personal-rating-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: none;
+      transition: border-color 150ms;
+    }
+    .detail-personal-rating-btn:hover {
+      border-color: var(--border-bright);
+    }
+    .detail-personal-rating-btn .rating-label {
+      font: 700 11px var(--font-mono);
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+    }
+    .detail-personal-rating-btn .rating-stars {
+      font-size: 14px;
+      color: var(--accent-warm);
+      letter-spacing: 2px;
+    }
     .detail-rating {
       font: 600 16px var(--font-mono);
       color: var(--accent-warm);
@@ -2920,7 +2954,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       cursor: none;
       transition: border-color 150ms var(--ease-snap), background 150ms var(--ease-snap);
       -webkit-user-select: none;
@@ -4208,11 +4242,29 @@
       padding: 1px;
       transition: color 100ms, transform 100ms;
       line-height: 1;
+      position: relative;
     }
     .ep-rate-star:hover { color: var(--accent-warm); transform: scale(1.3); }
     .ep-rate-star.filled { color: var(--accent-warm); text-shadow: 0 0 6px rgba(255,96,64,0.4); }
     .ep-rate-star.clear-btn { color: var(--text-3); font-size: 13px; }
     .ep-rate-star.clear-btn:hover { color: var(--danger); }
+    .ep-rate-star::after {
+      content: attr(data-val);
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: var(--accent-warm);
+      font: 700 11px var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 100ms;
+    }
+    .ep-rate-star:hover::after { opacity: 1; }
 
   /* ════════════════════════════════════════════════════════════════
      SERIES IMMERSIVE THEMES — each series owns its world
@@ -6950,7 +7002,7 @@
             '--border-bright':   'rgba(232,160,32,0.35)',
             '--border-glow':     'rgba(232,160,32,0.55)'
           },
-          moodTags: ['action', 'adventure', 'emotional damage', 'dark', 'brotherhood', 'masterpiece'],
+          moodTags: ['action', 'emotional damage', 'dark'],
           rating: 0,
           ratingIMDb: 9.1,
           ratingMAL: 9.11,
@@ -7107,6 +7159,17 @@
       })
       if (_actChanged) saveData(KEYS.library, _actLib)
       localStorage.setItem('phub_clean_activity_ts_v1', 'true')
+    }
+
+    // Migration: update FMAB moodTags to remove grey tags
+    if (!localStorage.getItem('phub_fmab_tags_v2')) {
+      var _fmabTagLib = loadData(KEYS.library, [])
+      var _fmabEntry = _fmabTagLib.find(function(it) { return it.id === 'fmab-seed-v1' })
+      if (_fmabEntry) {
+        _fmabEntry.moodTags = ['action', 'emotional damage', 'dark']
+        saveData(KEYS.library, _fmabTagLib)
+      }
+      localStorage.setItem('phub_fmab_tags_v2', 'true')
     }
 
 
@@ -8852,6 +8915,7 @@
         (ratingHTML ? '<div class="lib-card-rating">' + ratingHTML + '</div>' : '') +
       '</div>' +
       '<div class="lib-card-title">' + item.title + '</div>' +
+      (item.personalRating ? '<div class="lib-card-personal-rating">\u2605 ' + item.personalRating + '/10</div>' : '') +
       '<div>' +
         '<div class="progress-bar">' +
           '<div class="progress-bar-fill" style="width:' + (item.type==='social'?socialPct:pct) + '%;background:' + accentColor + ';"></div>' +
@@ -10373,6 +10437,12 @@
     heroLeft.innerHTML =
       '<span class="badge" data-type="' + item.type + '">' + item.type + '</span>' +
       '<div class="detail-title">' + item.title + '</div>' +
+      '<div class="detail-personal-rating-wrap">' +
+        '<button class="detail-personal-rating-btn" id="detail-personal-rating-btn" title="Rate this series">' +
+          '<span class="rating-label">MY RATING:</span> ' +
+          '<span class="rating-stars" id="detail-personal-rating-stars">' + (item.personalRating ? '\u2605'.repeat(item.personalRating) + '\u2606'.repeat(10 - item.personalRating) : '\u2606'.repeat(10)) + '</span>' +
+        '</button>' +
+      '</div>' +
       (dualRatingHTML || (item.rating ? '<div class="detail-rating">' + ratingStr + '</div>' : '')) +
       (moodChipsHTML ? '<div class="detail-mood-row">' + moodChipsHTML + '</div>' : '') +
       '<div class="detail-progress-label">' + watched + ' of ' + total + ' ' + unit + ' ' + ((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'read' : 'watched') + '</div>' +
@@ -10607,6 +10677,73 @@
     heroRight.appendChild(gravWrap)
     hero.appendChild(heroRight)
 
+    // -- Personal Rating button listener --
+    setTimeout(function() {
+      var ratingBtn = document.getElementById('detail-personal-rating-btn')
+      if (ratingBtn) {
+        ratingBtn.addEventListener('click', function(e) {
+          e.stopPropagation()
+          // Remove any existing popups
+          document.querySelectorAll('.detail-personal-rating-popup').forEach(function(p) { p.remove() })
+          var popup = document.createElement('div')
+          popup.className = 'detail-personal-rating-popup'
+          popup.style.cssText = 'position:absolute;top:100%;left:0;margin-top:8px;background:rgba(12,10,30,0.95);border:1px solid rgba(130,160,255,0.2);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.8);'
+          for (var s = 1; s <= 10; s++) {
+            var star = document.createElement('button')
+            star.className = 'ep-rate-star' + (item.personalRating >= s ? ' filled' : '')
+            star.textContent = '\u2605'
+            star.dataset.val = s
+            star.addEventListener('click', function(ev) {
+              ev.stopPropagation()
+              var val = parseInt(this.dataset.val)
+              item.personalRating = val
+              var lib = loadData(KEYS.library, [])
+              var it = lib.find(function(i) { return i.id === id })
+              if (it) {
+                it.personalRating = val
+                saveData(KEYS.library, lib)
+              }
+              popup.remove()
+              // Update display
+              var starsEl = document.getElementById('detail-personal-rating-stars')
+              if (starsEl) starsEl.textContent = '\u2605'.repeat(val) + '\u2606'.repeat(10 - val)
+            })
+            popup.appendChild(star)
+          }
+          // Clear button
+          if (item.personalRating) {
+            var clearBtn = document.createElement('button')
+            clearBtn.className = 'ep-rate-star clear-btn'
+            clearBtn.textContent = '\u2715'
+            clearBtn.title = 'Clear rating'
+            clearBtn.addEventListener('click', function(ev) {
+              ev.stopPropagation()
+              item.personalRating = 0
+              var lib = loadData(KEYS.library, [])
+              var it = lib.find(function(i) { return i.id === id })
+              if (it) {
+                it.personalRating = 0
+                saveData(KEYS.library, lib)
+              }
+              popup.remove()
+              var starsEl = document.getElementById('detail-personal-rating-stars')
+              if (starsEl) starsEl.textContent = '\u2606'.repeat(10)
+            })
+            popup.appendChild(clearBtn)
+          }
+          ratingBtn.parentElement.style.position = 'relative'
+          ratingBtn.parentElement.appendChild(popup)
+          // Close on outside click
+          setTimeout(function() {
+            document.addEventListener('click', function closePopup() {
+              popup.remove()
+              document.removeEventListener('click', closePopup)
+            }, { once: true })
+          }, 10)
+        })
+      }
+    }, 0)
+
     // -- Timer button listener --
     setTimeout(function() {
       var btn = document.getElementById('detail-timer-btn')
@@ -10688,7 +10825,7 @@
       var count = selectedEps.length
       selectCountBadge.textContent = count + ' SELECTED'
       selectCountBadge.style.display = count > 0 ? 'inline' : 'none'
-      updateSelectBar(true, selectedEps, id, item.title, selectBtn, selectCountBadge)
+      updateSelectBar(true, selectedEps, id, item.title, selectBtn, selectCountBadge, startTimer, null)
       contentArea.innerHTML = ''
       if (hasSeasonsData) {
         var a = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
@@ -10758,7 +10895,7 @@
         bulkSelectRow.style.display = 'none'
       }
       selectCountBadge.style.display = 'none'
-      updateSelectBar(selectMode, selectedEps, id, item.title, selectBtn, selectCountBadge)
+      updateSelectBar(selectMode, selectedEps, id, item.title, selectBtn, selectCountBadge, startTimer, null)
       // Re-render content area to apply/remove select-mode class on tiles
       contentArea.innerHTML = ''
       if (hasSeasonsData) {
@@ -10810,7 +10947,7 @@
           var c = selectedEps.length
           selectCountBadge.textContent = c + ' SELECTED'
           selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
-          updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge)
+          updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, season)
           container.innerHTML = ''
           renderSeasonTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
           return
@@ -10865,7 +11002,7 @@
     if (!season) return
 
     // Episode grid
-    var gridWrap = buildFilmstrip(item, season.episodes || [], activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer)
+    var gridWrap = buildFilmstrip(item, season.episodes || [], activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, season)
     container.appendChild(gridWrap)
 
     // Season panel
@@ -10997,7 +11134,7 @@
             var c = selectedEps.length
             selectCountBadge.textContent = c + ' SELECTED'
             selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
-            updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge)
+            updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, null)
             container.innerHTML = ''
             renderArcTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
             return
@@ -11056,7 +11193,7 @@
     for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) {
       chapters.push({ number: n, title: 'Ch. ' + n, rating: 0, isChapter: true })
     }
-    var gridWrap = buildFilmstrip(item, chapters, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer)
+    var gridWrap = buildFilmstrip(item, chapters, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, null)
     container.appendChild(gridWrap)
 
     // Reuse exact season panel: mark all watched + stats cards
@@ -11104,7 +11241,7 @@
     for (var n = 1; n <= item.totalEpisodes; n++) {
       episodes.push({ number: n, title: 'Episode ' + n, rating: 0 })
     }
-    var gridWrap = buildFilmstrip(item, episodes, null, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer)
+    var gridWrap = buildFilmstrip(item, episodes, null, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, null)
     container.appendChild(gridWrap)
   }
 
@@ -11120,7 +11257,7 @@
      PART 4: FILMSTRIP + EPISODE GRID BUILDER
      Returns the full filmstrip wrapper DOM element.
   ----------------------------------------------------------------- */
-  function buildFilmstrip(item, episodes, seasonId, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer) {
+  function buildFilmstrip(item, episodes, seasonId, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, seasonInfo) {
     var filmstrip = document.createElement('div')
     filmstrip.className = 'detail-filmstrip'
 
@@ -11175,13 +11312,7 @@
         for (var s = 1; s <= 10; s++) {
           var star = document.createElement('button')
           star.className = 'ep-rate-star' + (ep.rating >= s ? ' filled' : '')
-          star.textContent = s <= 5 ? '\u2605' : (s <= 10 ? String(s) : '')
-          // Use numbers 6-10 as text for compact display
-          if (s > 5) {
-            star.style.fontSize = '10px'
-            star.style.fontFamily = 'var(--font-mono)'
-            star.className = 'ep-rate-star' + (ep.rating >= s ? ' filled' : '')
-          }
+          star.textContent = '\u2605'
           star.dataset.val = s
           star.addEventListener('click', function(ev) {
             ev.stopPropagation()
@@ -11257,6 +11388,7 @@
     // Click: select mode vs toggle watched
     tile.addEventListener('click', function(e) {
       if (e.target.classList.contains('ep-timer-btn')) return
+      if (e.target.classList.contains('ep-rate-btn')) return
 
       if (selectMode) {
         tile.classList.toggle('tile-selected')
@@ -11266,7 +11398,7 @@
         var n = selectedEps.length
         selectCountBadge.textContent = n + ' SELECTED'
         selectCountBadge.style.display = n > 0 ? 'inline' : 'none'
-        updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge)
+        updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, seasonInfo)
         return
       }
 
@@ -11662,7 +11794,7 @@
   /* -----------------------------------------------------------------
      PART 4: MULTI-SELECT ACTION BAR
   ----------------------------------------------------------------- */
-  function updateSelectBar(active, selectedEps, itemId, title, selectBtn, selectCountBadge) {
+  function updateSelectBar(active, selectedEps, itemId, title, selectBtn, selectCountBadge, startTimer, seasonInfo) {
     var existing = document.getElementById('detail-select-bar')
     if (!active) {
       if (existing) existing.remove()
@@ -11681,12 +11813,24 @@
     var DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN']
     var todayIdx  = (new Date().getDay() + 6) % 7
 
+    // Check if whole season is selected
+    var isWholeSeason = false
+    var seasonName = ''
+    if (seasonInfo && seasonInfo.episodes) {
+      var seasonEpNums = seasonInfo.episodes.map(function(e) { return e.number })
+      var allSelected = seasonEpNums.every(function(num) { return selectedEps.includes(num) })
+      if (allSelected && seasonEpNums.length === n) {
+        isWholeSeason = true
+        seasonName = seasonInfo.name || 'Season'
+      }
+    }
+
     // Build bar: count + schedule btn + clear
     bar.innerHTML = ''
 
     var countEl = document.createElement('div')
     countEl.className = 'detail-select-count'
-    countEl.textContent = n + ' ep' + (n !== 1 ? 's' : '') + ' selected'
+    countEl.textContent = isWholeSeason ? seasonName + ' selected' : (n + ' ep' + (n !== 1 ? 's' : '') + ' selected')
     bar.appendChild(countEl)
 
     if (n > 0) {
@@ -11723,6 +11867,35 @@
         })
       })
       bar.appendChild(recurBtn)
+
+      var sessionBtn = document.createElement('button')
+      sessionBtn.className = 'btn-primary'
+      sessionBtn.style.cssText = 'font-size:11px;padding:7px 16px;background:var(--accent-warm);border-color:var(--accent-warm);'
+      sessionBtn.textContent = '▶ Start Session'
+      sessionBtn.addEventListener('click', function() {
+        var sorted = selectedEps.slice().sort(function(a,b){return a-b})
+        // Format episode label
+        var epLabel = ''
+        if (isWholeSeason) {
+          epLabel = seasonName
+        } else if (sorted.length === 1) {
+          epLabel = 'Ep. ' + sorted[0]
+        } else if (sorted.length > 5) {
+          epLabel = 'Eps ' + sorted[0] + '-' + sorted[sorted.length - 1]
+        } else {
+          epLabel = 'Eps ' + sorted.join(', ')
+        }
+        // Find the startTimer function from parent scope
+        if (typeof startTimer === 'function') {
+          startTimer(epLabel)
+        }
+        bar.innerHTML = '<div style="font:600 13px var(--font-mono);color:var(--success);flex:1;text-align:center;">✓ SESSION STARTED</div>'
+        setTimeout(function() { bar.classList.remove('visible'); setTimeout(function() { bar.remove() }, 350) }, 1500)
+        if (selectBtn) { selectBtn.textContent = 'SELECT'; selectBtn.className = 'btn-ghost' }
+        if (selectCountBadge) selectCountBadge.style.display = 'none'
+        document.querySelectorAll('.ep-tile.tile-selected').forEach(function(t) { t.classList.remove('tile-selected') })
+      })
+      bar.appendChild(sessionBtn)
     }
 
     var clearBtn = document.createElement('button')

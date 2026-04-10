@@ -286,6 +286,8 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       cursor: none;
+      white-space: nowrap;
+      flex-shrink: 0;
       
       transition: all 200ms var(--ease-snap);
       -webkit-user-select: none;
@@ -1815,8 +1817,167 @@
       z-index: 50;
       padding: 0 0 var(--space-4) 0;
     }
-    .lib-topbar-row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+    .lib-topbar-row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); flex-wrap: nowrap; gap: var(--space-2); }
     .lib-topbar-row1-left { display: flex; align-items: center; gap: var(--space-3); }
+    .lib-topbar-row1-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .lib-order-bar {
+      position: relative;
+      display: inline-flex;
+      align-items: stretch;
+      flex: 0 1 260px;
+      min-width: 176px;
+      max-width: 280px;
+      align-self: center;
+      background: rgba(80,100,255,0.09);
+      border: 1px solid rgba(130,160,255,0.15);
+      border-radius: var(--radius-pill);
+      overflow: visible;
+      transition: border-color 200ms var(--ease-snap), box-shadow 200ms var(--ease-snap), background 200ms var(--ease-snap);
+    }
+    .lib-order-bar:hover {
+      border-color: rgba(0,229,255,0.35);
+      background: rgba(0,229,255,0.08);
+    }
+    .lib-order-bar.is-open {
+      border-color: rgba(0,229,255,0.45);
+      box-shadow: 0 0 20px rgba(0,229,255,0.14), inset 0 0 20px rgba(0,229,255,0.04);
+    }
+    .lib-order-bar-prefix {
+      flex-shrink: 0;
+      padding: 0 10px 0 14px;
+      display: flex;
+      align-items: center;
+      font: 700 10px var(--font-mono);
+      color: var(--accent-cool);
+      letter-spacing: 0.12em;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      opacity: 0.95;
+    }
+    .lib-order-trigger-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: stretch;
+    }
+    .lib-order-trigger {
+      flex: 1;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0;
+      padding: 8px 14px 8px 12px;
+      border: none;
+      border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+      background: transparent;
+      color: var(--text-2);
+      font: 500 11px var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: none;
+      transition: color 150ms var(--ease-snap);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .lib-order-trigger:hover { color: var(--text-1); }
+    .lib-order-trigger:focus { outline: none; }
+    .lib-order-trigger:focus-visible {
+      box-shadow: inset 0 0 0 2px rgba(0,229,255,0.35);
+    }
+    .lib-order-trigger-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .lib-order-trigger-caret {
+      flex-shrink: 0;
+      font-size: 9px;
+      line-height: 1;
+      color: var(--text-3);
+      opacity: 0.9;
+      transition: transform 180ms var(--ease-snap);
+    }
+    .lib-order-bar.is-open .lib-order-trigger-caret {
+      transform: rotate(-180deg);
+      color: var(--accent-cool);
+    }
+    .lib-sort-panel {
+      position: fixed;
+      z-index: 10050;
+      margin: 0;
+      padding: 6px;
+      box-sizing: border-box;
+      background: linear-gradient(165deg, rgba(16,16,32,0.94) 0%, rgba(8,8,20,0.97) 100%);
+      border: 1px solid rgba(0,200,255,0.22);
+      border-radius: var(--radius-md);
+      box-shadow:
+        0 16px 48px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.05) inset,
+        0 0 28px rgba(0,229,255,0.1);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      max-height: min(58vh, 400px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity 160ms var(--ease-snap), transform 160ms var(--ease-snap), visibility 160ms;
+    }
+    .lib-sort-panel.is-open {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .lib-sort-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 11px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-2);
+      font: 500 10px var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: none;
+      text-align: left;
+      transition: background 120ms var(--ease-snap), color 120ms var(--ease-snap);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .lib-sort-option:hover {
+      background: rgba(0,200,255,0.1);
+      color: var(--text-1);
+    }
+    .lib-sort-option.is-selected {
+      color: var(--accent-cool);
+      background: rgba(0,200,255,0.07);
+    }
+    .lib-sort-option-label { flex: 1; min-width: 0; line-height: 1.35; }
+    .lib-sort-check {
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--accent-cool);
+      opacity: 0;
+      width: 1.1em;
+      text-align: center;
+    }
+    .lib-sort-option.is-selected .lib-sort-check { opacity: 1; }
     .lib-count-badge {
       font: 600 12px var(--font-mono);
       color: var(--text-3);
@@ -5025,6 +5186,13 @@
     .lib-search-wrap { flex: none; width: 100%; }
     .lib-quickadd-wrap { flex: none; width: 100%; }
 
+
+    .lib-order-bar {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+    }
+
     /* Modal: full width on mobile */
     .modal-box {
       width: calc(100% - 24px);
@@ -5168,7 +5336,8 @@
     tasksDefaultDurationMin: 45,
     overviewDateLookaheadDays: 14,
     quickAddPlaceholder: 'One Piece | anime | 1122 eps',
-    dashboardSuggestionMode: 'oldest' // oldest | newest | random
+    dashboardSuggestionMode: 'oldest', // oldest | newest | random
+    librarySortMode: 'added-desc'
   }
 
   function mergeSettingsWithDefaults(raw) {
@@ -5221,6 +5390,7 @@
       scheduledDay: null,   // "Monday"…"Sunday" or null
       status: string,       // "watching"|"completed"|"graveyard"
       addedDate: string,    // ISO date "YYYY-MM-DD"
+      lastActivityAt: string, // ISO timestamp — updated when watch/read progress changes
       graveyardDate: null,  // ISO date when dropped, or null
       graveyardNote: "",    // optional reason for dropping
       timerMinutes: 0,      // total minutes timed in this app
@@ -5344,8 +5514,16 @@
     // Defensive migration for legacy library entries.
     var lib = loadData(KEYS.library, [])
     var changed = false
+    var seenIds = Object.create(null)
     lib.forEach(function(item) {
       if (!item || typeof item !== 'object') return
+      if (!item.id || seenIds[item.id]) {
+        var newId
+        do { newId = generateId(item.title || 'content') } while (seenIds[newId])
+        item.id = newId
+        changed = true
+      }
+      seenIds[item.id] = true
       if (!Array.isArray(item.seasons)) { item.seasons = []; changed = true }
       if (!Array.isArray(item.watchedEpisodes)) { item.watchedEpisodes = []; changed = true }
       ;(item.seasons || []).forEach(function(s, sidx) {
@@ -5360,8 +5538,251 @@
       }
       if (!item.status) { item.status = 'watching'; changed = true }
       if (!item.addedDate) { item.addedDate = new Date().toISOString().split('T')[0]; changed = true }
+      // Only set lastActivityAt if item has been watched
+      if (!item.lastActivityAt) {
+        var hasWatched = false
+        if (item.type === 'social') {
+          hasWatched = (item.socialVideos || []).some(function(v) { return v.watched })
+        } else {
+          hasWatched = (item.watchedEpisodes || []).length > 0
+        }
+        if (hasWatched) {
+          item.lastActivityAt = new Date((item.addedDate || '1970-01-01') + 'T12:00:00').toISOString()
+          changed = true
+        }
+      }
     })
     if (changed) saveData(KEYS.library, lib)
+  }
+
+  function touchLibraryItemActivity(it) {
+    if (!it || typeof it !== 'object') return
+    it.lastActivityAt = new Date().toISOString()
+  }
+
+  function libraryRemainingTodo(item) {
+    if (!item || item.status === 'graveyard') return -1
+    if (item.type === 'social') {
+      var v = item.socialVideos || []
+      return Math.max(0, v.length - v.filter(function(x) { return x.watched }).length)
+    }
+    var total = item.totalEpisodes || 0
+    if (!total && Array.isArray(item.seasons) && item.seasons.length) {
+      total = item.seasons.reduce(function(acc, s) { return acc + ((s.episodes || []).length) }, 0)
+    }
+    var w = (item.watchedEpisodes || []).length
+    return Math.max(0, total - w)
+  }
+
+  function libraryWatchedCount(item) {
+    if (!item) return 0
+    if (item.type === 'social') {
+      var v = item.socialVideos || []
+      return v.filter(function(x) { return x.watched }).length
+    }
+    return (item.watchedEpisodes || []).length
+  }
+
+  function libraryTotalUnits(item) {
+    if (!item) return 0
+    if (item.type === 'social') return (item.socialVideos || []).length
+    var t = item.totalEpisodes || 0
+    if (!t && Array.isArray(item.seasons) && item.seasons.length) {
+      t = item.seasons.reduce(function(acc, s) { return acc + ((s.episodes || []).length) }, 0)
+    }
+    return t
+  }
+
+  function libraryProgressRatio(item) {
+    if (!item || item.status === 'graveyard') return -1
+    var tot = libraryTotalUnits(item)
+    var w = libraryWatchedCount(item)
+    if (tot <= 0) return w > 0 ? 1 : 0
+    return w / tot
+  }
+
+  function libraryRatingSortKey(item) {
+    if (!item) return 0
+    var r = Number(item.rating) || 0
+    if (item.ratingIMDb) r = Math.max(r, Number(item.ratingIMDb) || 0)
+    if (item.ratingMAL) {
+      var m = Number(item.ratingMAL) || 0
+      r = Math.max(r, m > 5 ? m : m * 2)
+    }
+    return r
+  }
+
+  function libraryAddedDateMs(item) {
+    var d = item && item.addedDate
+    if (!d || typeof d !== 'string') return 0
+    var m = new Date(d + 'T12:00:00').getTime()
+    return isNaN(m) ? 0 : m
+  }
+
+  function libraryActivityTs(item) {
+    if (item.lastActivityAt) {
+      var t = new Date(item.lastActivityAt).getTime()
+      if (!isNaN(t)) return t
+    }
+    // Check if item has any watched content
+    var hasActivity = false
+    if (item.type === 'social') {
+      hasActivity = (item.socialVideos || []).some(function(v) { return v.watched })
+    } else {
+      hasActivity = (item.watchedEpisodes || []).length > 0
+    }
+    // If never watched, return 0 (will sort to bottom)
+    // Otherwise use addedDate as fallback
+    return hasActivity ? libraryAddedDateMs(item) : 0
+  }
+
+  var LIBRARY_SORT_OPTIONS = [
+    { value: 'activity',         label: 'Latest watching' },
+    { value: 'added-desc',      label: 'Newest added' },
+    { value: 'added-asc',       label: 'Oldest added' },
+    { value: 'most-remaining',  label: 'Most left to do' },
+    { value: 'least-remaining', label: 'Least left to do' },
+    { value: 'most-progress',   label: 'Most progress' },
+    { value: 'least-progress',  label: 'Least progress' },
+    { value: 'title-asc',       label: 'Title A–Z' },
+    { value: 'title-desc',      label: 'Title Z–A' },
+    { value: 'timer-desc',      label: 'Most time logged' },
+    { value: 'rating-desc',     label: 'Highest rated' }
+  ]
+  var LIBRARY_SORT_MODES = LIBRARY_SORT_OPTIONS.reduce(function(acc, o) { acc[o.value] = 1; return acc }, {})
+
+  function normalizeLibrarySortMode(mode) {
+    return LIBRARY_SORT_MODES[mode] ? mode : 'added-desc'
+  }
+
+  function librarySortOptionLabel(mode) {
+    mode = normalizeLibrarySortMode(mode)
+    for (var i = 0; i < LIBRARY_SORT_OPTIONS.length; i++) {
+      if (LIBRARY_SORT_OPTIONS[i].value === mode) return LIBRARY_SORT_OPTIONS[i].label
+    }
+    return 'Newest added'
+  }
+
+  function sortLibraryItems(items, mode) {
+    mode = normalizeLibrarySortMode(mode)
+    var arr = (items || []).filter(function(x) { return x && typeof x === 'object' }).slice()
+    function cmpAddedDesc(a, b) {
+      var ma = libraryAddedDateMs(a)
+      var mb = libraryAddedDateMs(b)
+      if (mb !== ma) return mb - ma
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    function cmpRemainingAsc(a, b) {
+      var ra = libraryRemainingTodo(a)
+      var rb = libraryRemainingTodo(b)
+      if (ra < 0 && rb < 0) return (a.title || '').localeCompare(b.title || '')
+      if (ra < 0) return 1
+      if (rb < 0) return -1
+      if (ra !== rb) return ra - rb
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    if (mode === 'added-asc') {
+      arr.sort(function(a, b) { return -cmpAddedDesc(a, b) })
+    } else if (mode === 'most-remaining') {
+      arr.sort(function(a, b) {
+        var ra = libraryRemainingTodo(a)
+        var rb = libraryRemainingTodo(b)
+        if (ra < 0 && rb < 0) return (a.title || '').localeCompare(b.title || '')
+        if (ra < 0) return 1
+        if (rb < 0) return -1
+        if (rb !== ra) return rb - ra
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    } else if (mode === 'least-remaining') {
+      arr.sort(cmpRemainingAsc)
+    } else if (mode === 'activity') {
+      arr.sort(function(a, b) {
+        var ta = libraryActivityTs(a)
+        var tb = libraryActivityTs(b)
+        if (tb !== ta) return tb - ta
+        return cmpAddedDesc(a, b)
+      })
+    } else if (mode === 'most-progress') {
+      arr.sort(function(a, b) {
+        var pa = libraryProgressRatio(a)
+        var pb = libraryProgressRatio(b)
+        if (pa < 0 && pb < 0) return (a.title || '').localeCompare(b.title || '')
+        if (pa < 0) return 1
+        if (pb < 0) return -1
+        if (pb !== pa) return pb - pa
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    } else if (mode === 'least-progress') {
+      arr.sort(function(a, b) {
+        var pa = libraryProgressRatio(a)
+        var pb = libraryProgressRatio(b)
+        if (pa < 0 && pb < 0) return (a.title || '').localeCompare(b.title || '')
+        if (pa < 0) return 1
+        if (pb < 0) return -1
+        if (pa !== pb) return pa - pb
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    } else if (mode === 'title-asc') {
+      arr.sort(function(a, b) { return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }) })
+    } else if (mode === 'title-desc') {
+      arr.sort(function(a, b) { return (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base' }) })
+    } else if (mode === 'timer-desc') {
+      arr.sort(function(a, b) {
+        var ta = (a.timerMinutes || 0)
+        var tb = (b.timerMinutes || 0)
+        if (tb !== ta) return tb - ta
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    } else if (mode === 'rating-desc') {
+      arr.sort(function(a, b) {
+        var ra = libraryRatingSortKey(a)
+        var rb = libraryRatingSortKey(b)
+        if (rb !== ra) return rb - ra
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    } else {
+      arr.sort(cmpAddedDesc)
+    }
+    return arr
+  }
+
+  function getLibraryCardItemId(card) {
+    if (!card) return ''
+    var id = card.dataset.itemId || ''
+    if (id) return id
+    var btn = card.querySelector('.lib-open-btn')
+    return (btn && btn.dataset.itemId) ? btn.dataset.itemId : ''
+  }
+
+  function orderLibraryCardsInGrid(gridEl, mode) {
+    if (!gridEl) return
+    mode = normalizeLibrarySortMode(mode)
+    var noRes = gridEl.querySelector('#lib-no-results')
+    var empty = gridEl.querySelector('.lib-empty-state')
+    var sorted = sortLibraryItems(loadData(KEYS.library, []), mode)
+    var rank = Object.create(null)
+    sorted.forEach(function(it, i) {
+      if (it && it.id) rank[it.id] = i
+    })
+    var cards = Array.prototype.slice.call(gridEl.querySelectorAll('.library-card'))
+    cards.forEach(function(c) {
+      var sid = getLibraryCardItemId(c)
+      if (sid) c.dataset.itemId = sid
+    })
+    cards.sort(function(ca, cb) {
+      var ida = getLibraryCardItemId(ca)
+      var idb = getLibraryCardItemId(cb)
+      var ra = rank[ida]
+      var rb = rank[idb]
+      var unk = 1e9
+      if (ra === undefined) ra = unk
+      if (rb === undefined) rb = unk
+      if (ra !== rb) return ra - rb
+      return (ca.dataset.title || '').localeCompare(cb.dataset.title || '')
+    })
+    if (noRes) gridEl.appendChild(noRes)
+    if (empty) gridEl.appendChild(empty)
+    cards.forEach(function(c) { gridEl.appendChild(c) })
   }
 
   /* ─────────────────────────────────────────────────────────────────
@@ -6505,6 +6926,138 @@
       }
       localStorage.setItem('phub_added_perfect_blue_v1', 'true')
     }
+    // Migration: inject Fullmetal Alchemist: Brotherhood if not already present
+    if (!localStorage.getItem('phub_added_fmab_v1')) {
+      var _fmabLib = loadData(KEYS.library, [])
+      var _hasFMAB = _fmabLib.some(function(it) { return it.id === 'fmab-seed-v1' })
+      if (!_hasFMAB) {
+        _fmabLib.unshift({
+          id: 'fmab-seed-v1',
+          title: 'Fullmetal Alchemist: Brotherhood',
+          type: 'anime',
+          totalEpisodes: 64,
+          watchedEpisodes: [],
+          theme: 'fmab-alchemy',
+          themeClass: 'theme-fmab',
+          themeStyles: {
+            '--accent-cool':     '#e8a020',
+            '--accent-warm':     '#c0392b',
+            '--accent-cool-dim': 'rgba(232,160,32,0.18)',
+            '--surface':         'rgba(232,160,32,0.04)',
+            '--surface-2':       'rgba(232,160,32,0.08)',
+            '--surface-3':       'rgba(232,160,32,0.13)',
+            '--border':          'rgba(232,160,32,0.16)',
+            '--border-bright':   'rgba(232,160,32,0.35)',
+            '--border-glow':     'rgba(232,160,32,0.55)'
+          },
+          moodTags: ['action', 'adventure', 'emotional damage', 'dark', 'brotherhood', 'masterpiece'],
+          rating: 0,
+          ratingIMDb: 9.1,
+          ratingMAL: 9.11,
+          seasons: [
+            {
+              id: 's1', name: 'Season 1 — Ishval & Philosopher\'s Stone',
+              episodes: [
+                { number: 1,  title: 'Fullmetal Alchemist',                      ratingIMDb: 7.6, ratingMAL: 3.9 },
+                { number: 2,  title: 'The First Day',                            ratingIMDb: 8.4, ratingMAL: 4.1 },
+                { number: 3,  title: 'City of Heresy',                           ratingIMDb: 7.7, ratingMAL: 4.0 },
+                { number: 4,  title: 'An Alchemist\'s Anguish',                  ratingIMDb: 9.2, ratingMAL: 4.3 },
+                { number: 5,  title: 'Rain of Sorrows',                          ratingIMDb: 8.2, ratingMAL: 4.2 },
+                { number: 6,  title: 'Road of Hope',                             ratingIMDb: 7.6, ratingMAL: 4.1 },
+                { number: 7,  title: 'Hidden Truths',                            ratingIMDb: 7.6, ratingMAL: 4.1 },
+                { number: 8,  title: 'The Fifth Laboratory',                     ratingIMDb: 8.0, ratingMAL: 4.2 },
+                { number: 9,  title: 'Created Feelings',                         ratingIMDb: 7.9, ratingMAL: 4.2 },
+                { number: 10, title: 'Separate Destinations',                    ratingIMDb: 8.3, ratingMAL: 4.4 },
+                { number: 11, title: 'Miracle at Rush Valley',                   ratingIMDb: 7.2, ratingMAL: 4.0 },
+                { number: 12, title: 'One is All, All is One',                   ratingIMDb: 8.3, ratingMAL: 4.2 },
+                { number: 13, title: 'Beasts of Dublith',                        ratingIMDb: 8.1, ratingMAL: 4.1 },
+                { number: 14, title: 'Those Who Lurk Underground',               ratingIMDb: 9.0, ratingMAL: 4.4 },
+                { number: 15, title: 'Envoy from the East',                      ratingIMDb: 9.0, ratingMAL: 4.1 }
+              ]
+            },
+            {
+              id: 's2', name: 'Season 2 — Briggs & The North',
+              episodes: [
+                { number: 16, title: 'Footsteps of a Comrade-in-Arms',           ratingIMDb: 7.5, ratingMAL: 4.1 },
+                { number: 17, title: 'Cold Flame',                               ratingIMDb: 7.9, ratingMAL: 4.2 },
+                { number: 18, title: 'The Arrogant Palm of a Small Human',       ratingIMDb: 8.2, ratingMAL: 4.2 },
+                { number: 19, title: 'Death of the Undying',                     ratingIMDb: 9.6, ratingMAL: 4.6 },
+                { number: 20, title: 'Father Before the Grave',                  ratingIMDb: 8.3, ratingMAL: 4.3 },
+                { number: 21, title: 'Advance of the Fool',                      ratingIMDb: 8.2, ratingMAL: 4.3 },
+                { number: 22, title: 'Backs in the Distance',                    ratingIMDb: 9.0, ratingMAL: 4.4 },
+                { number: 23, title: 'Girl on the Battlefield',                  ratingIMDb: 8.6, ratingMAL: 4.4 },
+                { number: 24, title: 'Inside the Belly',                         ratingIMDb: 8.6, ratingMAL: 4.3 },
+                { number: 25, title: 'Doorway of Darkness',                      ratingIMDb: 8.5, ratingMAL: 4.3 },
+                { number: 26, title: 'Reunion',                                  ratingIMDb: 8.5, ratingMAL: 4.6 },
+                { number: 27, title: 'Interlude Party',                          ratingIMDb: 6.4, ratingMAL: 3.3 },
+                { number: 28, title: 'Father',                                   ratingIMDb: 8.5, ratingMAL: 4.4 },
+                { number: 29, title: 'Struggle of the Fool',                     ratingIMDb: 7.6, ratingMAL: 4.1 },
+                { number: 30, title: 'The Ishvalan War of Extermination',        ratingIMDb: 7.4, ratingMAL: 4.0 }
+              ]
+            },
+            {
+              id: 's3', name: 'Season 3 — Promised Day Approaches',
+              episodes: [
+                { number: 31, title: 'The 520 Cens Promise',                     ratingIMDb: 7.7, ratingMAL: 4.2 },
+                { number: 32, title: "The Führer's Son",                         ratingIMDb: 7.7, ratingMAL: 4.0 },
+                { number: 33, title: 'The Northern Wall of Briggs',              ratingIMDb: 7.7, ratingMAL: 4.2 },
+                { number: 34, title: 'Ice Queen',                                ratingIMDb: 7.4, ratingMAL: 4.1 },
+                { number: 35, title: 'The Shape of This Country',                ratingIMDb: 7.7, ratingMAL: 4.3 },
+                { number: 36, title: 'Family Portrait',                          ratingIMDb: 8.2, ratingMAL: 4.4 },
+                { number: 37, title: 'The First Homunculus',                     ratingIMDb: 8.3, ratingMAL: 4.3 },
+                { number: 38, title: 'Conflict at Baschool',                     ratingIMDb: 8.2, ratingMAL: 4.2 },
+                { number: 39, title: 'Daydream',                                 ratingIMDb: 7.8, ratingMAL: 4.2 },
+                { number: 40, title: 'Homunculus (The Dwarf in the Flask)',      ratingIMDb: 7.9, ratingMAL: 4.5 },
+                { number: 41, title: 'The Abyss',                               ratingIMDb: 9.2, ratingMAL: 4.4 },
+                { number: 42, title: 'Signs of a Counteroffensive',              ratingIMDb: 8.5, ratingMAL: 4.3 },
+                { number: 43, title: 'Bite of the Ant',                          ratingIMDb: 8.6, ratingMAL: 4.4 },
+                { number: 44, title: 'Revving at Full Throttle',                 ratingIMDb: 8.1, ratingMAL: 4.4 },
+                { number: 45, title: 'The Promised Day',                         ratingIMDb: 8.6, ratingMAL: 4.5 }
+              ]
+            },
+            {
+              id: 's4', name: 'Season 4 — The Promised Day & Finale',
+              episodes: [
+                { number: 46, title: 'Looming Shadows',                          ratingIMDb: 8.7, ratingMAL: 4.4 },
+                { number: 47, title: 'Emissary of Darkness',                     ratingIMDb: 8.3, ratingMAL: 4.5 },
+                { number: 48, title: 'The Oath in the Tunnel',                   ratingIMDb: 8.6, ratingMAL: 4.4 },
+                { number: 49, title: 'Filial Affection',                         ratingIMDb: 8.8, ratingMAL: 4.4 },
+                { number: 50, title: 'Upheaval in Central',                      ratingIMDb: 8.8, ratingMAL: 4.5 },
+                { number: 51, title: 'The Immortal Legion',                      ratingIMDb: 9.3, ratingMAL: 4.5 },
+                { number: 52, title: 'Combined Strength',                        ratingIMDb: 9.5, ratingMAL: 4.5 },
+                { number: 53, title: 'Flame of Vengeance',                       ratingIMDb: 8.6, ratingMAL: 4.6 },
+                { number: 54, title: 'Beyond the Inferno',                       ratingIMDb: 8.8, ratingMAL: 4.6 },
+                { number: 55, title: "The Adults' Way of Life",                  ratingIMDb: 8.6, ratingMAL: 4.5 },
+                { number: 56, title: 'The Return of the Führer',                 ratingIMDb: 8.8, ratingMAL: 4.5 },
+                { number: 57, title: 'Eternal Leave',                            ratingIMDb: 9.2, ratingMAL: 4.6 },
+                { number: 58, title: 'Sacrifices',                               ratingIMDb: 8.9, ratingMAL: 4.6 },
+                { number: 59, title: 'Lost Light',                               ratingIMDb: 9.1, ratingMAL: 4.6 },
+                { number: 60, title: 'Eye of Heaven, Gateway of Earth',          ratingIMDb: 9.4, ratingMAL: 4.6 },
+                { number: 61, title: 'He Who Would Swallow God',                 ratingIMDb: 9.3, ratingMAL: 4.5 },
+                { number: 62, title: 'A Fierce Counterattack',                   ratingIMDb: 9.6, ratingMAL: 4.6 },
+                { number: 63, title: 'The Other Side of the Gateway',            ratingIMDb: 9.7, ratingMAL: 4.7 },
+                { number: 64, title: "Journey's End",                            ratingIMDb: 9.4, ratingMAL: 4.5 }
+              ]
+            }
+          ],
+          arcs: [
+            { id: 'arc1', name: 'Opening & Philosopher\'s Stone', chapterStart: 1,  chapterEnd: 10 },
+            { id: 'arc2', name: 'Homunculus Reveal',              chapterStart: 11, chapterEnd: 20 },
+            { id: 'arc3', name: 'Briggs Mountain & North',        chapterStart: 21, chapterEnd: 35 },
+            { id: 'arc4', name: 'Promised Day',                   chapterStart: 36, chapterEnd: 50 },
+            { id: 'arc5', name: 'Final Battle & Epilogue',        chapterStart: 51, chapterEnd: 64 }
+          ],
+          scheduledDay: null,
+          status: 'watching',
+          addedDate: new Date().toISOString().split('T')[0],
+          graveyardDate: null, graveyardNote: '',
+          timerMinutes: 0, notes: ''
+        })
+        saveData(KEYS.library, _fmabLib)
+        logEvent('Fullmetal Alchemist: Brotherhood added to library')
+      }
+      localStorage.setItem('phub_added_fmab_v1', 'true')
+    }
     // Migration v2: force-patch Perfect Blue themeStyles + cardAccent on all cached entries
     if (!localStorage.getItem('phub_pb_patch_v4')) {
       var _pbLibV2 = loadData(KEYS.library, [])
@@ -6531,6 +7084,29 @@
         saveData(KEYS.library, _pbLibV2)
       }
       localStorage.setItem('phub_pb_patch_v4', 'true')
+    }
+
+    // Migration: clean up lastActivityAt from items that have never been watched
+    if (!localStorage.getItem('phub_clean_activity_ts_v1')) {
+      var _actLib = loadData(KEYS.library, [])
+      var _actChanged = false
+      _actLib.forEach(function(it) {
+        if (it.lastActivityAt) {
+          var hasWatched = false
+          if (it.type === 'social') {
+            hasWatched = (it.socialVideos || []).some(function(v) { return v.watched })
+          } else {
+            hasWatched = (it.watchedEpisodes || []).length > 0
+          }
+          // Remove lastActivityAt if item has never been watched
+          if (!hasWatched) {
+            delete it.lastActivityAt
+            _actChanged = true
+          }
+        }
+      })
+      if (_actChanged) saveData(KEYS.library, _actLib)
+      localStorage.setItem('phub_clean_activity_ts_v1', 'true')
     }
 
 
@@ -6594,7 +7170,7 @@
       var _aSeedIds = [
         'parasyte-the-maxim-seed', 'black-lagoon-seed', 'devilman-crybaby-seed',
         'umbrella-academy-seed', 'omniscient-reader-seed-v3', 'orv-novel-seed-v2',
-        'your-lie-in-april-seed', 'eighty-six-seed', 'perfect-blue-seed-v1'
+        'your-lie-in-april-seed', 'eighty-six-seed', 'perfect-blue-seed-v1', 'fmab-seed-v1'
       ]
       _aLib.forEach(function(it) {
         if (_aSeedIds.includes(it.id) && it.scheduledDay) {
@@ -7787,7 +8363,7 @@
   ----------------------------------------------------------------- */
   function renderLibrary() {
     const main    = document.getElementById('app-main')
-    const library = loadData(KEYS.library, [])
+    var library = sortLibraryItems(loadData(KEYS.library, []), normalizeLibrarySortMode(getAppSettings().librarySortMode))
 
     // Filter state -- lives for this render cycle
     let activeType  = 'all'
@@ -7821,9 +8397,18 @@
         '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">CONTENT MATRIX</div>' +
         '<span class="lib-count-badge" id="lib-file-count">[' + library.filter(function(i){return i.status!=='graveyard'}).length + ' FILES]</span>' +
       '</div>' +
-      '<div style="display:flex;gap:8px;align-items:center;">' +
-        '<button class="btn-ghost" id="lib-settings-btn" style="font-size:var(--text-xs);">Settings</button>' +
-        '<button class="btn-ghost" id="lib-new-btn" style="font-size:var(--text-xs);">+ New Content</button>' +
+      '<div class="lib-topbar-row1-actions">' +
+        '<button type="button" class="btn-ghost" id="lib-settings-btn" style="font-size:var(--text-xs);">Settings</button>' +
+        '<div class="lib-order-bar" id="lib-sort-root" title="How entries are ordered in the matrix">' +
+          '<span class="lib-order-bar-prefix">SORT</span>' +
+          '<div class="lib-order-trigger-wrap">' +
+            '<button type="button" class="lib-order-trigger" id="lib-sort-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Open sort options">' +
+              '<span class="lib-order-trigger-label" id="lib-sort-trigger-label">Newest added</span>' +
+              '<span class="lib-order-trigger-caret" aria-hidden="true">\u25be</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="btn-ghost" id="lib-new-btn" style="font-size:var(--text-xs);">+ New Content</button>' +
       '</div>'
     topbar.appendChild(row1)
 
@@ -7883,6 +8468,22 @@
     confirmEl.className = 'quick-add-confirm'
     confirmEl.id = 'lib-qa-confirm'
     topbar.appendChild(confirmEl)
+
+    var sortPanel = document.createElement('div')
+    sortPanel.id = 'lib-sort-panel'
+    sortPanel.className = 'lib-sort-panel'
+    sortPanel.setAttribute('role', 'listbox')
+    sortPanel.setAttribute('aria-labelledby', 'lib-sort-trigger')
+    LIBRARY_SORT_OPTIONS.forEach(function(opt) {
+      var btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'lib-sort-option'
+      btn.dataset.sortValue = opt.value
+      btn.setAttribute('role', 'option')
+      btn.innerHTML = '<span class="lib-sort-option-label">' + opt.label + '</span><span class="lib-sort-check" aria-hidden="true">\u2713</span>'
+      sortPanel.appendChild(btn)
+    })
+    topbar.appendChild(sortPanel)
 
     main.appendChild(topbar)
 
@@ -8040,6 +8641,7 @@
         if (badge) badge.textContent = '[' + lib.length + ' FILES]'
         library = lib
         filterCards()
+        orderLibraryCardsInGrid(grid2, normalizeLibrarySortMode(getAppSettings().librarySortMode))
       } else { renderLibrary() }
     })
 
@@ -8071,17 +8673,119 @@
         if (badge) badge.textContent = '[' + lib2.length + ' FILES]'
         library = lib2
         filterCards()
-        '<div id="modal-upcoming-wrap" style="display:none;margin-top:8px;">' +
-  '<label class="modal-field-label">Release / Air Date</label>' +
-  '<input class="modal-input" id="modal-upcoming-date" type="date" autocomplete="off"/>' +
-  '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:4px;">' +
-    'Will auto-schedule this release to your Overview calendar.' +
-  '</div>' +
-'</div>'
+        orderLibraryCardsInGrid(grid2, normalizeLibrarySortMode(getAppSettings().librarySortMode))
       })
     })
     document.getElementById('lib-settings-btn').addEventListener('click', function() {
       openAppSettingsModal(function() { renderLibrary() })
+    })
+
+    wireLibrarySortDropdown(filterCards)
+  }
+
+  function wireLibrarySortDropdown(onReordered) {
+    var root = document.getElementById('lib-sort-root')
+    var trigger = document.getElementById('lib-sort-trigger')
+    var labelEl = document.getElementById('lib-sort-trigger-label')
+    var panel = document.getElementById('lib-sort-panel')
+    if (!root || !trigger || !labelEl || !panel) return
+
+    var appScroll = document.getElementById('app-main')
+    var currentMode = normalizeLibrarySortMode(getAppSettings().librarySortMode)
+
+    function syncLabel() {
+      labelEl.textContent = librarySortOptionLabel(currentMode)
+    }
+    function setSelectedStyles() {
+      panel.querySelectorAll('.lib-sort-option').forEach(function(btn) {
+        var on = btn.dataset.sortValue === currentMode
+        btn.classList.toggle('is-selected', on)
+        btn.setAttribute('aria-selected', on ? 'true' : 'false')
+      })
+    }
+    function positionPanel() {
+      if (!panel.classList.contains('is-open')) return
+      var r = root.getBoundingClientRect()
+      var gap = 6
+      var vw = window.innerWidth
+      var w = r.width
+      var left = r.left
+      if (left + w > vw - 12) left = Math.max(12, vw - w - 12)
+      if (left < 12) left = 12
+      panel.style.left = left + 'px'
+      panel.style.top = (r.bottom + gap) + 'px'
+      panel.style.width = w + 'px'
+    }
+    function closePanel() {
+      panel.classList.remove('is-open')
+      root.classList.remove('is-open')
+      trigger.setAttribute('aria-expanded', 'false')
+      document.removeEventListener('click', docCapture, true)
+      document.removeEventListener('keydown', onKey, true)
+      if (appScroll) appScroll.removeEventListener('scroll', positionPanel)
+      window.removeEventListener('resize', positionPanel)
+    }
+    function openPanel() {
+      setSelectedStyles()
+      syncLabel()
+      panel.classList.add('is-open')
+      root.classList.add('is-open')
+      trigger.setAttribute('aria-expanded', 'true')
+      positionPanel()
+      document.removeEventListener('click', docCapture, true)
+      document.removeEventListener('keydown', onKey, true)
+      setTimeout(function() {
+        document.addEventListener('click', docCapture, true)
+        document.addEventListener('keydown', onKey, true)
+      }, 0)
+      if (appScroll) appScroll.addEventListener('scroll', positionPanel, { passive: true })
+      window.addEventListener('resize', positionPanel)
+    }
+    function togglePanel() {
+      if (panel.classList.contains('is-open')) closePanel()
+      else openPanel()
+    }
+    function docCapture(e) {
+      if (!panel.isConnected) {
+        document.removeEventListener('click', docCapture, true)
+        document.removeEventListener('keydown', onKey, true)
+        return
+      }
+      if (root.contains(e.target) || panel.contains(e.target)) return
+      closePanel()
+    }
+    function onKey(e) {
+      if (!panel.isConnected) {
+        document.removeEventListener('click', docCapture, true)
+        document.removeEventListener('keydown', onKey, true)
+        return
+      }
+      if (e.key === 'Escape') {
+        closePanel()
+        trigger.focus()
+      }
+    }
+    function applyMode(v) {
+      currentMode = normalizeLibrarySortMode(v)
+      updateAppSetting('librarySortMode', currentMode)
+      syncLabel()
+      setSelectedStyles()
+      orderLibraryCardsInGrid(document.getElementById('lib-grid'), currentMode)
+      if (typeof onReordered === 'function') onReordered()
+      closePanel()
+    }
+
+    syncLabel()
+    setSelectedStyles()
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation()
+      togglePanel()
+    })
+    panel.querySelectorAll('.lib-sort-option').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        applyMode(btn.dataset.sortValue)
+      })
     })
   }
 
@@ -8091,6 +8795,7 @@
   function buildLibraryCard(item, idx, moodColors) {
     const card = document.createElement('div')
     card.className     = 'library-card'
+    card.dataset.itemId = item.id
     card.dataset.type   = item.type
     card.dataset.title  = (item.title || '').toLowerCase()
     card.dataset.status = item.status || 'watching'
@@ -8203,7 +8908,8 @@
       graveyardDate:   null,
       graveyardNote:   '',
       timerMinutes:    0,
-      notes:           ''
+      notes:           '',
+      lastActivityAt:  new Date().toISOString()
     }
     if (extras.ratingIMDb) item.ratingIMDb = extras.ratingIMDb
     if (extras.ratingMAL)  item.ratingMAL  = extras.ratingMAL
@@ -8943,6 +9649,23 @@
     function startSocialTimer() {
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
       timerStart = Date.now()
+      
+      // Update activity timestamp when session starts
+      var lib = loadData(KEYS.library, [])
+      var it = lib.find(function(i) { return i.id === id })
+      if (it) {
+        touchLibraryItemActivity(it)
+        saveData(KEYS.library, lib)
+        // Re-order library grid if using activity sort
+        var libGrid = document.getElementById('lib-grid')
+        if (libGrid) {
+          var currentSortMode = normalizeLibrarySortMode(getAppSettings().librarySortMode)
+          if (currentSortMode === 'activity') {
+            orderLibraryCardsInGrid(libGrid, currentSortMode)
+          }
+        }
+      }
+      
       var dispEl = document.getElementById('social-timer-display')
       var btn    = document.getElementById('social-timer-btn')
       if (dispEl) dispEl.style.display = 'block'
@@ -9197,7 +9920,7 @@
           var fi2 = freshItem()
           var vids = fi2.socialVideos || []
           var v = vids.find(function(x){return x.id===video.id})
-          if (v) { v.watched = !v.watched; saveItem(fi2); logEvent((v.watched?'Watched':'Unwatched')+': '+video.title+' ('+item.title+')'); renderVideoGrid(); renderStats() }
+          if (v) { v.watched = !v.watched; touchLibraryItemActivity(fi2); saveItem(fi2); logEvent((v.watched?'Watched':'Unwatched')+': '+video.title+' ('+item.title+')'); renderVideoGrid(); renderStats() }
         })
 
         var delVid = document.createElement('button'); delVid.className = 'social-video-del'; delVid.textContent = '\u2715'
@@ -9486,6 +10209,23 @@
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
       timerStart   = Date.now()
       timerEpLabel = epLabel || null
+      
+      // Update activity timestamp when session starts
+      var lib = loadData(KEYS.library, [])
+      var it = lib.find(function(i) { return i.id === item.id })
+      if (it) {
+        touchLibraryItemActivity(it)
+        saveData(KEYS.library, lib)
+        // Re-order library grid if using activity sort
+        var libGrid = document.getElementById('lib-grid')
+        if (libGrid) {
+          var currentSortMode = normalizeLibrarySortMode(getAppSettings().librarySortMode)
+          if (currentSortMode === 'activity') {
+            orderLibraryCardsInGrid(libGrid, currentSortMode)
+          }
+        }
+      }
+      
       var dispEl   = document.getElementById('detail-timer-display')
       var epEl     = document.getElementById('detail-timer-ep')
       var btn      = document.getElementById('detail-timer-btn')
@@ -10560,6 +11300,7 @@
 
       // Sync back to the live item reference
       item.watchedEpisodes = it.watchedEpisodes.slice()
+      touchLibraryItemActivity(it)
       saveData(KEYS.library, lib)
 
       // If just marked watched, auto-clear any past schedule entry for this episode
@@ -10611,6 +11352,14 @@
         if (libProg) libProg.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' + unit2 + (it.timerMinutes && it.timerMinutes >= 1 ? ' · \u23f1 ' + fmtMins(it.timerMinutes) : '')
       }
       checkSeasonCompletion(it, beforeCount, tile)
+      // Re-order library grid if using activity sort (latest watching)
+      var libGrid = document.getElementById('lib-grid')
+      if (libGrid) {
+        var currentSortMode = normalizeLibrarySortMode(getAppSettings().librarySortMode)
+        if (currentSortMode === 'activity') {
+          orderLibraryCardsInGrid(libGrid, currentSortMode)
+        }
+      }
       // Notify season panel to refresh its stat cards
       document.dispatchEvent(new CustomEvent('ep-toggled', { detail: { itemId: item.id, watchedEpisodes: it.watchedEpisodes } }))
     })
@@ -10661,6 +11410,7 @@
       var allInSeason  = epNums.filter(function(n) { return !it.watchedEpisodes.includes(n) })
       it.watchedEpisodes = it.watchedEpisodes.concat(allInSeason)
       item.watchedEpisodes = it.watchedEpisodes.slice()
+      touchLibraryItemActivity(it)
       saveData(KEYS.library, lib)
 
       // Cascade flash on tiles
@@ -10698,6 +11448,7 @@
       // Remove all episodes in this season from watchedEpisodes
       it.watchedEpisodes = (it.watchedEpisodes || []).filter(function(n) { return !epNums.includes(n) })
       item.watchedEpisodes = it.watchedEpisodes.slice()
+      touchLibraryItemActivity(it)
       saveData(KEYS.library, lib)
 
       // Cascade unflash on tiles

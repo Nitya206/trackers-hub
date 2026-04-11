@@ -687,7 +687,7 @@
     }
     .session-overlay-timer-ring {
       margin-top: 48px;
-      width: 280px; height: 280px;
+      width: 340px; height: 340px;
       position: relative;
       opacity: 0;
     }
@@ -740,10 +740,10 @@
       letter-spacing: 0.15em;
       margin-top: 6px;
       max-width: 240px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       text-align: center;
+      padding: 0 10px;
+      word-break: break-word;
+      line-height: 1.5;
     }
     .session-overlay-stop-btn {
       margin-top: 40px;
@@ -5397,10 +5397,10 @@
     <div class="session-overlay-sub">Initiating watch protocol</div>
     <div class="session-overlay-series" id="session-overlay-series"></div>
     <div class="session-overlay-timer-ring">
-      <svg class="session-ring-svg" width="280" height="280" viewBox="0 0 280 280">
-        <circle class="session-ring-track" cx="140" cy="140" r="126" stroke-width="6"/>
-        <circle class="session-ring-fill" cx="140" cy="140" r="126" stroke-width="6"
-          stroke-dasharray="791.68" stroke-dashoffset="0" id="session-ring-arc"/>
+      <svg class="session-ring-svg" width="340" height="340" viewBox="0 0 340 340">
+        <circle class="session-ring-track" cx="170" cy="170" r="156" stroke-width="6"/>
+        <circle class="session-ring-fill" cx="170" cy="170" r="156" stroke-width="6"
+          stroke-dasharray="980.18" stroke-dashoffset="0" id="session-ring-arc"/>
       </svg>
       <div class="session-ring-center">
         <div class="session-ring-time" id="session-overlay-time">00:00</div>
@@ -10361,6 +10361,41 @@
       return
     }
 
+    // -- MIGRATE: Renumber episodes per season (one-time migration) --
+    if (item.seasons && item.seasons.length > 0 && !item._episodesRenumbered) {
+      var needsMigration = false
+      // Check if episodes are numbered continuously across seasons
+      var lastNum = 0
+      item.seasons.forEach(function(s) {
+        if (s.episodes && s.episodes.length > 0) {
+          if (s.episodes[0].number > 1 && s.episodes[0].number === lastNum + 1) {
+            needsMigration = true
+          }
+          lastNum = s.episodes[s.episodes.length - 1].number
+        }
+      })
+      
+      if (needsMigration) {
+        // Renumber episodes: each season starts from 1
+        item.seasons.forEach(function(season) {
+          if (season.episodes) {
+            season.episodes.forEach(function(ep, idx) {
+              ep.number = idx + 1
+            })
+          }
+        })
+        item._episodesRenumbered = true
+        // Save back to library
+        var lib = loadData(KEYS.library, [])
+        var it = lib.find(function(i) { return i.id === id })
+        if (it) {
+          it.seasons = item.seasons
+          it._episodesRenumbered = true
+          saveData(KEYS.library, lib)
+        }
+      }
+    }
+
     // -- THEME TRANSFORMATION --
     // 1. Apply CSS variable overrides (accent colours etc.)
     var _cssOriginals = {}
@@ -11136,7 +11171,7 @@
         window.__bulkSelectAll = function() {
           if (hasSeasonsData) {
             var nums1 = []
-            ;(item.seasons || []).forEach(function(s) { (s.episodes || []).forEach(function(ep) { nums1.push(ep.number) }) })
+            ;(item.seasons || []).forEach(function(s, sIdx) { (s.episodes || []).forEach(function(ep) { nums1.push(makeEpKey(sIdx, ep.number)) }) })
             addUniqueSelected(nums1)
           } else if (hasArcsData) {
             var nums2 = []
@@ -11218,7 +11253,7 @@
       tab.addEventListener('click', function() {
         var seasonIdx = parseInt(this.dataset.seasonIdx, 10)
         if (selectMode && seasonIdx === activeIdx) {
-          var nums = (season.episodes || []).map(function(ep) { return ep.number })
+          var nums = (season.episodes || []).map(function(ep) { return makeEpKey(seasonIdx, ep.number) })
           nums.forEach(function(n) { if (selectedEps.indexOf(n) === -1) selectedEps.push(n) })
           selectCountBadge.style.display = 'none'
           updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, season)
@@ -11771,8 +11806,8 @@
 
       if (selectMode) {
         tile.classList.toggle('tile-selected')
-        var idx = selectedEps.indexOf(ep.number)
-        if (idx === -1) selectedEps.push(ep.number)
+        var idx = selectedEps.indexOf(epKey)
+        if (idx === -1) selectedEps.push(epKey)
         else selectedEps.splice(idx, 1)
         selectCountBadge.style.display = 'none'
         updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, seasonInfo)
@@ -12511,6 +12546,15 @@
   function getSmartSelectionText(selectedEps, item) {
     if (!selectedEps || selectedEps.length === 0) return '0 selected'
     
+    // Parse keys to extract season index and episode number
+    var parsedEps = selectedEps.map(function(key) {
+      if (typeof key === 'string' && key.indexOf('_') > 0) {
+        var parts = key.split('_')
+        return { seasonIdx: parseInt(parts[0].substring(1), 10), epNum: parseInt(parts[1], 10), key: key }
+      }
+      return { seasonIdx: null, epNum: parseInt(key, 10) || key, key: key }
+    })
+    
     var hasSeasonsData = item.seasons && item.seasons.length > 0
     var hasArcsData = item.arcs && item.arcs.length > 0
     var isReading = item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel'
@@ -12521,14 +12565,13 @@
       // Analyze which seasons are selected
       var seasonStats = []
       item.seasons.forEach(function(season, idx) {
-        var seasonEps = (season.episodes || []).map(function(e) { return e.number })
-        var selectedInSeason = seasonEps.filter(function(n) { return selectedEps.indexOf(n) >= 0 })
+        var selectedInSeason = parsedEps.filter(function(p) { return p.seasonIdx === idx })
         if (selectedInSeason.length > 0) {
           seasonStats.push({
             name: season.name || ('Season ' + (idx + 1)),
             selected: selectedInSeason.length,
-            total: seasonEps.length,
-            isComplete: selectedInSeason.length === seasonEps.length
+            total: (season.episodes || []).length,
+            isComplete: selectedInSeason.length === (season.episodes || []).length
           })
         }
       })
@@ -12538,9 +12581,24 @@
         var s = seasonStats[0]
         return s.name + ' · ' + s.selected + ' ' + (s.selected === 1 ? unitLabel : unitLabelPlural) + ' selected'
       }
-      // Multiple seasons
+      // Multiple seasons - show S01E14-S02E02 format
       var totalEps = seasonStats.reduce(function(sum, s) { return sum + s.selected }, 0)
-      return seasonStats.length + ' seasons · ' + totalEps + ' ' + unitLabelPlural + ' selected'
+      // Get first and last episodes with season numbers
+      var firstSeason = seasonStats[0]
+      var lastSeason = seasonStats[seasonStats.length - 1]
+      var firstSeasonNum = firstSeason.name.match(/Season\s+(\d+)/i)
+      var lastSeasonNum = lastSeason.name.match(/Season\s+(\d+)/i)
+      var s1 = String(firstSeasonNum ? firstSeasonNum[1] : '1').padStart(2, '0')
+      var s2 = String(lastSeasonNum ? lastSeasonNum[1] : seasonStats.length).padStart(2, '0')
+      
+      // Get actual episode numbers from parsed data
+      var firstSeasonEps = parsedEps.filter(function(p) { return p.seasonIdx === 0 }).map(function(p) { return p.epNum }).sort(function(a,b){return a-b})
+      var lastSeasonEps = parsedEps.filter(function(p) { return p.seasonIdx === seasonStats.length - 1 }).map(function(p) { return p.epNum }).sort(function(a,b){return a-b})
+      var e1 = String(firstSeasonEps[0]).padStart(2, '0')
+      var e2 = String(lastSeasonEps[lastSeasonEps.length - 1]).padStart(2, '0')
+      var count = String(totalEps).padStart(2, '0')
+      
+      return 'S' + s1 + 'E' + e1 + '-S' + s2 + 'E' + e2 + ' (' + count + ' ' + unitLabelPlural + ' selected)'
     } else if (hasArcsData) {
       // Analyze which arcs are selected
       var arcStats = []
@@ -12704,7 +12762,16 @@
       sessionBtn.style.cssText = 'font-size:11px;padding:7px 16px;background:var(--accent-warm);border-color:var(--accent-warm);'
       sessionBtn.textContent = '▶ Start Session'
       sessionBtn.addEventListener('click', function() {
-        var sorted = selectedEps.slice().sort(function(a,b){return a-b})
+        // Parse keys to extract season index and episode number
+        var parsedEps = selectedEps.map(function(key) {
+          if (typeof key === 'string' && key.indexOf('_') > 0) {
+            var parts = key.split('_')
+            return { seasonIdx: parseInt(parts[0].substring(1), 10), epNum: parseInt(parts[1], 10), key: key }
+          }
+          return { seasonIdx: null, epNum: parseInt(key, 10) || key, key: key }
+        })
+        
+        var sorted = parsedEps.map(function(p) { return p.epNum }).sort(function(a,b){return a-b})
         
         // Get item to analyze seasons/arcs
         var lib = loadData(KEYS.library, [])
@@ -12722,23 +12789,35 @@
           if (hasSeasonsData) {
             // Analyze which seasons are selected
             var seasonStats = []
-            item.seasons.forEach(function(season) {
-              var seasonEps = (season.episodes || []).map(function(e) { return e.number })
-              var selectedInSeason = seasonEps.filter(function(n) { return sorted.indexOf(n) >= 0 })
+            item.seasons.forEach(function(season, sIdx) {
+              var seasonKeys = (season.episodes || []).map(function(e) { return makeEpKey(sIdx, e.number) })
+              var selectedInSeason = parsedEps.filter(function(p) { return p.seasonIdx === sIdx })
               if (selectedInSeason.length > 0) {
                 seasonStats.push({
-                  name: season.name || 'Season',
-                  episodes: selectedInSeason
+                  name: season.name || ('Season ' + (sIdx + 1)),
+                  episodes: selectedInSeason.map(function(p) { return p.epNum }).sort(function(a,b){return a-b})
                 })
               }
             })
             
             if (seasonStats.length === 1) {
               var s = seasonStats[0]
+              // Shorten season name for display (e.g., "Season 1" instead of full name)
+              var shortName = s.name
+              if (s.name.length > 15) {
+                // Try to extract just "Season X" or "S1" pattern
+                var match = s.name.match(/Season\s+(\d+)/i)
+                if (match) {
+                  shortName = 'S' + match[1]
+                } else {
+                  shortName = s.name.substring(0, 12) + '...'
+                }
+              }
+              
               if (s.episodes.length === 1) {
-                epLabel = s.name + ' · ' + unitLabel + ' ' + s.episodes[0]
-              } else if (s.episodes.length <= 3) {
-                epLabel = s.name + ' · ' + unitLabelPlural + ' ' + s.episodes.join(', ')
+                epLabel = shortName + ' · ' + unitLabel + ' ' + s.episodes[0]
+              } else if (s.episodes.length <= 4) {
+                epLabel = shortName + ' · ' + unitLabelPlural + ' ' + s.episodes.join(', ')
               } else {
                 // Check if consecutive
                 var isConsecutive = true
@@ -12749,13 +12828,24 @@
                   }
                 }
                 if (isConsecutive) {
-                  epLabel = s.name + ' · ' + unitLabelPlural + ' ' + s.episodes[0] + '-' + s.episodes[s.episodes.length - 1]
+                  epLabel = shortName + ' · ' + unitLabelPlural + ' ' + s.episodes[0] + '-' + s.episodes[s.episodes.length - 1]
                 } else {
-                  epLabel = s.name + ' · ' + s.episodes.length + ' ' + unitLabelPlural.toLowerCase()
+                  epLabel = shortName + ' · ' + s.episodes.length + ' ' + unitLabelPlural.toLowerCase()
                 }
               }
             } else if (seasonStats.length > 1) {
-              epLabel = seasonStats.length + ' seasons · ' + sorted.length + ' ' + unitLabelPlural.toLowerCase()
+              // Multiple seasons - show first and last episode with season numbers
+              var totalEps = seasonStats.reduce(function(sum, s) { return sum + s.episodes.length }, 0)
+              var firstSeason = seasonStats[0]
+              var lastSeason = seasonStats[seasonStats.length - 1]
+              var firstSeasonNum = firstSeason.name.match(/Season\s+(\d+)/i)
+              var lastSeasonNum = lastSeason.name.match(/Season\s+(\d+)/i)
+              var s1 = String(firstSeasonNum ? firstSeasonNum[1] : '1').padStart(2, '0')
+              var s2 = String(lastSeasonNum ? lastSeasonNum[1] : seasonStats.length).padStart(2, '0')
+              var e1 = String(firstSeason.episodes[0]).padStart(2, '0')
+              var e2 = String(lastSeason.episodes[lastSeason.episodes.length - 1]).padStart(2, '0')
+              var count = String(totalEps).padStart(2, '0')
+              epLabel = 'S' + s1 + 'E' + e1 + '-S' + s2 + 'E' + e2 + ' (' + count + ' ' + unitLabelPlural.toLowerCase() + ')'
             }
           } else if (hasArcsData) {
             // Analyze which arcs are selected
@@ -12774,10 +12864,22 @@
             
             if (arcStats.length === 1) {
               var a = arcStats[0]
+              // Shorten arc name for display
+              var shortName = a.name
+              if (a.name.length > 15) {
+                // Try to extract just "Arc X" pattern
+                var match = a.name.match(/Arc\s+(\d+)/i)
+                if (match) {
+                  shortName = 'Arc ' + match[1]
+                } else {
+                  shortName = a.name.substring(0, 12) + '...'
+                }
+              }
+              
               if (a.chapters.length === 1) {
-                epLabel = a.name + ' · ' + unitLabel + ' ' + a.chapters[0]
-              } else if (a.chapters.length <= 3) {
-                epLabel = a.name + ' · ' + unitLabelPlural + ' ' + a.chapters.join(', ')
+                epLabel = shortName + ' · ' + unitLabel + ' ' + a.chapters[0]
+              } else if (a.chapters.length <= 4) {
+                epLabel = shortName + ' · ' + unitLabelPlural + ' ' + a.chapters.join(', ')
               } else {
                 // Check if consecutive
                 var isConsecutive = true
@@ -12788,13 +12890,14 @@
                   }
                 }
                 if (isConsecutive) {
-                  epLabel = a.name + ' · ' + unitLabelPlural + ' ' + a.chapters[0] + '-' + a.chapters[a.chapters.length - 1]
+                  epLabel = shortName + ' · ' + unitLabelPlural + ' ' + a.chapters[0] + '-' + a.chapters[a.chapters.length - 1]
                 } else {
-                  epLabel = a.name + ' · ' + a.chapters.length + ' ' + unitLabelPlural.toLowerCase()
+                  epLabel = shortName + ' · ' + a.chapters.length + ' ' + unitLabelPlural.toLowerCase()
                 }
               }
             } else if (arcStats.length > 1) {
-              epLabel = arcStats.length + ' arcs · ' + sorted.length + ' ' + unitLabelPlural.toLowerCase()
+              // Multiple arcs - show range across all
+              epLabel = unitLabelPlural + ' ' + sorted[0] + '-' + sorted[sorted.length - 1] + ' (' + arcStats.length + ' arcs)'
             }
           }
         }
@@ -13467,10 +13570,9 @@
       if (!it6) return
       if (!it6.seasons) it6.seasons = []
 
-      // Build episodes array
-      var startNum = lastEpNum + 1
+      // Build episodes array - each season starts at episode 1
       var newEps = []
-      for (var ei = 0; ei < epCount; ei++) newEps.push({ number: startNum + ei, title: '' })
+      for (var ei = 0; ei < epCount; ei++) newEps.push({ number: ei + 1, title: '' })
 
       var newSeason = { id: 's' + (it6.seasons.length + 1), name: name, episodes: newEps }
       if (newStatus === 'upcoming') newSeason.upcoming = true

@@ -3118,12 +3118,19 @@
       z-index: 9996;
       transform: translateY(100%);
       transition: transform 300ms var(--ease-spring);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
     }
+    .detail-select-bar::-webkit-scrollbar { display: none; }
     .detail-select-bar.visible { transform: translateY(0); }
+    .detail-select-bar button { flex-shrink: 0; white-space: nowrap; }
     .detail-select-count {
       font: 600 var(--text-sm) var(--font-mono);
       color: var(--text-2);
-      flex: 1;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     /* Empty episode state */
@@ -5419,6 +5426,10 @@
      MOBILE / TOUCH RESPONSIVE
   ════════════════════════════════════════════════════════════════ */
 
+  /* Detail season stat grids — class-based so media queries can override */
+  .detail-stat-grid-3col { grid-template-columns: repeat(3, 1fr); }
+  .detail-stat-grid-2col { grid-template-columns: repeat(2, 1fr); }
+
   /* Restore cursors on touch devices — custom cursor doesn't work on touch */
   @media (hover: none), (pointer: coarse) {
     /* Hide custom cursor elements */
@@ -5516,6 +5527,141 @@
     .manifest-row {
       flex-wrap: wrap;
       gap: var(--space-2);
+    }
+
+    /* ── Detail season stat grids: collapse to 2-col / 1-col ── */
+    .detail-stat-grid-3col { grid-template-columns: repeat(2, 1fr); }
+    .detail-stat-grid-2col { grid-template-columns: 1fr; }
+
+    /* ── Session overlay: ring + title scale down ── */
+    .session-overlay-title {
+      font-size: clamp(36px, 10vw, 72px);
+    }
+    .session-overlay-series {
+      font-size: clamp(13px, 3.5vw, 18px);
+      white-space: normal;
+      text-align: center;
+      max-width: 90vw;
+    }
+    .session-overlay-timer-ring {
+      width: min(280px, 78vw);
+      height: min(280px, 78vw);
+      margin-top: 28px;
+    }
+    .session-ring-svg {
+      width: 100%;
+      height: 100%;
+    }
+    .session-ring-time {
+      font-size: clamp(24px, 7vw, 40px);
+    }
+
+    /* ── Dashboard: next-mission card stack ── */
+    .next-mission-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: 20px var(--space-4);
+    }
+    .next-mission-title {
+      font-size: clamp(18px, 5vw, 32px);
+    }
+
+    /* ── Dashboard: two-col stack ── */
+    .dash-two-col {
+      grid-template-columns: 1fr;
+    }
+
+    /* ── Mood queue: mood grid 2-col ── */
+    .mq-mood-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* ── Mood queue: result card stack ── */
+    .mq-result-card {
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .mq-result-right {
+      flex-direction: row;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+    .mq-result-title {
+      font-size: clamp(18px, 5vw, 28px);
+      white-space: normal;
+    }
+
+    /* ── Library topbar: wrap actions row ── */
+    .lib-topbar-row1 {
+      flex-wrap: wrap;
+    }
+    .lib-topbar-row1-actions {
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    /* ── Social layout: already handled at 980px but ensure sidebar isn't 320px fixed ── */
+    .social-layout {
+      grid-template-columns: 1fr;
+    }
+
+    /* ── Detail: season stats 2-col instead of 3 ── */
+    .detail-season-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* ── Detail: timer display font scale ── */
+    .detail-timer-display {
+      font-size: clamp(18px, 5vw, 26px);
+    }
+
+    /* ── Detail: bulk select row wrap ── */
+    .detail-bulk-select-row {
+      flex-wrap: wrap;
+    }
+
+    /* ── Completion banner: full-left on mobile (no sidebar offset) ── */
+    .completion-banner {
+      left: 0;
+    }
+
+    /* ── Tasks: add bar stack on very small screens ── */
+    .tasks-add-bar {
+      flex-wrap: wrap;
+    }
+    .tasks-name-input {
+      flex: 1 1 100%;
+    }
+
+    /* ── Task card: prevent task name overflow ── */
+    .task-name {
+      white-space: normal;
+      word-break: break-word;
+    }
+    .task-actions {
+      flex-wrap: wrap;
+    }
+
+    /* ── Overview manifest: hide less-critical cells to prevent crunch ── */
+    .manifest-prog-cell,
+    .manifest-left-cell,
+    .manifest-rating-cell,
+    .manifest-day-cell {
+      display: none;
+    }
+    .manifest-status {
+      width: 60px;
+    }
+
+    /* ── Graveyard: actions wrap ── */
+    .graveyard-actions {
+      flex-wrap: wrap;
+    }
+
+    /* ── Weekly calendar already at 3-col above; also fix day col overflow ── */
+    .sched-day-col {
+      min-width: 0;
     }
   }
 
@@ -12262,12 +12408,14 @@
       }
       
       if (isReadingType || !ratingHTML) {
-        stats.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:16px;'
+        stats.style.cssText = 'display:grid;gap:16px;'
+        stats.classList.add('detail-stat-grid-2col')
         stats.innerHTML =
           '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + (isReadingType ? 'Read' : 'Watched') + '</div></div>' +
           '<div class="stat-card"><div class="stat-card-number">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
       } else {
-        stats.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;'
+        stats.style.cssText = 'display:grid;gap:16px;'
+        stats.classList.add('detail-stat-grid-3col')
         stats.innerHTML =
           ratingHTML +
           '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">Watched</div></div>' +

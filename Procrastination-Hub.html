@@ -412,6 +412,7 @@
       letter-spacing: 0.06em;
       text-shadow: 0 1px 8px rgba(0,229,255,0.22);
       position: relative;
+      white-space: nowrap;
     }
     /* Thin accent underline instead of blob glow */
     .stat-card-number::after {
@@ -676,13 +677,17 @@
       margin-top: 28px;
       opacity: 0;
       transform: translateY(8px);
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     #session-overlay.active .session-overlay-series {
       animation: sessionFadeUp 400ms 900ms var(--ease-out) forwards;
     }
     .session-overlay-timer-ring {
       margin-top: 48px;
-      width: 220px; height: 220px;
+      width: 280px; height: 280px;
       position: relative;
       opacity: 0;
     }
@@ -734,6 +739,11 @@
       color: var(--text-2);
       letter-spacing: 0.15em;
       margin-top: 6px;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
     }
     .session-overlay-stop-btn {
       margin-top: 40px;
@@ -2126,11 +2136,12 @@
       overflow: hidden;
     }
     .lib-card-personal-rating {
-      font: 600 12px var(--font-mono);
+      font: 600 11px var(--font-mono);
       color: var(--accent-warm);
-      margin-top: 4px;
-      margin-bottom: 8px;
+      margin-top: 2px;
+      margin-bottom: 6px;
       letter-spacing: 0.04em;
+      line-height: 1;
     }
     .lib-card-header {
       display: flex;
@@ -2169,10 +2180,19 @@
       color: var(--accent-warm);
       font-size: 12px;
     }
+    .lib-card-rating-chip.chip-personal {
+      background: rgba(255,138,76,0.1);
+      border: 1px solid rgba(255,138,76,0.25);
+      color: #ff8a4c;
+    }
     .lib-card-rating-label {
       font-size: 9px;
       opacity: 0.65;
       letter-spacing: 0.05em;
+    }
+    .lib-card-rating-value {
+      font-size: 11px;
+      font-weight: 700;
     }
     .lib-card-progress-text {
       font: 400 12px var(--font-mono);
@@ -2668,11 +2688,10 @@
       margin-bottom: var(--space-3);
     }
     .detail-timer-display {
-      font: 700 32px var(--font-display);
+      font: 700 48px var(--font-display);
       color: var(--accent-cool);
       margin-bottom: var(--space-2);
       letter-spacing: 0.06em;
-
       text-shadow: 0 0 20px rgba(0,200,255,0.4);
     }
     .detail-timer-ep-label { font: 400 13px var(--font-mono); color: var(--text-3); margin-bottom: var(--space-2); }
@@ -2941,6 +2960,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
       gap: 10px;
+      overflow: visible;
     }
 
     /* Episode tile */
@@ -2969,6 +2989,7 @@
     .ep-num {
       font: 700 16px var(--font-mono);
       color: var(--text-3);
+      pointer-events: none;
     }
     .ep-check {
       position: absolute;
@@ -2978,12 +2999,14 @@
       color: var(--accent-cool);
       opacity: 0;
       transition: opacity 150ms;
+      pointer-events: none;
+      display: none;
     }
     .ep-tile.watched .ep-check { opacity: 1; }
     /* Timer icon – appears on hover */
     .ep-timer-btn {
       position: absolute;
-      bottom: 4px;
+      top: 4px;
       left: 5px;
       font-size: 15px;
       background: transparent;
@@ -2994,9 +3017,12 @@
       opacity: 0;
       transition: opacity 100ms;
       line-height: 1;
+      z-index: 3;
     }
     .ep-tile:hover .ep-timer-btn { opacity: 1; }
     .ep-tile:hover .ep-timer-btn:hover { color: var(--accent-cool); }
+    
+    /* Custom tooltip */
     /* Flash animation on toggle */
     .ep-tile.tile-flash {
       animation: epFlash 400ms var(--ease-out) both;
@@ -4139,38 +4165,101 @@
     }
 
     /* ── EP TILE INLINE RATING ── */
-    .ep-rating-badge {
+    .ep-ratings-bar {
       position: absolute;
-      top: 3px;
+      bottom: 5px;
       left: 4px;
-      font: 700 11px var(--font-mono);
-      color: var(--accent-warm);
-      text-shadow: 0 0 8px rgba(255,96,64,0.4);
-      opacity: 0.9;
+      right: 4px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
+      z-index: 2;
+      min-height: 14px;
+      padding: 0;
+    }
+    .ep-rating-badge {
+      font: 700 10px var(--font-mono);
+      color: var(--accent-warm);
+      background: rgba(255,138,76,0.12);
+      border: 1px solid rgba(255,138,76,0.25);
+      border-radius: 3px;
+      padding: 2px 4px;
+      text-align: center;
+      text-shadow: 0 0 8px rgba(255,96,64,0.4);
+      opacity: 0.95;
+      line-height: 1;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* When personal rating is the only rating, keep consistent spacing and make wider */
+    .ep-tile.personal-only .ep-ratings-bar {
+      bottom: 5px;
+      left: 4px;
+      right: 4px;
+      padding: 0;
+      justify-content: center;
+    }
+    .ep-tile.personal-only .ep-rating-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      height: 15px;
+      flex: 1;
+      max-width: 100%;
     }
     /* Dual-source rating badges */
     .ep-badge-imdb {
-      position: absolute;
-      top: 3px;
-      left: 4px;
       font: 700 10px var(--font-mono);
       color: #fbbf24;
+      background: rgba(245,197,24,0.12);
+      border: 1px solid rgba(245,197,24,0.25);
+      border-radius: 3px;
+      padding: 2px 4px;
+      text-align: center;
       text-shadow: 0 0 8px rgba(251,191,36,0.6);
       opacity: 0.95;
-      pointer-events: none;
       line-height: 1;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .ep-badge-mal {
-      position: absolute;
-      top: 14px;
-      left: 4px;
       font: 700 10px var(--font-mono);
       color: #00e5ff;
+      background: rgba(95,143,219,0.12);
+      border: 1px solid rgba(95,143,219,0.25);
+      border-radius: 3px;
+      padding: 2px 4px;
+      text-align: center;
       text-shadow: 0 0 8px rgba(0,229,255,0.5);
       opacity: 0.88;
-      pointer-events: none;
       line-height: 1;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* When no personal rating, make platform badges wider */
+    .ep-ratings-bar.no-personal .ep-badge-imdb,
+    .ep-ratings-bar.no-personal .ep-badge-mal {
+      padding: 2px 8px;
+      flex: 1;
+    }
+    /* When only one platform rating exists (IMDb OR MAL), make it even wider */
+    .ep-ratings-bar.only-one .ep-badge-imdb,
+    .ep-ratings-bar.only-one .ep-badge-mal {
+      padding: 2px 8px;
+      flex: 1;
+    }
+    /* When only one platform AND no personal, make it widest */
+    .ep-ratings-bar.only-one.no-personal .ep-badge-imdb,
+    .ep-ratings-bar.only-one.no-personal .ep-badge-mal {
+      padding: 2px 8px;
+      flex: 1;
     }
     /* Dual aggregate rating row in detail view */
     .detail-ratings-row {
@@ -4199,9 +4288,12 @@
     .detail-rating-chip.chip-imdb .chip-val   { color: #F5C518; text-shadow: 0 0 16px rgba(245,197,24,0.5); }
     .detail-rating-chip.chip-mal  .chip-label { color: #5f8fdb; font-size:10px; }
     .detail-rating-chip.chip-mal  .chip-val   { color: #5f8fdb; text-shadow: 0 0 16px rgba(94,143,219,0.4); }
+    .detail-rating-chip.chip-personal .chip-label { color: var(--accent-warm); font-size:10px; }
+    .detail-rating-chip.chip-personal .chip-val   { color: var(--accent-warm); text-shadow: 0 0 16px rgba(255,96,64,0.4); }
     /* Small brand-colored IMDb/MAL labels in library cards */
     .lib-card-rating-chip.chip-imdb .lib-card-rating-label { color: #F5C518; }
     .lib-card-rating-chip.chip-mal  .lib-card-rating-label { color: #5f8fdb; }
+    .lib-card-rating-chip.chip-personal .lib-card-rating-label { color: var(--accent-warm); }
     .ep-rate-btn {
       position: absolute;
       top: 4px;
@@ -4223,8 +4315,8 @@
       top: -36px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(12,10,30,0.95);
-      border: 1px solid rgba(130,160,255,0.2);
+      background: rgba(12,10,30,1);
+      border: 1px solid rgba(130,160,255,0.3);
       border-radius: var(--radius-sm);
       padding: 4px 6px;
       display: flex;
@@ -5305,10 +5397,10 @@
     <div class="session-overlay-sub">Initiating watch protocol</div>
     <div class="session-overlay-series" id="session-overlay-series"></div>
     <div class="session-overlay-timer-ring">
-      <svg class="session-ring-svg" width="220" height="220" viewBox="0 0 220 220">
-        <circle class="session-ring-track" cx="110" cy="110" r="96" stroke-width="6"/>
-        <circle class="session-ring-fill" cx="110" cy="110" r="96" stroke-width="6"
-          stroke-dasharray="603.19" stroke-dashoffset="0" id="session-ring-arc"/>
+      <svg class="session-ring-svg" width="280" height="280" viewBox="0 0 280 280">
+        <circle class="session-ring-track" cx="140" cy="140" r="126" stroke-width="6"/>
+        <circle class="session-ring-fill" cx="140" cy="140" r="126" stroke-width="6"
+          stroke-dasharray="791.68" stroke-dashoffset="0" id="session-ring-arc"/>
       </svg>
       <div class="session-ring-center">
         <div class="session-ring-time" id="session-overlay-time">00:00</div>
@@ -7172,6 +7264,52 @@
       localStorage.setItem('phub_fmab_tags_v2', 'true')
     }
 
+    // Migration: calculate season-level ratings from episode averages for Black Lagoon
+    if (!localStorage.getItem('phub_bl_season_ratings_v1')) {
+      var _blRatLib = loadData(KEYS.library, [])
+      var _blRatEntry = _blRatLib.find(function(it) { return it.id === 'black-lagoon-seed' })
+      if (_blRatEntry && _blRatEntry.seasons) {
+        _blRatEntry.seasons.forEach(function(season) {
+          var eps = season.episodes || []
+          var imdbEps = eps.filter(function(e) { return e.ratingIMDb })
+          var malEps = eps.filter(function(e) { return e.ratingMAL })
+          if (imdbEps.length > 0) {
+            var avgIMDb = imdbEps.reduce(function(sum, e) { return sum + Number(e.ratingIMDb) }, 0) / imdbEps.length
+            season.ratingIMDb = avgIMDb
+          }
+          if (malEps.length > 0) {
+            var avgMAL = malEps.reduce(function(sum, e) { return sum + Number(e.ratingMAL) }, 0) / malEps.length
+            season.ratingMAL = avgMAL
+          }
+        })
+        saveData(KEYS.library, _blRatLib)
+      }
+      localStorage.setItem('phub_bl_season_ratings_v1', 'true')
+    }
+
+    // Migration: calculate season-level ratings from episode averages for 86
+    if (!localStorage.getItem('phub_86_season_ratings_v1')) {
+      var _86RatLib = loadData(KEYS.library, [])
+      var _86RatEntry = _86RatLib.find(function(it) { return it.id === 'eighty-six-seed' })
+      if (_86RatEntry && _86RatEntry.seasons) {
+        _86RatEntry.seasons.forEach(function(season) {
+          var eps = season.episodes || []
+          var imdbEps = eps.filter(function(e) { return e.ratingIMDb })
+          var malEps = eps.filter(function(e) { return e.ratingMAL })
+          if (imdbEps.length > 0) {
+            var avgIMDb = imdbEps.reduce(function(sum, e) { return sum + Number(e.ratingIMDb) }, 0) / imdbEps.length
+            season.ratingIMDb = avgIMDb
+          }
+          if (malEps.length > 0) {
+            var avgMAL = malEps.reduce(function(sum, e) { return sum + Number(e.ratingMAL) }, 0) / malEps.length
+            season.ratingMAL = avgMAL
+          }
+        })
+        saveData(KEYS.library, _86RatLib)
+      }
+      localStorage.setItem('phub_86_season_ratings_v1', 'true')
+    }
+
 
     // Always-run patch: fix Perfect Blue moodTags + theme
     ;(function() {
@@ -8897,14 +9035,27 @@
     var ratingHTML = ''
     if (item.ratingIMDb && item.ratingMAL) {
       ratingHTML =
-        '<span class="lib-card-rating-chip chip-imdb"><span class="lib-card-rating-label">IMDb</span>' + Number(item.ratingIMDb).toFixed(1) + '</span>' +
-        '<span class="lib-card-rating-chip chip-mal"><span class="lib-card-rating-label">MAL</span>' + Number(item.ratingMAL).toFixed(1) + '</span>'
+        '<span class="lib-card-rating-chip chip-imdb"><span class="lib-card-rating-label">IMDb</span><span class="lib-card-rating-value">' + Number(item.ratingIMDb).toFixed(1) + '</span></span>' +
+        '<span class="lib-card-rating-chip chip-mal"><span class="lib-card-rating-label">MAL</span><span class="lib-card-rating-value">' + Number(item.ratingMAL).toFixed(1) + '</span></span>'
     } else if (item.ratingIMDb) {
-      ratingHTML = '<span class="lib-card-rating-chip chip-imdb"><span class="lib-card-rating-label">IMDb</span>' + Number(item.ratingIMDb).toFixed(1) + '</span>'
+      ratingHTML = '<span class="lib-card-rating-chip chip-imdb"><span class="lib-card-rating-label">IMDb</span><span class="lib-card-rating-value">' + Number(item.ratingIMDb).toFixed(1) + '</span></span>'
     } else if (item.ratingMAL) {
-      ratingHTML = '<span class="lib-card-rating-chip chip-mal"><span class="lib-card-rating-label">MAL</span>' + Number(item.ratingMAL).toFixed(1) + '</span>'
+      ratingHTML = '<span class="lib-card-rating-chip chip-mal"><span class="lib-card-rating-label">MAL</span><span class="lib-card-rating-value">' + Number(item.ratingMAL).toFixed(1) + '</span></span>'
     } else if (item.rating) {
       ratingHTML = '<span class="lib-card-rating-chip chip-single">\u2605 ' + Number(item.rating).toFixed(1) + '</span>'
+    }
+    // Calculate personal rating from season averages if available
+    var personalRating = item.personalRating
+    if (item.seasons && item.seasons.length > 0) {
+      var seasonsWithPersonal = item.seasons.filter(function(s) { return s.personalRating })
+      if (seasonsWithPersonal.length > 0) {
+        var avgPersonal = seasonsWithPersonal.reduce(function(sum, s) { return sum + Number(s.personalRating) }, 0) / seasonsWithPersonal.length
+        personalRating = avgPersonal.toFixed(1)
+      }
+    }
+    // Add personal rating chip if it exists
+    if (personalRating) {
+      ratingHTML += '<span class="lib-card-rating-chip chip-personal"><span class="lib-card-rating-label">MY</span><span class="lib-card-rating-value">' + personalRating + '</span></span>'
     }
     const dayHTML     = item.scheduledDay
       ? '<span class="lib-card-day">\u25b8 ' + item.scheduledDay + '</span>' : ''
@@ -8915,7 +9066,6 @@
         (ratingHTML ? '<div class="lib-card-rating">' + ratingHTML + '</div>' : '') +
       '</div>' +
       '<div class="lib-card-title">' + item.title + '</div>' +
-      (item.personalRating ? '<div class="lib-card-personal-rating">\u2605 ' + item.personalRating + '/10</div>' : '') +
       '<div>' +
         '<div class="progress-bar">' +
           '<div class="progress-bar-fill" style="width:' + (item.type==='social'?socialPct:pct) + '%;background:' + accentColor + ';"></div>' +
@@ -10412,13 +10562,39 @@
     var total      = item.totalEpisodes || 0
     var pct        = total > 0 ? Math.min((watched / total) * 100, 100) : 0
     var unit       = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'chapters' : 'eps'
+    
+    // Calculate series average from season ratings if available
+    var seriesRatingIMDb = item.ratingIMDb
+    var seriesRatingMAL = item.ratingMAL
+    var seriesPersonalRating = item.personalRating
+    if (item.seasons && item.seasons.length > 0) {
+      var seasonsWithIMDb = item.seasons.filter(function(s) { return s.ratingIMDb })
+      var seasonsWithMAL = item.seasons.filter(function(s) { return s.ratingMAL })
+      var seasonsWithPersonal = item.seasons.filter(function(s) { return s.personalRating })
+      if (seasonsWithIMDb.length > 0) {
+        var avgIMDb = seasonsWithIMDb.reduce(function(sum, s) { return sum + Number(s.ratingIMDb) }, 0) / seasonsWithIMDb.length
+        seriesRatingIMDb = avgIMDb
+      }
+      if (seasonsWithMAL.length > 0) {
+        var avgMAL = seasonsWithMAL.reduce(function(sum, s) { return sum + Number(s.ratingMAL) }, 0) / seasonsWithMAL.length
+        seriesRatingMAL = avgMAL
+      }
+      if (seasonsWithPersonal.length > 0) {
+        var avgPersonal = seasonsWithPersonal.reduce(function(sum, s) { return sum + Number(s.personalRating) }, 0) / seasonsWithPersonal.length
+        seriesPersonalRating = avgPersonal.toFixed(1)
+      }
+    }
+    
     var ratingStr  = item.rating ? ('\u2605 ' + Number(item.rating).toFixed(1)) : '\u2014'
     // Build dual rating HTML if platform ratings exist
     var dualRatingHTML = ''
-    if (item.ratingIMDb || item.ratingMAL) {
+    if (seriesRatingIMDb || seriesRatingMAL || seriesPersonalRating) {
       dualRatingHTML = '<div class="detail-ratings-row">'
-      if (item.ratingIMDb) { var _imdbVal = Number(item.ratingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); dualRatingHTML += '<div class="detail-rating-chip chip-imdb"><span class="chip-label">IMDb</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
-      if (item.ratingMAL)  dualRatingHTML += '<div class="detail-rating-chip chip-mal"><span class="chip-label">MAL</span><span class="chip-val">'  + Number(item.ratingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      if (seriesRatingIMDb) { var _imdbVal = Number(seriesRatingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); dualRatingHTML += '<div class="detail-rating-chip chip-imdb"><span class="chip-label">IMDb</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
+      if (seriesRatingMAL)  dualRatingHTML += '<div class="detail-rating-chip chip-mal"><span class="chip-label">MAL</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      if (seriesPersonalRating) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display"><span class="chip-label">MY RATING</span><span class="chip-val">' + seriesPersonalRating + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      else if (item.seasons && item.seasons.length > 0) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.4;cursor:default;"><span class="chip-label">MY RATING</span><span class="chip-val" style="font-size:10px;">Rate seasons<span style="font-size:9px;opacity:0.6"></span></span></div>'
+      else dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.5;"><span class="chip-label">MY RATING</span><span class="chip-val">\u2605<span style="font-size:9px;opacity:0.6"> Rate</span></span></div>'
       dualRatingHTML += '</div>'
     }
 
@@ -10437,12 +10613,6 @@
     heroLeft.innerHTML =
       '<span class="badge" data-type="' + item.type + '">' + item.type + '</span>' +
       '<div class="detail-title">' + item.title + '</div>' +
-      '<div class="detail-personal-rating-wrap">' +
-        '<button class="detail-personal-rating-btn" id="detail-personal-rating-btn" title="Rate this series">' +
-          '<span class="rating-label">MY RATING:</span> ' +
-          '<span class="rating-stars" id="detail-personal-rating-stars">' + (item.personalRating ? '\u2605'.repeat(item.personalRating) + '\u2606'.repeat(10 - item.personalRating) : '\u2606'.repeat(10)) + '</span>' +
-        '</button>' +
-      '</div>' +
       (dualRatingHTML || (item.rating ? '<div class="detail-rating">' + ratingStr + '</div>' : '')) +
       (moodChipsHTML ? '<div class="detail-mood-row">' + moodChipsHTML + '</div>' : '') +
       '<div class="detail-progress-label">' + watched + ' of ' + total + ' ' + unit + ' ' + ((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'read' : 'watched') + '</div>' +
@@ -10547,7 +10717,8 @@
         var recurBtn = document.createElement('button')
         recurBtn.className = 'sched-add-btn'
         recurBtn.style.cssText = 'margin-top:4px;border-color:rgba(0,229,255,0.2);color:var(--accent-cool);opacity:0.7;'
-        recurBtn.textContent = '⚡ AUTO-SCHEDULE WEEKLY EPISODES'
+        var isReading = item.arcs && item.arcs.length > 0
+        recurBtn.textContent = isReading ? '⚡ AUTO-SCHEDULE WEEKLY CHAPTERS' : '⚡ AUTO-SCHEDULE WEEKLY EPISODES'
         recurBtn.addEventListener('click', function() {
           openRecurringSchedForItem(id, item, function() { renderEntries() })
         })
@@ -10635,64 +10806,149 @@
     deleteWrap.appendChild(deleteBtn)
     gravWrap.appendChild(deleteWrap)
 
-    // Add Season button
-    var addSeasonWrap = document.createElement('div')
-    addSeasonWrap.style.cssText = 'margin-bottom:8px;'
-    var addSeasonBtn = document.createElement('button')
-    addSeasonBtn.className = 'btn-ghost'
-    addSeasonBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;'
-    addSeasonBtn.textContent = '+ Add New Season'
-    addSeasonBtn.addEventListener('click', function() {
-      openAddSeasonModal(item, id, function(updatedItem) {
-        var lib6 = loadData(KEYS.library, [])
-        var it6 = lib6.find(function(i) { return i.id === id })
-        if (!it6) return
-        item.seasons = it6.seasons
-        item.totalEpisodes = it6.totalEpisodes
-        contentArea.innerHTML = ''
-        renderSeasonTabs(contentArea, item, item.seasons.length - 1, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+    // Add Season/Arc management buttons BEFORE gravWrap
+    var hasSeasonsData = item.seasons && item.seasons.length > 0
+    var hasArcsData    = item.arcs    && item.arcs.length    > 0
+
+    if (hasSeasonsData) {
+      // For watching content: show season management buttons (prioritize seasons over arcs)
+      var addSeasonWrap = document.createElement('div')
+      addSeasonWrap.style.cssText = 'margin-bottom:8px;'
+      var addSeasonBtn = document.createElement('button')
+      addSeasonBtn.className = 'btn-ghost'
+      addSeasonBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;'
+      addSeasonBtn.textContent = '+ Add New Season'
+      addSeasonBtn.addEventListener('click', function() {
+        openAddSeasonModal(item, id, function(updatedItem) {
+          var lib6 = loadData(KEYS.library, [])
+          var it6 = lib6.find(function(i) { return i.id === id })
+          if (!it6) return
+          item.seasons = it6.seasons
+          item.totalEpisodes = it6.totalEpisodes
+          var contentArea = document.getElementById('detail-content-area')
+          if (contentArea) {
+            contentArea.innerHTML = ''
+            renderSeasonTabs(contentArea, item, item.seasons.length - 1, false, [], null, null, startTimer, stopTimer)
+          }
+        })
       })
-    })
-    addSeasonWrap.appendChild(addSeasonBtn)
-    var manageSeasonBtn = document.createElement('button')
-    manageSeasonBtn.className = 'btn-ghost'
-    manageSeasonBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;margin-top:6px;'
-    manageSeasonBtn.textContent = 'Manage Seasons'
-    manageSeasonBtn.addEventListener('click', function() {
-      openManageSeasonsModal(item, id, function() {
-        var lib6 = loadData(KEYS.library, [])
-        var it6 = lib6.find(function(i) { return i.id === id })
-        if (!it6) return
-        item.seasons = it6.seasons || []
-        item.totalEpisodes = it6.totalEpisodes || 0
-        item.watchedEpisodes = it6.watchedEpisodes || []
-        contentArea.innerHTML = ''
-        if (item.seasons && item.seasons.length) renderSeasonTabs(contentArea, item, 0, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
-        else renderFlatGrid(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      addSeasonWrap.appendChild(addSeasonBtn)
+      var manageSeasonBtn = document.createElement('button')
+      manageSeasonBtn.className = 'btn-ghost'
+      manageSeasonBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;margin-top:6px;'
+      manageSeasonBtn.textContent = 'Manage Seasons'
+      manageSeasonBtn.addEventListener('click', function() {
+        openManageSeasonsModal(item, id, function() {
+          var lib6 = loadData(KEYS.library, [])
+          var it6 = lib6.find(function(i) { return i.id === id })
+          if (!it6) return
+          item.seasons = it6.seasons || []
+          item.totalEpisodes = it6.totalEpisodes || 0
+          item.watchedEpisodes = it6.watchedEpisodes || []
+          var contentArea = document.getElementById('detail-content-area')
+          if (contentArea) {
+            contentArea.innerHTML = ''
+            if (item.seasons && item.seasons.length) renderSeasonTabs(contentArea, item, 0, false, [], null, null, startTimer, stopTimer)
+            else renderFlatGrid(contentArea, item, false, [], null, null, startTimer, stopTimer)
+          }
+        })
       })
-    })
-    addSeasonWrap.appendChild(manageSeasonBtn)
-    heroRight.appendChild(addSeasonWrap)
+      addSeasonWrap.appendChild(manageSeasonBtn)
+      heroRight.appendChild(addSeasonWrap)
+    } else if (hasArcsData) {
+      // For reading content: show arc management buttons
+      var addArcWrap = document.createElement('div')
+      addArcWrap.style.cssText = 'margin-bottom:8px;'
+      var addArcBtn = document.createElement('button')
+      addArcBtn.className = 'btn-ghost'
+      addArcBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;'
+      addArcBtn.textContent = '+ Add New Arc'
+      addArcBtn.addEventListener('click', function() {
+        openAddArcModal(item, id, function(updatedItem) {
+          var lib6 = loadData(KEYS.library, [])
+          var it6 = lib6.find(function(i) { return i.id === id })
+          if (!it6) return
+          item.arcs = it6.arcs
+          var contentArea = document.getElementById('detail-content-area')
+          if (contentArea) {
+            contentArea.innerHTML = ''
+            renderArcTabs(contentArea, item, item.arcs.length - 1, false, [], null, null, startTimer, stopTimer)
+          }
+        })
+      })
+      addArcWrap.appendChild(addArcBtn)
+      var manageArcBtn = document.createElement('button')
+      manageArcBtn.className = 'btn-ghost'
+      manageArcBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;margin-top:6px;'
+      manageArcBtn.textContent = 'Manage Arcs'
+      manageArcBtn.addEventListener('click', function() {
+        openManageArcsModal(item, id, function() {
+          var lib6 = loadData(KEYS.library, [])
+          var it6 = lib6.find(function(i) { return i.id === id })
+          if (!it6) return
+          item.arcs = it6.arcs || []
+          var contentArea = document.getElementById('detail-content-area')
+          if (contentArea) {
+            contentArea.innerHTML = ''
+            if (item.arcs && item.arcs.length) renderArcTabs(contentArea, item, 0, false, [], null, null, startTimer, stopTimer)
+            else renderFlatGrid(contentArea, item, false, [], null, null, startTimer, stopTimer)
+          }
+        })
+      })
+      addArcWrap.appendChild(manageArcBtn)
+      heroRight.appendChild(addArcWrap)
+    }
 
     heroRight.appendChild(gravWrap)
     hero.appendChild(heroRight)
 
-    // -- Personal Rating button listener --
+    // -- Personal Rating chip click listener --
     setTimeout(function() {
-      var ratingBtn = document.getElementById('detail-personal-rating-btn')
-      if (ratingBtn) {
-        ratingBtn.addEventListener('click', function(e) {
+      var ratingChip = document.getElementById('detail-personal-rating-display')
+      if (ratingChip) {
+        // If series has seasons, don't allow manual rating
+        if (item.seasons && item.seasons.length > 0) {
+          ratingChip.style.cursor = 'default'
+          ratingChip.addEventListener('click', function(e) {
+            e.stopPropagation()
+            // Show tooltip message
+            var tooltip = document.createElement('div')
+            tooltip.style.cssText = 'position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 12px;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.8);font:400 11px var(--font-sans);color:var(--text);white-space:nowrap;'
+            tooltip.textContent = 'Rate individual seasons to calculate series rating'
+            document.body.appendChild(tooltip)
+            setTimeout(function() { tooltip.remove() }, 2500)
+          })
+          return
+        }
+        
+        // For series without seasons, allow manual rating
+        ratingChip.style.cursor = 'pointer'
+        ratingChip.addEventListener('click', function(e) {
           e.stopPropagation()
+          
           // Remove any existing popups
           document.querySelectorAll('.detail-personal-rating-popup').forEach(function(p) { p.remove() })
           var popup = document.createElement('div')
           popup.className = 'detail-personal-rating-popup'
-          popup.style.cssText = 'position:absolute;top:100%;left:0;margin-top:8px;background:rgba(12,10,30,0.95);border:1px solid rgba(130,160,255,0.2);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.8);'
+          popup.style.cssText = 'position:absolute;top:100%;left:0;margin-top:8px;background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.8);'
+          
           for (var s = 1; s <= 10; s++) {
             var star = document.createElement('button')
-            star.className = 'ep-rate-star' + (item.personalRating >= s ? ' filled' : '')
+            star.className = 'series-rate-star' + (item.personalRating >= s ? ' filled' : '')
             star.textContent = '\u2605'
             star.dataset.val = s
+            star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;'
+            if (item.personalRating >= s) {
+              star.style.color = '#ff8a4c'
+            }
+            star.addEventListener('mouseover', function() {
+              this.style.color = '#ff8a4c'
+              this.style.transform = 'scale(1.15)'
+            })
+            star.addEventListener('mouseout', function() {
+              this.style.color = (item.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'var(--text-dim)'
+              this.style.transform = 'scale(1)'
+            })
             star.addEventListener('click', function(ev) {
               ev.stopPropagation()
               var val = parseInt(this.dataset.val)
@@ -10703,43 +10959,58 @@
                 it.personalRating = val
                 saveData(KEYS.library, lib)
               }
-              popup.remove()
               // Update display
-              var starsEl = document.getElementById('detail-personal-rating-stars')
-              if (starsEl) starsEl.textContent = '\u2605'.repeat(val) + '\u2606'.repeat(10 - val)
+              var chipVal = ratingChip.querySelector('.chip-val')
+              if (chipVal) chipVal.innerHTML = val + '<span style="font-size:9px;opacity:0.6">/10</span>'
+              popup.remove()
             })
             popup.appendChild(star)
           }
-          // Clear button
+          
+          // Clear button if rating exists
           if (item.personalRating) {
             var clearBtn = document.createElement('button')
-            clearBtn.className = 'ep-rate-star clear-btn'
             clearBtn.textContent = '\u2715'
             clearBtn.title = 'Clear rating'
+            clearBtn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;margin-left:4px;'
+            clearBtn.addEventListener('mouseover', function() {
+              this.style.color = '#ff4444'
+              this.style.transform = 'scale(1.15)'
+            })
+            clearBtn.addEventListener('mouseout', function() {
+              this.style.color = 'var(--text-dim)'
+              this.style.transform = 'scale(1)'
+            })
             clearBtn.addEventListener('click', function(ev) {
               ev.stopPropagation()
-              item.personalRating = 0
+              delete item.personalRating
               var lib = loadData(KEYS.library, [])
               var it = lib.find(function(i) { return i.id === id })
               if (it) {
-                it.personalRating = 0
+                delete it.personalRating
                 saveData(KEYS.library, lib)
               }
+              // Remove chip from display or update to show "Rate"
+              var chipVal = ratingChip.querySelector('.chip-val')
+              if (chipVal) chipVal.innerHTML = '\u2605<span style="font-size:9px;opacity:0.6"> Rate</span>'
+              ratingChip.style.opacity = '0.5'
               popup.remove()
-              var starsEl = document.getElementById('detail-personal-rating-stars')
-              if (starsEl) starsEl.textContent = '\u2606'.repeat(10)
             })
             popup.appendChild(clearBtn)
           }
-          ratingBtn.parentElement.style.position = 'relative'
-          ratingBtn.parentElement.appendChild(popup)
+          
+          ratingChip.style.position = 'relative'
+          ratingChip.appendChild(popup)
+          
           // Close on outside click
           setTimeout(function() {
-            document.addEventListener('click', function closePopup() {
-              popup.remove()
-              document.removeEventListener('click', closePopup)
-            }, { once: true })
-          }, 10)
+            document.addEventListener('click', function closePopup(e) {
+              if (!popup.contains(e.target)) {
+                popup.remove()
+                document.removeEventListener('click', closePopup)
+              }
+            })
+          }, 100)
         })
       }
     }, 0)
@@ -10822,9 +11093,7 @@
 
     function addUniqueSelected(list) {
       list.forEach(function(n) { if (selectedEps.indexOf(n) === -1) selectedEps.push(n) })
-      var count = selectedEps.length
-      selectCountBadge.textContent = count + ' SELECTED'
-      selectCountBadge.style.display = count > 0 ? 'inline' : 'none'
+      selectCountBadge.style.display = 'none'
       updateSelectBar(true, selectedEps, id, item.title, selectBtn, selectCountBadge, startTimer, null)
       contentArea.innerHTML = ''
       if (hasSeasonsData) {
@@ -10838,47 +11107,6 @@
       }
     }
 
-    var bulkSelectRow = document.createElement('div')
-    bulkSelectRow.className = 'detail-bulk-select-row'
-    bulkSelectRow.style.display = 'none'
-    var bulkCurrentBtn = document.createElement('button')
-    bulkCurrentBtn.className = 'detail-bulk-select-btn'
-    bulkCurrentBtn.textContent = hasArcsData ? 'SELECT ARC' : 'SELECT SEASON'
-    bulkCurrentBtn.addEventListener('click', function() {
-      if (!selectMode) return
-      if (hasSeasonsData) {
-        var si = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
-        var season = item.seasons && item.seasons[isNaN(si) ? 0 : si]
-        if (!season) return
-        addUniqueSelected((season.episodes || []).map(function(ep) { return ep.number }))
-      } else if (hasArcsData) {
-        var ai = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
-        var arc = item.arcs && item.arcs[isNaN(ai) ? 0 : ai]
-        if (!arc) return
-        var nums = []
-        for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
-        addUniqueSelected(nums)
-      }
-    })
-    var bulkAllBtn = document.createElement('button')
-    bulkAllBtn.className = 'detail-bulk-select-btn'
-    bulkAllBtn.textContent = hasArcsData ? 'SELECT ALL ARCS' : 'SELECT ALL SEASONS'
-    bulkAllBtn.addEventListener('click', function() {
-      if (!selectMode) return
-      if (hasSeasonsData) {
-        var nums1 = []
-        ;(item.seasons || []).forEach(function(s) { (s.episodes || []).forEach(function(ep) { nums1.push(ep.number) }) })
-        addUniqueSelected(nums1)
-      } else if (hasArcsData) {
-        var nums2 = []
-        ;(item.arcs || []).forEach(function(a) { for (var n = a.chapterStart; n <= a.chapterEnd; n++) nums2.push(n) })
-        addUniqueSelected(nums2)
-      }
-    })
-    bulkSelectRow.appendChild(bulkCurrentBtn)
-    if (hasSeasonsData || hasArcsData) bulkSelectRow.appendChild(bulkAllBtn)
-    heroLeft.appendChild(bulkSelectRow)
-
     // -- Select mode toggle --
     selectBtn.addEventListener('click', function() {
       selectMode    = !selectMode
@@ -10887,22 +11115,68 @@
         selectBtn.textContent = '✕ CANCEL'
         selectBtn.style.borderColor = 'var(--accent-warm)'
         selectBtn.style.color       = 'var(--accent-warm)'
-        bulkSelectRow.style.display = (hasSeasonsData || hasArcsData) ? 'flex' : 'none'
+        
+        // Set up bulk select callbacks for bottom bar
+        window.__bulkSelectCurrent = function() {
+          if (hasSeasonsData) {
+            var si = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
+            var season = item.seasons && item.seasons[isNaN(si) ? 0 : si]
+            if (!season) return
+            addUniqueSelected((season.episodes || []).map(function(ep) { return ep.number }))
+          } else if (hasArcsData) {
+            var ai = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
+            var arc = item.arcs && item.arcs[isNaN(ai) ? 0 : ai]
+            if (!arc) return
+            var nums = []
+            for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
+            addUniqueSelected(nums)
+          }
+        }
+        
+        window.__bulkSelectAll = function() {
+          if (hasSeasonsData) {
+            var nums1 = []
+            ;(item.seasons || []).forEach(function(s) { (s.episodes || []).forEach(function(ep) { nums1.push(ep.number) }) })
+            addUniqueSelected(nums1)
+          } else if (hasArcsData) {
+            var nums2 = []
+            ;(item.arcs || []).forEach(function(a) { for (var n = a.chapterStart; n <= a.chapterEnd; n++) nums2.push(n) })
+            addUniqueSelected(nums2)
+          }
+        }
+        
+        // Store arc/season type for bottom bar
+        // v2: explicit check - arcs for reading, seasons for watching
+        if (hasArcsData && !hasSeasonsData) {
+          window.__selectModeType = 'arc'
+        } else if (hasSeasonsData && !hasArcsData) {
+          window.__selectModeType = 'season'
+        } else {
+          window.__selectModeType = null
+        }
       } else {
         selectBtn.textContent = 'SELECT'
         selectBtn.style.borderColor = ''
         selectBtn.style.color       = ''
-        bulkSelectRow.style.display = 'none'
+        window.__bulkSelectCurrent = null
+        window.__bulkSelectAll = null
+        window.__selectModeType = null
       }
       selectCountBadge.style.display = 'none'
-      updateSelectBar(selectMode, selectedEps, id, item.title, selectBtn, selectCountBadge, startTimer, null)
+      updateSelectBar(selectMode, selectedEps, id, item.title, selectBtn, selectCountBadge, startTimer, selectMode ? { isArc: hasArcsData } : null)
       // Re-render content area to apply/remove select-mode class on tiles
-      contentArea.innerHTML = ''
+      // Keep current season/arc index
+      var currentIdx = 0
       if (hasSeasonsData) {
-        renderSeasonTabs(contentArea, item, 0, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+        currentIdx = parseInt(contentArea.dataset.activeSeasonIdx || '0', 10)
+        contentArea.innerHTML = ''
+        renderSeasonTabs(contentArea, item, currentIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
       } else if (hasArcsData) {
-        renderArcAccordion(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+        currentIdx = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
+        contentArea.innerHTML = ''
+        renderArcTabs(contentArea, item, currentIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
       } else {
+        contentArea.innerHTML = ''
         renderFlatGrid(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
       }
     })
@@ -10940,20 +11214,20 @@
       var tab = document.createElement('button')
       tab.className = 'detail-season-tab' + (i === activeIdx ? ' active' : '')
       tab.textContent = season.name
+      tab.dataset.seasonIdx = i
       tab.addEventListener('click', function() {
-        if (selectMode && i === activeIdx) {
+        var seasonIdx = parseInt(this.dataset.seasonIdx, 10)
+        if (selectMode && seasonIdx === activeIdx) {
           var nums = (season.episodes || []).map(function(ep) { return ep.number })
           nums.forEach(function(n) { if (selectedEps.indexOf(n) === -1) selectedEps.push(n) })
-          var c = selectedEps.length
-          selectCountBadge.textContent = c + ' SELECTED'
-          selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
+          selectCountBadge.style.display = 'none'
           updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, season)
           container.innerHTML = ''
-          renderSeasonTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+          renderSeasonTabs(container, item, seasonIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
           return
         }
         container.innerHTML = ''
-        renderSeasonTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+        renderSeasonTabs(container, item, seasonIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
       })
       navRow.appendChild(tab)
     })
@@ -11126,21 +11400,26 @@
         tab.textContent = arc.name
         tab.title = 'Ch. ' + arc.chapterStart + '\u2013' + arc.chapterEnd
         tab.style.cssText = 'white-space:nowrap;flex-shrink:0;'
+        tab.dataset.arcIdx = i
         tab.addEventListener('click', function() {
-          if (selectMode && i === activeIdx) {
+          var arcIdx = parseInt(this.dataset.arcIdx, 10)
+          if (selectMode && arcIdx === activeIdx) {
             var nums = []
             for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
             nums.forEach(function(v) { if (selectedEps.indexOf(v) === -1) selectedEps.push(v) })
-            var c = selectedEps.length
-            selectCountBadge.textContent = c + ' SELECTED'
-            selectCountBadge.style.display = c > 0 ? 'inline' : 'none'
-            updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, null)
+            selectCountBadge.style.display = 'none'
+            // Create arc info object with episodes array for detection
+            var arcInfo = {
+              name: arc.name,
+              episodes: nums.map(function(n) { return { number: n } })
+            }
+            updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, arcInfo)
             container.innerHTML = ''
-            renderArcTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+            renderArcTabs(container, item, arcIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
             return
           }
           container.innerHTML = ''
-          renderArcTabs(container, item, i, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+          renderArcTabs(container, item, arcIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
         })
         navRow.appendChild(tab)
       })
@@ -11191,9 +11470,20 @@
     // Chapter grid
     var chapters = []
     for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) {
-      chapters.push({ number: n, title: 'Ch. ' + n, rating: 0, isChapter: true })
+      // Check if this chapter has a saved rating
+      var savedRating = 0
+      if (arc.chapters) {
+        var savedCh = arc.chapters.find(function(c) { return c.number === n })
+        if (savedCh) savedRating = savedCh.rating || 0
+      }
+      chapters.push({ number: n, title: 'Ch. ' + n, rating: savedRating, isChapter: true })
     }
-    var gridWrap = buildFilmstrip(item, chapters, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, null)
+    // Create arc info object for select bar
+    var arcInfo = {
+      name: arc.name,
+      episodes: chapters
+    }
+    var gridWrap = buildFilmstrip(item, chapters, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, arcInfo)
     container.appendChild(gridWrap)
 
     // Reuse exact season panel: mark all watched + stats cards
@@ -11265,7 +11555,7 @@
     grid.className = 'detail-ep-grid'
 
     episodes.forEach(function(ep) {
-      var tile = buildEpTile(item, ep, seasonId, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer)
+      var tile = buildEpTile(item, ep, seasonId, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, seasonInfo)
       grid.appendChild(tile)
     })
 
@@ -11276,7 +11566,7 @@
   /* -----------------------------------------------------------------
      PART 4: SINGLE EPISODE TILE BUILDER
   ----------------------------------------------------------------- */
-  function buildEpTile(item, ep, seasonIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer) {
+  function buildEpTile(item, ep, seasonIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, seasonInfo) {
     var tile = document.createElement('div')
     tile.className = 'ep-tile'
     if (ep.isChapter) tile.classList.add('chapter-tile')
@@ -11285,20 +11575,31 @@
     var epKey = makeEpKey(seasonIdx, ep.number)
     var isWatched = item.watchedEpisodes && item.watchedEpisodes.includes(epKey)
     if (isWatched) tile.classList.add('watched')
+    
+    // Add class if no platform ratings exist
+    var hasPlatformRatings = ep.ratingIMDb || ep.ratingMAL
+    if (!hasPlatformRatings && ep.rating) tile.classList.add('personal-only')
+
+    // Build ratings container
+    var ratingsHTML = ''
+    if (ep.ratingIMDb || ep.ratingMAL || ep.rating) {
+      // Check if only one platform rating exists (IMDb XOR MAL)
+      var hasOnlyOnePlatform = (ep.ratingIMDb && !ep.ratingMAL) || (!ep.ratingIMDb && ep.ratingMAL)
+      var noPersonalClass = !ep.rating ? ' no-personal' : ''
+      var onlyOneClass = hasOnlyOnePlatform ? ' only-one' : ''
+      ratingsHTML = '<div class="ep-ratings-bar' + noPersonalClass + onlyOneClass + '">'
+      if (ep.ratingIMDb) ratingsHTML += '<span class="ep-badge-imdb">' + Number(ep.ratingIMDb).toFixed(1) + '</span>'
+      if (ep.ratingMAL) ratingsHTML += '<span class="ep-badge-mal">' + Number(ep.ratingMAL).toFixed(1) + '</span>'
+      if (ep.rating) ratingsHTML += '<span class="ep-rating-badge">' + ep.rating + '</span>'
+      ratingsHTML += '</div>'
+    }
 
     tile.innerHTML =
-      (ep.ratingIMDb ? '<span class="ep-badge-imdb">' + ep.ratingIMDb + '</span>' : (ep.rating ? '<span class="ep-rating-badge">\u2605' + ep.rating + '</span>' : '')) +
-      (ep.ratingMAL  ? '<span class="ep-badge-mal">'  + ep.ratingMAL  + '/5</span>' : '') +
+      ratingsHTML +
       '<span class="ep-num">' + ep.number + '</span>' +
       '<span class="ep-check">\u2713</span>' +
       '<button class="ep-rate-btn" title="Rate this episode">\u2605</button>' +
       '<button class="ep-timer-btn" title="Start timer for this episode">\u23f1</button>'
-
-    // Tooltip
-    if (ep.title && ep.title !== 'Episode ' + ep.number) {
-      var ratingTip = ep.ratingIMDb ? ' · IMDb ' + ep.ratingIMDb + (ep.ratingMAL ? ' · MAL ' + ep.ratingMAL + '/5' : '') : (ep.rating ? ' \u00b7 \u2605' + ep.rating : '')
-      tile.title = ep.title + ratingTip
-    }
 
     // Rate button — opens star popup
     var rateBtn = tile.querySelector('.ep-rate-btn')
@@ -11309,7 +11610,7 @@
         document.querySelectorAll('.ep-rate-popup').forEach(function(p) { p.remove() })
         var popup = document.createElement('div')
         popup.className = 'ep-rate-popup'
-        for (var s = 1; s <= 10; s++) {
+        for (var s = 1; s <= 5; s++) {
           var star = document.createElement('button')
           star.className = 'ep-rate-star' + (ep.rating >= s ? ' filled' : '')
           star.textContent = '\u2605'
@@ -11329,6 +11630,23 @@
                   if (e.number === ep.number) { e.rating = val; found = true }
                 })
               })
+              // Check arcs for chapters (reading content)
+              if (!found && ep.isChapter) {
+                ;(it.arcs || []).forEach(function(arc) {
+                  // Initialize chapters array if it doesn't exist
+                  if (!arc.chapters) arc.chapters = []
+                  // Find or create chapter entry
+                  var ch = arc.chapters.find(function(c) { return c.number === ep.number })
+                  if (ch) {
+                    ch.rating = val
+                    found = true
+                  } else if (ep.number >= arc.chapterStart && ep.number <= arc.chapterEnd) {
+                    // Chapter is in this arc's range, add it
+                    arc.chapters.push({ number: ep.number, rating: val })
+                    found = true
+                  }
+                })
+              }
               if (!found) {
                 // flat episodes — create in first season
                 if (it.seasons && it.seasons.length > 0) {
@@ -11339,13 +11657,44 @@
               saveData(KEYS.library, lib)
             }
             popup.remove()
-            // Update badge on tile
-            var existingBadge = tile.querySelector('.ep-rating-badge')
-            if (existingBadge) existingBadge.remove()
-            var badge = document.createElement('span')
-            badge.className = 'ep-rating-badge'
-            badge.textContent = '\u2605' + val
-            tile.insertBefore(badge, tile.firstChild)
+            // Update ratings bar on tile
+            var existingBar = tile.querySelector('.ep-ratings-bar')
+            if (existingBar) {
+              var existingBadge = existingBar.querySelector('.ep-rating-badge')
+              if (existingBadge) {
+                existingBadge.textContent = val
+              } else {
+                var badge = document.createElement('span')
+                badge.className = 'ep-rating-badge'
+                badge.textContent = val
+                existingBar.appendChild(badge)
+              }
+              // Update classes for proper width
+              existingBar.classList.remove('no-personal')
+              var hasIMDb = existingBar.querySelector('.ep-badge-imdb')
+              var hasMAL = existingBar.querySelector('.ep-badge-mal')
+              var hasOnlyOne = (hasIMDb && !hasMAL) || (!hasIMDb && hasMAL)
+              if (hasOnlyOne) {
+                existingBar.classList.remove('only-one')
+              }
+              // Add personal-only class if no platform ratings
+              if (!hasIMDb && !hasMAL) {
+                tile.classList.add('personal-only')
+              }
+            } else {
+              // Create new ratings bar if it doesn't exist
+              var newBar = document.createElement('div')
+              newBar.className = 'ep-ratings-bar'
+              var badge = document.createElement('span')
+              badge.className = 'ep-rating-badge'
+              badge.textContent = val
+              newBar.appendChild(badge)
+              tile.insertBefore(newBar, tile.firstChild)
+              // Add personal-only class since no platform ratings exist
+              tile.classList.add('personal-only')
+            }
+            // Refresh stats to update personal average
+            if (typeof refreshStats === 'function') refreshStats(item.watchedEpisodes)
           })
           popup.appendChild(star)
         }
@@ -11366,11 +11715,39 @@
                   if (e.number === ep.number) e.rating = 0
                 })
               })
+              // Clear from arcs for chapters (reading content)
+              if (ep.isChapter) {
+                ;(it.arcs || []).forEach(function(arc) {
+                  if (arc.chapters) {
+                    var ch = arc.chapters.find(function(c) { return c.number === ep.number })
+                    if (ch) ch.rating = 0
+                  }
+                })
+              }
               saveData(KEYS.library, lib)
             }
             popup.remove()
-            var existingBadge = tile.querySelector('.ep-rating-badge')
-            if (existingBadge) existingBadge.remove()
+            // Remove personal rating badge from ratings bar
+            var existingBar = tile.querySelector('.ep-ratings-bar')
+            if (existingBar) {
+              var existingBadge = existingBar.querySelector('.ep-rating-badge')
+              if (existingBadge) existingBadge.remove()
+              // Update classes for proper width
+              var hasIMDb = existingBar.querySelector('.ep-badge-imdb')
+              var hasMAL = existingBar.querySelector('.ep-badge-mal')
+              if (hasIMDb || hasMAL) {
+                existingBar.classList.add('no-personal')
+                var hasOnlyOne = (hasIMDb && !hasMAL) || (!hasIMDb && hasMAL)
+                if (hasOnlyOne) {
+                  existingBar.classList.add('only-one')
+                }
+              } else {
+                // If ratings bar is now empty, remove it
+                existingBar.remove()
+              }
+            }
+            // Refresh stats to update personal average
+            if (typeof refreshStats === 'function') refreshStats(item.watchedEpisodes)
           })
           popup.appendChild(clearBtn)
         }
@@ -11389,15 +11766,15 @@
     tile.addEventListener('click', function(e) {
       if (e.target.classList.contains('ep-timer-btn')) return
       if (e.target.classList.contains('ep-rate-btn')) return
+      if (e.target.classList.contains('ep-rate-star')) return
+      if (e.target.closest('.ep-rate-popup')) return
 
       if (selectMode) {
         tile.classList.toggle('tile-selected')
         var idx = selectedEps.indexOf(ep.number)
         if (idx === -1) selectedEps.push(ep.number)
         else selectedEps.splice(idx, 1)
-        var n = selectedEps.length
-        selectCountBadge.textContent = n + ' SELECTED'
-        selectCountBadge.style.display = n > 0 ? 'inline' : 'none'
+        selectCountBadge.style.display = 'none'
         updateSelectBar(true, selectedEps, item.id, item.title, selectBtn, selectCountBadge, startTimer, seasonInfo)
         return
       }
@@ -11619,25 +11996,81 @@
     stats.id = 'season-stats-' + (season.id || seasonIdx)
     function getAvgRatingDisplay() {
       if (!eps.length) return null
-      var ratedEps = eps.filter(function(e) { return e.ratingIMDb || e.ratingMAL || e.rating })
+      var ratedEps = eps.filter(function(e) { return e.rating })
       if (!ratedEps.length) return null
-      var sum = ratedEps.reduce(function(s, e) {
-        var count = 0
-        var total = 0
-        if (e.ratingIMDb) { total += Number(e.ratingIMDb); count++ }
-        if (e.ratingMAL)  { total += normalizeMALEpRating(e.ratingMAL); count++ }
-        if (count === 0 && e.rating) { total = Number(e.rating); count = 1 }
-        return s + (count > 0 ? total / count : 0)
-      }, 0)
+      // Episode ratings are out of 5, convert to 10 scale
+      var sum = ratedEps.reduce(function(s, e) { return s + (Number(e.rating) * 2) }, 0)
       return (sum / ratedEps.length).toFixed(1)
     }
     function refreshStats(watchedEps) {
       var newWatched = watchedEps ? watchedEps.filter(function(n) { return epNums.includes(n) }).length : 0
       var newPct = eps.length > 0 ? Math.round((newWatched / eps.length) * 100) : 0
-      // For reading types (manga/manhwa/novel) we omit Avg Rating and show only 2 stat cards
       var isReadingType = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
-      var avgRating = getAvgRatingDisplay()
-      if (isReadingType || !avgRating) {
+      
+      // Calculate personal average from episode ratings
+      var personalAvg = getAvgRatingDisplay()
+      
+      // Calculate season averages from episodes
+      var seasonIMDb = null, seasonMAL = null
+      var imdbEps = eps.filter(function(e) { return e.ratingIMDb })
+      var malEps = eps.filter(function(e) { return e.ratingMAL })
+      if (imdbEps.length > 0) {
+        seasonIMDb = (imdbEps.reduce(function(s, e) { return s + Number(e.ratingIMDb) }, 0) / imdbEps.length).toFixed(1)
+      }
+      if (malEps.length > 0) {
+        seasonMAL = (malEps.reduce(function(s, e) { return s + Number(e.ratingMAL) }, 0) / malEps.length).toFixed(1)
+      }
+      
+      // Use season-level rating if set, otherwise use calculated average
+      var seasonRatingIMDb = season.ratingIMDb ? Number(season.ratingIMDb).toFixed(1) : seasonIMDb
+      var seasonRatingMAL = season.ratingMAL ? Number(season.ratingMAL).toFixed(1) : seasonMAL
+      var seasonPersonalRating = season.personalRating ? Number(season.personalRating).toFixed(1) : personalAvg
+      
+      // Calculate overall average from all three sources
+      var overallAvg = null
+      if (seasonRatingIMDb || seasonRatingMAL || seasonPersonalRating) {
+        var count = 0
+        var total = 0
+        if (seasonRatingIMDb) { total += Number(seasonRatingIMDb); count++ }
+        if (seasonRatingMAL) { total += Number(seasonRatingMAL) * 2; count++ } // MAL is out of 5, convert to 10
+        if (seasonPersonalRating) { total += Number(seasonPersonalRating); count++ }
+        if (count > 0) overallAvg = (total / count).toFixed(1)
+      }
+      
+      // Build rating display with bars inside the card
+      var ratingHTML = ''
+      if (overallAvg && !isReadingType) {
+        ratingHTML = '<div class="stat-card">' +
+          '<div class="stat-card-number">' + overallAvg + '</div>' +
+          '<div class="stat-card-label">Avg Rating</div>' +
+          '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center;">'
+        
+        if (seasonRatingIMDb) {
+          var imdbLink = season.imdbUrl || ''
+          var imdbStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(245,197,24,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#F5C518;' + (imdbLink ? 'cursor:pointer;transition:all 0.2s;' : '')
+          var imdbHover = imdbLink ? ' onmouseover="this.style.background=\'rgba(245,197,24,0.22)\'" onmouseout="this.style.background=\'rgba(245,197,24,0.12)\'"' : ''
+          ratingHTML += '<div class="season-imdb-chip" style="' + imdbStyle + '"' + imdbHover + '><span>IMDb</span><span>' + seasonRatingIMDb + '</span></div>'
+        } else {
+          ratingHTML += '<div class="season-imdb-chip season-add-link" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(245,197,24,0.08);border:1px dashed rgba(245,197,24,0.3);border-radius:3px;font-size:10px;font-weight:600;color:#F5C518;cursor:pointer;opacity:0.6;transition:all 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.6\'"><span>+ IMDb</span></div>'
+        }
+        if (seasonRatingMAL) {
+          var malLink = season.malUrl || ''
+          var malStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(95,143,219,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#5f8fdb;' + (malLink ? 'cursor:pointer;transition:all 0.2s;' : '')
+          var malHover = malLink ? ' onmouseover="this.style.background=\'rgba(95,143,219,0.22)\'" onmouseout="this.style.background=\'rgba(95,143,219,0.12)\'"' : ''
+          ratingHTML += '<div class="season-mal-chip" style="' + malStyle + '"' + malHover + '><span>MAL</span><span>' + seasonRatingMAL + '</span></div>'
+        } else {
+          ratingHTML += '<div class="season-mal-chip season-add-link" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(95,143,219,0.08);border:1px dashed rgba(95,143,219,0.3);border-radius:3px;font-size:10px;font-weight:600;color:#5f8fdb;cursor:pointer;opacity:0.6;transition:all 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.6\'"><span>+ MAL</span></div>'
+        }
+        if (seasonPersonalRating) {
+          ratingHTML += '<div class="season-personal-rating-btn" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(255,138,76,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#ff8a4c;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,138,76,0.22)\'" onmouseout="this.style.background=\'rgba(255,138,76,0.12)\'"><span>MY</span><span>' + seasonPersonalRating + '</span></div>'
+        } else {
+          ratingHTML += '<div class="season-personal-rating-btn" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(255,138,76,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#ff8a4c;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,138,76,0.22)\'" onmouseout="this.style.background=\'rgba(255,138,76,0.12)\'"><span>RATE</span></div>'
+        }
+        
+        ratingHTML += '</div></div>'
+      }
+      
+      if (isReadingType || !ratingHTML) {
         stats.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:16px;'
         stats.innerHTML =
           '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + (isReadingType ? 'Read' : 'Watched') + '</div></div>' +
@@ -11645,9 +12078,81 @@
       } else {
         stats.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;'
         stats.innerHTML =
-          '<div class="stat-card"><div class="stat-card-number">' + avgRating + '</div><div class="stat-card-label">Avg Rating</div></div>' +
+          ratingHTML +
           '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">Watched</div></div>' +
           '<div class="stat-card"><div class="stat-card-number">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
+        
+        // Add click handler for season rating
+        var ratingBtn = stats.querySelector('.season-personal-rating-btn')
+        if (ratingBtn) {
+          ratingBtn.addEventListener('click', function(e) {
+            e.stopPropagation()
+            showSeasonRatingPopup(season, ratingBtn, function(newRating) {
+              season.personalRating = newRating
+              var lib = loadData(KEYS.library, [])
+              var libItem = lib.find(function(i) { return i.id === item.id })
+              if (libItem && libItem.seasons) {
+                var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
+                if (libSeason) {
+                  libSeason.personalRating = newRating
+                  saveData(KEYS.library, lib)
+                  refreshStats(item.watchedEpisodes)
+                }
+              }
+            })
+          })
+        }
+        
+        // Add click handlers for IMDb/MAL chips
+        var imdbChip = stats.querySelector('.season-imdb-chip')
+        if (imdbChip) {
+          imdbChip.addEventListener('click', function(e) {
+            e.stopPropagation()
+            if (season.imdbUrl) {
+              window.open(season.imdbUrl, '_blank')
+            } else {
+              // Show custom input modal for IMDb URL
+              showInputModal('Add IMDb Link', 'Enter IMDb URL for ' + season.name, imdbChip, function(url) {
+                season.imdbUrl = url
+                var lib = loadData(KEYS.library, [])
+                var libItem = lib.find(function(i) { return i.id === item.id })
+                if (libItem && libItem.seasons) {
+                  var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
+                  if (libSeason) {
+                    libSeason.imdbUrl = url
+                    saveData(KEYS.library, lib)
+                    refreshStats(item.watchedEpisodes)
+                  }
+                }
+              })
+            }
+          })
+        }
+        
+        var malChip = stats.querySelector('.season-mal-chip')
+        if (malChip) {
+          malChip.addEventListener('click', function(e) {
+            e.stopPropagation()
+            if (season.malUrl) {
+              window.open(season.malUrl, '_blank')
+            } else {
+              // Show custom input modal for MAL URL
+              showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + season.name, malChip, function(url) {
+                season.malUrl = url
+                var lib = loadData(KEYS.library, [])
+                var libItem = lib.find(function(i) { return i.id === item.id })
+                if (libItem && libItem.seasons) {
+                  var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
+                  if (libSeason) {
+                    libSeason.malUrl = url
+                    saveData(KEYS.library, lib)
+                    refreshStats(item.watchedEpisodes)
+                  }
+                }
+              })
+            }
+          })
+        }
       }
     }
     refreshStats(item.watchedEpisodes)
@@ -11667,6 +12172,214 @@
     // Episode ratings are now inline on each tile — no separate table needed
 
     return panel
+  }
+
+  // Custom input modal (replaces browser prompt) - small inline popup
+  function showInputModal(title, placeholder, buttonEl, onSubmit) {
+    // Remove any existing modals
+    document.querySelectorAll('.custom-input-modal').forEach(function(m) { m.remove() })
+    
+    var popup = document.createElement('div')
+    popup.className = 'custom-input-modal'
+    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,0.98);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:10px 12px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);min-width:350px;max-width:500px;'
+    
+    var titleEl = document.createElement('div')
+    titleEl.style.cssText = 'font:600 10px var(--font-sans);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;'
+    titleEl.textContent = title
+    popup.appendChild(titleEl)
+    
+    var input = document.createElement('input')
+    input.type = 'text'
+    input.placeholder = placeholder || ''
+    input.style.cssText = 'width:100%;padding:6px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font:400 11px var(--font-sans);margin-bottom:8px;box-sizing:border-box;outline:none;'
+    input.addEventListener('focus', function() {
+      this.style.borderColor = 'rgba(130,160,255,0.4)'
+    })
+    input.addEventListener('blur', function() {
+      this.style.borderColor = 'var(--border)'
+    })
+    popup.appendChild(input)
+    
+    var btnRow = document.createElement('div')
+    btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;'
+    
+    var cancelBtn = document.createElement('button')
+    cancelBtn.textContent = '✕'
+    cancelBtn.style.cssText = 'padding:4px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);font:600 11px var(--font-sans);cursor:pointer;transition:all 0.2s;line-height:1;'
+    cancelBtn.addEventListener('mouseover', function() {
+      this.style.borderColor = '#ff4444'
+      this.style.color = '#ff4444'
+    })
+    cancelBtn.addEventListener('mouseout', function() {
+      this.style.borderColor = 'var(--border)'
+      this.style.color = 'var(--text-dim)'
+    })
+    cancelBtn.addEventListener('click', function() {
+      popup.remove()
+    })
+    btnRow.appendChild(cancelBtn)
+    
+    var submitBtn = document.createElement('button')
+    submitBtn.textContent = '✓'
+    submitBtn.style.cssText = 'padding:4px 8px;background:var(--accent-cool);border:none;border-radius:3px;color:var(--bg);font:600 11px var(--font-sans);cursor:pointer;transition:all 0.2s;line-height:1;'
+    submitBtn.addEventListener('mouseover', function() {
+      this.style.opacity = '0.85'
+    })
+    submitBtn.addEventListener('mouseout', function() {
+      this.style.opacity = '1'
+    })
+    submitBtn.addEventListener('click', function() {
+      var value = input.value.trim()
+      if (value) {
+        onSubmit(value)
+        popup.remove()
+      }
+    })
+    btnRow.appendChild(submitBtn)
+    
+    popup.appendChild(btnRow)
+    
+    document.body.appendChild(popup)
+    
+    // Position relative to button with viewport constraints
+    var rect = buttonEl.getBoundingClientRect()
+    var popupWidth = 350 // min-width
+    
+    // Calculate horizontal position (centered on button)
+    var left = rect.left + rect.width / 2
+    
+    // Constrain to viewport horizontally
+    var minLeft = popupWidth / 2 + 10
+    var maxLeft = window.innerWidth - popupWidth / 2 - 10
+    left = Math.max(minLeft, Math.min(maxLeft, left))
+    
+    // Calculate vertical position (above button)
+    var bottom = window.innerHeight - rect.top + 10
+    
+    // Check if popup would go off top
+    if (rect.top < 120) {
+      // Position below button instead
+      popup.style.top = (rect.bottom + 10) + 'px'
+      popup.style.bottom = 'auto'
+    } else {
+      popup.style.bottom = bottom + 'px'
+      popup.style.top = 'auto'
+    }
+    
+    popup.style.left = left + 'px'
+    popup.style.transform = 'translateX(-50%)'
+    
+    // Focus input
+    setTimeout(function() { input.focus() }, 100)
+    
+    // Submit on Enter, close on Escape
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        submitBtn.click()
+      } else if (e.key === 'Escape') {
+        popup.remove()
+      }
+    })
+    
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', function closePopup(e) {
+        if (!popup.contains(e.target)) {
+          popup.remove()
+          document.removeEventListener('click', closePopup)
+        }
+      })
+    }, 100)
+  }
+
+  // Season rating popup
+  function showSeasonRatingPopup(season, buttonEl, onRated) {
+    // Remove any existing popups
+    document.querySelectorAll('.season-rate-popup').forEach(function(p) { p.remove() })
+    
+    // Hide select bar while popup is open
+    var selectBar = document.getElementById('detail-select-bar')
+    if (selectBar) selectBar.style.display = 'none'
+    
+    var popup = document.createElement('div')
+    popup.className = 'season-rate-popup'
+    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);flex-wrap:nowrap;'
+    
+    // Position relative to button
+    var rect = buttonEl.getBoundingClientRect()
+    popup.style.left = (rect.left + rect.width / 2) + 'px'
+    popup.style.bottom = (window.innerHeight - rect.top + 10) + 'px'
+    popup.style.transform = 'translateX(-50%)'
+    
+    for (var s = 1; s <= 10; s++) {
+      var star = document.createElement('button')
+      star.className = 'season-rate-star' + (season.personalRating >= s ? ' filled' : '')
+      star.textContent = '\u2605'
+      star.dataset.val = s
+      star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;flex-shrink:0;'
+      if (season.personalRating >= s) {
+        star.style.color = '#ff8a4c'
+      }
+      star.addEventListener('mouseover', function() {
+        this.style.color = '#ff8a4c'
+        this.style.transform = 'scale(1.15)'
+      })
+      star.addEventListener('mouseout', function() {
+        this.style.color = (season.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'var(--text-dim)'
+        this.style.transform = 'scale(1)'
+      })
+      if (season.personalRating >= s) {
+        star.style.color = '#ff8a4c'
+      }
+      star.addEventListener('click', function(ev) {
+        ev.stopPropagation()
+        var val = parseInt(this.dataset.val)
+        onRated(val)
+        popup.remove()
+        // Restore select bar
+        var selectBar = document.getElementById('detail-select-bar')
+        if (selectBar) selectBar.style.display = 'flex'
+      })
+      popup.appendChild(star)
+    }
+    
+    // Clear button
+    if (season.personalRating) {
+      var clearBtn = document.createElement('button')
+      clearBtn.textContent = '\u2715'
+      clearBtn.title = 'Clear rating'
+      clearBtn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;margin-left:4px;'
+      clearBtn.addEventListener('mouseover', function() {
+        this.style.color = '#ff4444'
+        this.style.transform = 'scale(1.15)'
+      })
+      clearBtn.addEventListener('mouseout', function() {
+        this.style.color = 'var(--text-dim)'
+        this.style.transform = 'scale(1)'
+      })
+      clearBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation()
+        onRated(0)
+        popup.remove()
+        // Restore select bar
+        var selectBar = document.getElementById('detail-select-bar')
+        if (selectBar) selectBar.style.display = 'flex'
+      })
+      popup.appendChild(clearBtn)
+    }
+    
+    document.body.appendChild(popup)
+    
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', function closePopup() {
+        popup.remove()
+        // Restore select bar
+        var selectBar = document.getElementById('detail-select-bar')
+        if (selectBar) selectBar.style.display = 'flex'
+        document.removeEventListener('click', closePopup)
+      }, { once: true })
+    }, 10)
   }
 
   /* -----------------------------------------------------------------
@@ -11794,6 +12507,71 @@
   /* -----------------------------------------------------------------
      PART 4: MULTI-SELECT ACTION BAR
   ----------------------------------------------------------------- */
+  
+  function getSmartSelectionText(selectedEps, item) {
+    if (!selectedEps || selectedEps.length === 0) return '0 selected'
+    
+    var hasSeasonsData = item.seasons && item.seasons.length > 0
+    var hasArcsData = item.arcs && item.arcs.length > 0
+    var isReading = item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel'
+    var unitLabel = isReading ? 'ch' : 'ep'
+    var unitLabelPlural = isReading ? 'chs' : 'eps'
+    
+    if (hasSeasonsData) {
+      // Analyze which seasons are selected
+      var seasonStats = []
+      item.seasons.forEach(function(season, idx) {
+        var seasonEps = (season.episodes || []).map(function(e) { return e.number })
+        var selectedInSeason = seasonEps.filter(function(n) { return selectedEps.indexOf(n) >= 0 })
+        if (selectedInSeason.length > 0) {
+          seasonStats.push({
+            name: season.name || ('Season ' + (idx + 1)),
+            selected: selectedInSeason.length,
+            total: seasonEps.length,
+            isComplete: selectedInSeason.length === seasonEps.length
+          })
+        }
+      })
+      
+      if (seasonStats.length === 0) return selectedEps.length + ' ' + (selectedEps.length === 1 ? unitLabel : unitLabelPlural) + ' selected'
+      if (seasonStats.length === 1) {
+        var s = seasonStats[0]
+        return s.name + ' · ' + s.selected + ' ' + (s.selected === 1 ? unitLabel : unitLabelPlural) + ' selected'
+      }
+      // Multiple seasons
+      var totalEps = seasonStats.reduce(function(sum, s) { return sum + s.selected }, 0)
+      return seasonStats.length + ' seasons · ' + totalEps + ' ' + unitLabelPlural + ' selected'
+    } else if (hasArcsData) {
+      // Analyze which arcs are selected
+      var arcStats = []
+      item.arcs.forEach(function(arc) {
+        var arcChapters = []
+        for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) arcChapters.push(n)
+        var selectedInArc = arcChapters.filter(function(n) { return selectedEps.indexOf(n) >= 0 })
+        if (selectedInArc.length > 0) {
+          arcStats.push({
+            name: arc.name || 'Arc',
+            selected: selectedInArc.length,
+            total: arcChapters.length,
+            isComplete: selectedInArc.length === arcChapters.length
+          })
+        }
+      })
+      
+      if (arcStats.length === 0) return selectedEps.length + ' ' + (selectedEps.length === 1 ? unitLabel : unitLabelPlural) + ' selected'
+      if (arcStats.length === 1) {
+        var a = arcStats[0]
+        return a.name + ' · ' + a.selected + ' ' + (a.selected === 1 ? unitLabel : unitLabelPlural) + ' selected'
+      }
+      // Multiple arcs
+      var totalChs = arcStats.reduce(function(sum, a) { return sum + a.selected }, 0)
+      return arcStats.length + ' arcs · ' + totalChs + ' ' + unitLabelPlural + ' selected'
+    }
+    
+    // Flat episodes/chapters
+    return selectedEps.length + ' ' + (selectedEps.length === 1 ? unitLabel : unitLabelPlural) + ' selected'
+  }
+  
   function updateSelectBar(active, selectedEps, itemId, title, selectBtn, selectCountBadge, startTimer, seasonInfo) {
     var existing = document.getElementById('detail-select-bar')
     if (!active) {
@@ -11813,7 +12591,7 @@
     var DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN']
     var todayIdx  = (new Date().getDay() + 6) % 7
 
-    // Check if whole season is selected
+    // Check if whole season/arc is selected
     var isWholeSeason = false
     var seasonName = ''
     if (seasonInfo && seasonInfo.episodes) {
@@ -11821,17 +12599,70 @@
       var allSelected = seasonEpNums.every(function(num) { return selectedEps.includes(num) })
       if (allSelected && seasonEpNums.length === n) {
         isWholeSeason = true
-        seasonName = seasonInfo.name || 'Season'
+        // Use the actual name from seasonInfo, which will be arc name or season name
+        seasonName = seasonInfo.name || (seasonInfo.isArc ? 'Arc' : 'Season')
       }
     }
 
-    // Build bar: count + schedule btn + clear
+    // Build bar: count + bulk select buttons + schedule btn + clear
     bar.innerHTML = ''
 
+    // Add bulk select buttons based on content type
+    // Use stored type from when select mode was activated
+    var selectType = window.__selectModeType
+    
+    // Debug: if type is not set but callbacks exist, try to determine from callbacks
+    if (!selectType && window.__bulkSelectAll) {
+      // Assume season if no type is set (most common case)
+      selectType = 'season'
+    }
+    
     var countEl = document.createElement('div')
     countEl.className = 'detail-select-count'
-    countEl.textContent = isWholeSeason ? seasonName + ' selected' : (n + ' ep' + (n !== 1 ? 's' : '') + ' selected')
+    
+    // Get the item to pass to smart selection text
+    var lib = loadData(KEYS.library, [])
+    var item = lib.find(function(i) { return i.id === itemId })
+    
+    if (item) {
+      countEl.textContent = getSmartSelectionText(selectedEps, item)
+    } else {
+      var unitName = (selectType === 'arc') ? 'ch' : 'ep'
+      var unitPlural = (selectType === 'arc') ? 'chs' : 'eps'
+      countEl.textContent = n + ' ' + (n !== 1 ? unitPlural : unitName) + ' selected'
+    }
     bar.appendChild(countEl)
+    
+    if (selectType === 'arc') {
+      // For reading content: show both "+ ARC" and "+ ALL ARCS"
+      var bulkCurrentBtn = document.createElement('button')
+      bulkCurrentBtn.className = 'btn-ghost'
+      bulkCurrentBtn.style.cssText = 'font-size:10px;padding:6px 10px;border-style:dashed;'
+      bulkCurrentBtn.textContent = '+ ARC'
+      bulkCurrentBtn.addEventListener('click', function() {
+        if (window.__bulkSelectCurrent) window.__bulkSelectCurrent()
+      })
+      bar.appendChild(bulkCurrentBtn)
+
+      var bulkAllBtn = document.createElement('button')
+      bulkAllBtn.className = 'btn-ghost'
+      bulkAllBtn.style.cssText = 'font-size:10px;padding:6px 10px;border-style:dashed;'
+      bulkAllBtn.textContent = '+ ALL ARCS'
+      bulkAllBtn.addEventListener('click', function() {
+        if (window.__bulkSelectAll) window.__bulkSelectAll()
+      })
+      bar.appendChild(bulkAllBtn)
+    } else if (selectType === 'season') {
+      // For watching content: show only "+ ALL SEASONS"
+      var bulkAllBtn = document.createElement('button')
+      bulkAllBtn.className = 'btn-ghost'
+      bulkAllBtn.style.cssText = 'font-size:10px;padding:6px 10px;border-style:dashed;'
+      bulkAllBtn.textContent = '+ ALL SEASONS'
+      bulkAllBtn.addEventListener('click', function() {
+        if (window.__bulkSelectAll) window.__bulkSelectAll()
+      })
+      bar.appendChild(bulkAllBtn)
+    }
 
     if (n > 0) {
       var schedBtn = document.createElement('button')
@@ -11874,17 +12705,113 @@
       sessionBtn.textContent = '▶ Start Session'
       sessionBtn.addEventListener('click', function() {
         var sorted = selectedEps.slice().sort(function(a,b){return a-b})
-        // Format episode label
+        
+        // Get item to analyze seasons/arcs
+        var lib = loadData(KEYS.library, [])
+        var item = lib.find(function(i) { return i.id === itemId })
+        
+        // Format episode label with smart detection
         var epLabel = ''
-        if (isWholeSeason) {
-          epLabel = seasonName
-        } else if (sorted.length === 1) {
-          epLabel = 'Ep. ' + sorted[0]
-        } else if (sorted.length > 5) {
-          epLabel = 'Eps ' + sorted[0] + '-' + sorted[sorted.length - 1]
-        } else {
-          epLabel = 'Eps ' + sorted.join(', ')
+        if (item) {
+          var hasSeasonsData = item.seasons && item.seasons.length > 0
+          var hasArcsData = item.arcs && item.arcs.length > 0
+          var isReading = item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel'
+          var unitLabel = isReading ? 'Ch.' : 'Ep.'
+          var unitLabelPlural = isReading ? 'Chs' : 'Eps'
+          
+          if (hasSeasonsData) {
+            // Analyze which seasons are selected
+            var seasonStats = []
+            item.seasons.forEach(function(season) {
+              var seasonEps = (season.episodes || []).map(function(e) { return e.number })
+              var selectedInSeason = seasonEps.filter(function(n) { return sorted.indexOf(n) >= 0 })
+              if (selectedInSeason.length > 0) {
+                seasonStats.push({
+                  name: season.name || 'Season',
+                  episodes: selectedInSeason
+                })
+              }
+            })
+            
+            if (seasonStats.length === 1) {
+              var s = seasonStats[0]
+              if (s.episodes.length === 1) {
+                epLabel = s.name + ' · ' + unitLabel + ' ' + s.episodes[0]
+              } else if (s.episodes.length <= 3) {
+                epLabel = s.name + ' · ' + unitLabelPlural + ' ' + s.episodes.join(', ')
+              } else {
+                // Check if consecutive
+                var isConsecutive = true
+                for (var i = 1; i < s.episodes.length; i++) {
+                  if (s.episodes[i] !== s.episodes[i-1] + 1) {
+                    isConsecutive = false
+                    break
+                  }
+                }
+                if (isConsecutive) {
+                  epLabel = s.name + ' · ' + unitLabelPlural + ' ' + s.episodes[0] + '-' + s.episodes[s.episodes.length - 1]
+                } else {
+                  epLabel = s.name + ' · ' + s.episodes.length + ' ' + unitLabelPlural.toLowerCase()
+                }
+              }
+            } else if (seasonStats.length > 1) {
+              epLabel = seasonStats.length + ' seasons · ' + sorted.length + ' ' + unitLabelPlural.toLowerCase()
+            }
+          } else if (hasArcsData) {
+            // Analyze which arcs are selected
+            var arcStats = []
+            item.arcs.forEach(function(arc) {
+              var arcChapters = []
+              for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) arcChapters.push(n)
+              var selectedInArc = arcChapters.filter(function(n) { return sorted.indexOf(n) >= 0 })
+              if (selectedInArc.length > 0) {
+                arcStats.push({
+                  name: arc.name || 'Arc',
+                  chapters: selectedInArc
+                })
+              }
+            })
+            
+            if (arcStats.length === 1) {
+              var a = arcStats[0]
+              if (a.chapters.length === 1) {
+                epLabel = a.name + ' · ' + unitLabel + ' ' + a.chapters[0]
+              } else if (a.chapters.length <= 3) {
+                epLabel = a.name + ' · ' + unitLabelPlural + ' ' + a.chapters.join(', ')
+              } else {
+                // Check if consecutive
+                var isConsecutive = true
+                for (var i = 1; i < a.chapters.length; i++) {
+                  if (a.chapters[i] !== a.chapters[i-1] + 1) {
+                    isConsecutive = false
+                    break
+                  }
+                }
+                if (isConsecutive) {
+                  epLabel = a.name + ' · ' + unitLabelPlural + ' ' + a.chapters[0] + '-' + a.chapters[a.chapters.length - 1]
+                } else {
+                  epLabel = a.name + ' · ' + a.chapters.length + ' ' + unitLabelPlural.toLowerCase()
+                }
+              }
+            } else if (arcStats.length > 1) {
+              epLabel = arcStats.length + ' arcs · ' + sorted.length + ' ' + unitLabelPlural.toLowerCase()
+            }
+          }
         }
+        
+        // Fallback if no label was generated
+        if (!epLabel) {
+          var unitLabel = 'Ep.'
+          var unitLabelPlural = 'Eps'
+          if (sorted.length === 1) {
+            epLabel = unitLabel + ' ' + sorted[0]
+          } else if (sorted.length <= 3) {
+            epLabel = unitLabelPlural + ' ' + sorted.join(', ')
+          } else {
+            epLabel = unitLabelPlural + ' ' + sorted[0] + '-' + sorted[sorted.length - 1]
+          }
+        }
+        
         // Find the startTimer function from parent scope
         if (typeof startTimer === 'function') {
           startTimer(epLabel)
@@ -12612,6 +13539,173 @@
     return results
   }
 
+  /* =================================================================
+     MANAGE ARCS MODAL — openManageArcsModal(item, id, onDone)
+  ================================================================= */
+  function openManageArcsModal(item, id, onDone) {
+    var overlay = document.createElement('div')
+    overlay.className = 'sched-modal-overlay'
+    overlay.style.zIndex = '10001'
+    var box = document.createElement('div')
+    box.className = 'sched-modal'
+    box.style.cssText = 'width:min(560px,calc(100% - 40px));'
+
+    var arcs = (item.arcs || []).slice()
+    if (!arcs.length) {
+      alert('No arcs found. Add an arc first.')
+      return
+    }
+
+    var rowsHtml = arcs.map(function(a, i) {
+      return '<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:8px;">' +
+        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="name" value="' + (a.name || ('Arc ' + (i + 1))) + '" placeholder="Arc name" autocomplete="off"/>' +
+        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="start" type="number" min="1" value="' + (a.chapterStart || 1) + '" placeholder="Start" autocomplete="off"/>' +
+        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="end" type="number" min="1" value="' + (a.chapterEnd || 1) + '" placeholder="End" autocomplete="off"/>' +
+      '</div>'
+    }).join('')
+
+    box.innerHTML =
+      '<div class="sched-modal-title">Manage Arcs</div>' +
+      '<div class="sched-modal-subtitle">' + item.title + '</div>' +
+      '<div style="font:500 10px var(--font-mono);color:var(--text-3);margin-bottom:8px;">Edit arc name, start chapter, and end chapter.</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:4px;font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase;">' +
+        '<div>ARC NAME</div><div>START CH</div><div>END CH</div>' +
+      '</div>' +
+      '<div style="max-height:400px;overflow-y:auto;overflow-x:hidden;margin-bottom:16px;padding-right:4px;">' +
+        rowsHtml +
+      '</div>' +
+      '<div class="sched-modal-btns"><button class="sched-modal-cancel" id="ma-cancel">CANCEL</button><button class="sched-modal-save" id="ma-save">SAVE CHANGES</button></div>'
+
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(function() { overlay.classList.add('visible') })
+
+    function closeModal() {
+      overlay.classList.remove('visible')
+      document.body.style.overflow = ''
+      setTimeout(function() { overlay.remove() }, 180)
+      if (onDone) onDone()
+    }
+    box.querySelector('#ma-cancel').addEventListener('click', closeModal)
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal() })
+
+    box.querySelector('#ma-save').addEventListener('click', function() {
+      var lib = loadData(KEYS.library, [])
+      var it = lib.find(function(x) { return x.id === id })
+      if (!it) return
+      var rows = box.querySelectorAll('[data-aidx]')
+      var nextByIndex = {}
+      rows.forEach(function(el) {
+        var idx = parseInt(el.dataset.aidx, 10)
+        if (!nextByIndex[idx]) nextByIndex[idx] = { name: '', start: 1, end: 1 }
+        if (el.dataset.field === 'name') nextByIndex[idx].name = (el.value || '').trim() || ('Arc ' + (idx + 1))
+        if (el.dataset.field === 'start') nextByIndex[idx].start = Math.max(1, parseInt(el.value, 10) || 1)
+        if (el.dataset.field === 'end') nextByIndex[idx].end = Math.max(1, parseInt(el.value, 10) || 1)
+      })
+
+      var newArcs = []
+      ;(it.arcs || []).forEach(function(a, idx) {
+        var spec = nextByIndex[idx] || { name: a.name || ('Arc ' + (idx + 1)), start: a.chapterStart || 1, end: a.chapterEnd || 1 }
+        newArcs.push({
+          id: a.id || ('arc-' + (idx + 1)),
+          name: spec.name,
+          chapterStart: spec.start,
+          chapterEnd: spec.end,
+          chapters: a.chapters || [] // Preserve chapter ratings
+        })
+      })
+      it.arcs = newArcs
+      saveData(KEYS.library, lib)
+      logEvent('Updated arcs for ' + item.title)
+      closeModal()
+    })
+  }
+
+  /* =================================================================
+     ADD ARC MODAL — openAddArcModal(item, id, onDone)
+  ================================================================= */
+  function openAddArcModal(item, id, onDone) {
+    var overlay = document.createElement('div')
+    overlay.className = 'sched-modal-overlay'
+    overlay.style.zIndex = '10001'
+
+    var existingArcs = (item.arcs || [])
+    var lastChapter = 0
+    existingArcs.forEach(function(a) {
+      if (a.chapterEnd > lastChapter) lastChapter = a.chapterEnd
+    })
+    var nextArcNum = existingArcs.length + 1
+    var suggestedName = 'Arc ' + nextArcNum
+    var suggestedStart = lastChapter + 1
+
+    var box = document.createElement('div')
+    box.className = 'sched-modal'
+    box.style.cssText = 'width:min(460px,calc(100% - 48px));'
+    box.innerHTML = `
+      <div class="sched-modal-title">+ Add New Arc</div>
+      <div class="sched-modal-subtitle" style="margin-bottom:16px;">${item.title}</div>
+
+      <div class="sched-modal-field">
+        <div class="sched-modal-label">Arc Name</div>
+        <input class="sched-modal-input" id="aa-name" type="text" value="${suggestedName}" placeholder="e.g. Arc 2, Tournament Arc" autocomplete="off"/>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="sched-modal-field">
+          <div class="sched-modal-label">Start Chapter</div>
+          <input class="sched-modal-input" id="aa-start" type="number" min="1" value="${suggestedStart}" placeholder="1" autocomplete="off"/>
+        </div>
+        <div class="sched-modal-field">
+          <div class="sched-modal-label">End Chapter</div>
+          <input class="sched-modal-input" id="aa-end" type="number" min="1" value="${suggestedStart + 9}" placeholder="10" autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="sched-modal-btns">
+        <button class="sched-modal-cancel" id="aa-cancel">CANCEL</button>
+        <button class="sched-modal-save" id="aa-save">ADD ARC</button>
+      </div>
+    `
+
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(function() { overlay.classList.add('visible') })
+
+    function closeModal() {
+      overlay.classList.remove('visible')
+      document.body.style.overflow = ''
+      setTimeout(function() { overlay.remove() }, 180)
+    }
+    box.querySelector('#aa-cancel').addEventListener('click', closeModal)
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal() })
+
+    box.querySelector('#aa-save').addEventListener('click', function() {
+      var name = box.querySelector('#aa-name').value.trim() || suggestedName
+      var start = Math.max(1, parseInt(box.querySelector('#aa-start').value, 10) || 1)
+      var end = Math.max(start, parseInt(box.querySelector('#aa-end').value, 10) || start)
+
+      var lib = loadData(KEYS.library, [])
+      var it = lib.find(function(x) { return x.id === id })
+      if (!it) return
+
+      if (!it.arcs) it.arcs = []
+      var newArc = {
+        id: 'arc-' + (it.arcs.length + 1),
+        name: name,
+        chapterStart: start,
+        chapterEnd: end,
+        chapters: []
+      }
+      it.arcs.push(newArc)
+      saveData(KEYS.library, lib)
+      logEvent('Added arc "' + name + '" to ' + item.title)
+      closeModal()
+      if (onDone) onDone(it)
+    })
+  }
+
   /* Format minutes into "Xh Ym" or "Ym" string */
   function fmtMins(mins) {
     if (!mins || mins < 1) return null
@@ -12647,15 +13741,18 @@
     overlay.className = 'sched-modal-overlay'
     overlay.style.zIndex = '10001'
 
+    var isReading = item.arcs && item.arcs.length > 0
+    var contentType = isReading ? 'Chapters' : 'Episodes'
+    
     var box = document.createElement('div')
     box.className = 'sched-modal'
     box.style.cssText = 'width:min(460px,calc(100% - 48px));'
     box.innerHTML = `
-      <div class="sched-modal-title">⚡ Auto-Schedule Weekly Episodes</div>
+      <div class="sched-modal-title">⚡ Auto-Schedule Weekly ${contentType}</div>
       <div class="sched-modal-subtitle" style="margin-bottom:16px;">${item.title}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="sched-modal-field" style="margin-bottom:0;">
-          <div class="sched-modal-label">Airs every</div>
+          <div class="sched-modal-label">${isReading ? 'Releases' : 'Airs'} every</div>
           <select class="sched-modal-input" id="rfi-day">
             <option value="">— Pick day —</option>
             ${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(d){return '<option>'+d+'</option>'}).join('')}

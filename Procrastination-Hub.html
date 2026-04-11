@@ -4341,6 +4341,10 @@
     }
     .ep-tile:hover .ep-rate-btn { opacity: 1; }
     .ep-tile:hover .ep-rate-btn:hover { color: var(--accent-warm); }
+    @media (hover: none), (pointer: coarse) {
+      .ep-rate-btn { opacity: 0.55; cursor: pointer; }
+      .ep-rate-btn:active { opacity: 1; color: var(--accent-warm); }
+    }
     .ep-rate-popup {
       position: fixed;
       background: rgba(12,10,30,1);
@@ -4348,10 +4352,12 @@
       border-radius: var(--radius-sm);
       padding: 4px 6px;
       display: flex;
+      flex-wrap: wrap;
       gap: 2px;
       z-index: 9999;
       box-shadow: 0 8px 30px rgba(0,0,0,0.8);
       animation: slideInResult 150ms var(--ease-spring) both;
+      max-width: calc(100vw - 24px);
     }
     .ep-rate-star {
       background: none;
@@ -4359,10 +4365,18 @@
       color: rgba(180,190,220,0.55);
       font-size: 14px;
       cursor: none;
-      padding: 1px;
+      padding: 4px;
       transition: color 100ms, transform 100ms;
       line-height: 1;
       position: relative;
+      min-width: 28px;
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (hover: none), (pointer: coarse) {
+      .ep-rate-star { cursor: pointer; font-size: 18px; min-width: 36px; min-height: 36px; }
     }
     .ep-rate-star:hover { color: var(--accent-warm); transform: scale(1.3); }
     .ep-rate-star.filled { color: var(--accent-warm); text-shadow: 0 0 6px rgba(255,96,64,0.4); }
@@ -11282,18 +11296,14 @@
           document.querySelectorAll('.detail-personal-rating-popup').forEach(function(p) { p.remove() })
           var popup = document.createElement('div')
           popup.className = 'detail-personal-rating-popup'
-          popup.style.cssText = 'position:fixed;background:#1a1630;border:1px solid rgba(130,160,255,0.5);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,0.9);'
-          // Position it below the rating chip
-          var chipRect = ratingChip.getBoundingClientRect()
-          popup.style.top = (chipRect.bottom + 8) + 'px'
-          popup.style.left = chipRect.left + 'px'
+          popup.style.cssText = 'position:fixed;background:#1a1630;border:1px solid rgba(130,160,255,0.5);border-radius:var(--radius-sm);padding:8px 10px;display:flex;flex-wrap:wrap;gap:4px;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,0.9);max-width:calc(100vw - 24px);'
           
           for (var s = 1; s <= 10; s++) {
             var star = document.createElement('button')
             star.className = 'series-rate-star' + (item.personalRating >= s ? ' filled' : '')
             star.textContent = '\u2605'
             star.dataset.val = s
-            star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:0;line-height:1;'
+            star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:4px;line-height:1;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;'
             if (item.personalRating >= s) {
               star.style.color = '#ff8a4c'
             }
@@ -11328,7 +11338,7 @@
             var clearBtn = document.createElement('button')
             clearBtn.textContent = '\u2715'
             clearBtn.title = 'Clear rating'
-            clearBtn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;margin-left:4px;'
+            clearBtn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:4px;line-height:1;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;margin-left:4px;'
             clearBtn.addEventListener('mouseover', function() {
               this.style.color = '#ff4444'
               this.style.transform = 'scale(1.15)'
@@ -11356,6 +11366,15 @@
           }
           
           document.body.appendChild(popup)
+          
+          // Clamp position after append
+          var chipRect = ratingChip.getBoundingClientRect()
+          requestAnimationFrame(function() {
+            var pw = popup.offsetWidth
+            var left = Math.max(12, Math.min(window.innerWidth - pw - 12, chipRect.left))
+            popup.style.top = (chipRect.bottom + 8) + 'px'
+            popup.style.left = left + 'px'
+          })
           
           // Close on outside click
           setTimeout(function() {
@@ -12109,12 +12128,25 @@
         // Position fixed relative to rateBtn, append to body to escape tile opacity
         var tileRect = tile.getBoundingClientRect()
         popup.style.position = 'fixed'
-        popup.style.left = (tileRect.left + tileRect.width / 2) + 'px'
-        popup.style.bottom = (window.innerHeight - tileRect.top + 3) + 'px'
         popup.style.top = 'auto'
-        popup.style.transform = 'translateX(-50%)'
         popup.style.zIndex = '9999'
         document.body.appendChild(popup)
+        // Clamp horizontally after append so we know popup width
+        requestAnimationFrame(function() {
+          var pw = popup.offsetWidth
+          var cx = tileRect.left + tileRect.width / 2
+          var left = Math.max(12, Math.min(window.innerWidth - pw - 12, cx - pw / 2))
+          var bottom = window.innerHeight - tileRect.top + 3
+          // If would go off top, flip below tile
+          if (tileRect.top - popup.offsetHeight - 3 < 0) {
+            popup.style.bottom = 'auto'
+            popup.style.top = (tileRect.bottom + 3) + 'px'
+          } else {
+            popup.style.bottom = bottom + 'px'
+          }
+          popup.style.left = left + 'px'
+          popup.style.transform = 'none'
+        })
         // Close on outside click
         setTimeout(function() {
           document.addEventListener('click', function closePopup() {
@@ -12664,20 +12696,33 @@
     
     var popup = document.createElement('div')
     popup.className = 'season-rate-popup'
-    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);flex-wrap:nowrap;'
+    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 10px;display:flex;flex-wrap:wrap;gap:4px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);max-width:calc(100vw - 24px);'
     
     // Position relative to button
     var rect = buttonEl.getBoundingClientRect()
-    popup.style.left = (rect.left + rect.width / 2) + 'px'
-    popup.style.bottom = (window.innerHeight - rect.top + 10) + 'px'
-    popup.style.transform = 'translateX(-50%)'
+    document.body.appendChild(popup)
+    requestAnimationFrame(function() {
+      var pw = popup.offsetWidth
+      var cx = rect.left + rect.width / 2
+      var left = Math.max(12, Math.min(window.innerWidth - pw - 12, cx - pw / 2))
+      var bottom = window.innerHeight - rect.top + 10
+      if (rect.top - popup.offsetHeight - 10 < 0) {
+        popup.style.bottom = 'auto'
+        popup.style.top = (rect.bottom + 10) + 'px'
+      } else {
+        popup.style.bottom = bottom + 'px'
+        popup.style.top = 'auto'
+      }
+      popup.style.left = left + 'px'
+      popup.style.transform = 'none'
+    })
     
     for (var s = 1; s <= 10; s++) {
       var star = document.createElement('button')
       star.className = 'season-rate-star' + (season.personalRating >= s ? ' filled' : '')
       star.textContent = '\u2605'
       star.dataset.val = s
-      star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:0;line-height:1;flex-shrink:0;'
+      star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:4px;line-height:1;flex-shrink:0;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;'
       if (season.personalRating >= s) {
         star.style.color = '#ff8a4c'
       }
@@ -12728,8 +12773,6 @@
       })
       popup.appendChild(clearBtn)
     }
-    
-    document.body.appendChild(popup)
     
     // Close on outside click
     setTimeout(function() {

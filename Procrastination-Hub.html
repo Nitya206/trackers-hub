@@ -376,6 +376,7 @@
       position: relative;
       overflow: clip;
       overflow-clip-margin: 4px;
+      min-width: 0;
     }
     /* Per-card accent bottom borders */
     .stat-card:nth-child(1) { border-bottom: 2px solid rgba(168,85,247,0.5); }
@@ -413,6 +414,25 @@
       text-shadow: 0 1px 8px rgba(0,229,255,0.22);
       position: relative;
       white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 600px) {
+      .stat-card-number {
+        font-size: clamp(20px, 7vw, 38px);
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1;
+        letter-spacing: 0.03em;
+      }
+      .stat-card-label {
+        font-size: 11px;
+      }
+      .stat-card {
+        padding: 16px 10px 20px;
+        gap: 6px;
+      }
     }
     /* Thin accent underline instead of blob glow */
     .stat-card-number::after {
@@ -3048,6 +3068,7 @@
       display: grid;
       grid-template-columns: repeat(3,1fr);
       gap: 16px;
+      min-width: 0;
     }
 
     /* Celebration burst ring */
@@ -5532,6 +5553,7 @@
     /* ── Detail season stat grids: collapse to 2-col / 1-col ── */
     .detail-stat-grid-3col { grid-template-columns: repeat(2, 1fr); }
     .detail-stat-grid-2col { grid-template-columns: 1fr; }
+    .detail-season-stats   { grid-template-columns: repeat(2, 1fr) !important; }
 
     /* ── Session overlay: ring + title scale down ── */
     .session-overlay-title {

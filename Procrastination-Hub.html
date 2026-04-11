@@ -2702,7 +2702,6 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 28px;
-      
       box-shadow: var(--glow-card);
     }
     /* More compact notes card inside social sidebar */
@@ -4301,6 +4300,10 @@
       font-size: 14px;
       background: transparent;
       border: none;
+      outline: none;
+      box-shadow: none;
+      -webkit-appearance: none;
+      appearance: none;
       color: var(--text-3);
       cursor: none;
       padding: 0;
@@ -4311,24 +4314,21 @@
     .ep-tile:hover .ep-rate-btn { opacity: 1; }
     .ep-tile:hover .ep-rate-btn:hover { color: var(--accent-warm); }
     .ep-rate-popup {
-      position: absolute;
-      top: -36px;
-      left: 50%;
-      transform: translateX(-50%);
+      position: fixed;
       background: rgba(12,10,30,1);
       border: 1px solid rgba(130,160,255,0.3);
       border-radius: var(--radius-sm);
       padding: 4px 6px;
       display: flex;
       gap: 2px;
-      z-index: 500;
+      z-index: 9999;
       box-shadow: 0 8px 30px rgba(0,0,0,0.8);
       animation: slideInResult 150ms var(--ease-spring) both;
     }
     .ep-rate-star {
       background: none;
       border: none;
-      color: var(--text-3);
+      color: rgba(180,190,220,0.55);
       font-size: 14px;
       cursor: none;
       padding: 1px;
@@ -4338,7 +4338,7 @@
     }
     .ep-rate-star:hover { color: var(--accent-warm); transform: scale(1.3); }
     .ep-rate-star.filled { color: var(--accent-warm); text-shadow: 0 0 6px rgba(255,96,64,0.4); }
-    .ep-rate-star.clear-btn { color: var(--text-3); font-size: 13px; }
+    .ep-rate-star.clear-btn { color: rgba(180,190,220,0.55); font-size: 13px; }
     .ep-rate-star.clear-btn:hover { color: var(--danger); }
     .ep-rate-star::after {
       content: attr(data-val);
@@ -4378,20 +4378,27 @@
      where it should — in the infected details. The background
      stays black. Only the edges betray what's growing.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-parasyte {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(57,255,20,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)   0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(20,80,10,0.06)  0%, transparent 50%);
+  }
   body.theme-parasyte::before {
     background:
-      radial-gradient(ellipse 50% 40% at 8% 0%,   rgba(57,255,20,0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 92% 90%,  rgba(30,160,10,0.08) 0%, transparent 55%),
-      radial-gradient(ellipse 30% 25% at 75% 8%,   rgba(57,255,20,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 30% at 15% 85%,  rgba(20,100,5,0.04)  0%, transparent 50%);
+      radial-gradient(ellipse 50% 40% at 8% 0%,   rgba(57,255,20,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 92% 90%,  rgba(30,160,10,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 30% 25% at 75% 8%,   rgba(57,255,20,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 35% 30% at 15% 85%,  rgba(20,100,5,0.03)  0%, transparent 50%);
   }
   body.theme-parasyte #hex-grid polygon {
+    fill: none !important;
     stroke: #39ff14 !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-parasyte .detail-title {
     text-shadow: 0 0 40px rgba(57,255,20,0.35), 0 0 90px rgba(57,255,20,0.10), 0 2px 4px rgba(0,0,0,0.9);
-    color: #f0fff0;
+    color: #39ff14;
   }
   body.theme-parasyte .ep-tile.watched {
     background: rgba(57,255,20,0.09);
@@ -4402,17 +4409,17 @@
   body.theme-parasyte .ep-tile.watched .ep-check { color: #39ff14; }
   body.theme-parasyte .ep-tile:hover             { border-color: rgba(57,255,20,0.22); }
   body.theme-parasyte .detail-timer-card {
-    background: linear-gradient(155deg, rgba(20,40,10,0.28) 0%, rgba(10,18,5,0.14) 100%);
-    border-color: rgba(57,255,20,0.18);
-    box-shadow: 0 0 50px rgba(57,255,20,0.04), inset 0 1px 0 rgba(57,255,20,0.10);
+    background: linear-gradient(155deg, rgba(12,45,6,0.55) 0%, rgba(6,22,3,0.28) 100%);
+    border-color: rgba(57,255,20,0.12);
+    box-shadow: 0 0 30px rgba(57,255,20,0.03), inset 0 1px 0 rgba(57,255,20,0.07);
   }
   body.theme-parasyte .detail-timer-display {
     color: #39ff14;
     text-shadow: 0 0 24px rgba(57,255,20,0.55), 0 0 60px rgba(57,255,20,0.15);
   }
   body.theme-parasyte .detail-notes-card {
-    background: linear-gradient(155deg, rgba(15,28,8,0.26) 0%, rgba(8,14,4,0.13) 100%);
-    border-color: rgba(57,255,20,0.14);
+    background: linear-gradient(155deg, rgba(10,36,5,0.45) 0%, rgba(5,18,2,0.22) 100%);
+    border-color: rgba(57,255,20,0.10);
   }
   body.theme-parasyte .detail-filmstrip::before,
   body.theme-parasyte .detail-filmstrip::after {
@@ -4446,20 +4453,27 @@
      Gritty harbour noir. Crimson embers in industrial shadow.
      Violence has a texture. The darkness earns its red.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-blacklagoon {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(192,57,43,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)   0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(100,20,10,0.06)  0%, transparent 50%);
+  }
   body.theme-blacklagoon::before {
     background:
-      radial-gradient(ellipse 50% 38% at 10% 0%,   rgba(192,57,43,0.10) 0%, transparent 58%),
-      radial-gradient(ellipse 40% 30% at 90% 92%,  rgba(140,20,15,0.08) 0%, transparent 55%),
-      radial-gradient(ellipse 28% 22% at 78% 8%,   rgba(192,57,43,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 28% at 20% 80%,  rgba(100,10,5,0.04)  0%, transparent 50%);
+      radial-gradient(ellipse 50% 38% at 10% 0%,   rgba(192,57,43,0.09) 0%, transparent 58%),
+      radial-gradient(ellipse 40% 30% at 90% 92%,  rgba(140,20,15,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 28% 22% at 78% 8%,   rgba(192,57,43,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 35% 28% at 20% 80%,  rgba(100,10,5,0.03)  0%, transparent 50%);
   }
   body.theme-blacklagoon #hex-grid polygon {
+    fill: none !important;
     stroke: #c0392b !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-blacklagoon .detail-title {
     text-shadow: 0 0 35px rgba(192,57,43,0.40), 0 0 80px rgba(192,57,43,0.10), 0 2px 4px rgba(0,0,0,0.95);
-    color: #fff4f2;
+    color: #e74c3c;
   }
   body.theme-blacklagoon .ep-tile.watched {
     background: rgba(192,57,43,0.11);
@@ -4470,17 +4484,17 @@
   body.theme-blacklagoon .ep-tile.watched .ep-check { color: #e05040; }
   body.theme-blacklagoon .ep-tile:hover             { border-color: rgba(192,57,43,0.20); }
   body.theme-blacklagoon .detail-timer-card {
-    background: linear-gradient(155deg, rgba(45,8,5,0.28) 0%, rgba(22,4,3,0.14) 100%);
-    border-color: rgba(192,57,43,0.18);
-    box-shadow: 0 0 50px rgba(192,57,43,0.04), inset 0 1px 0 rgba(192,57,43,0.10);
+    background: linear-gradient(155deg, rgba(60,10,6,0.55) 0%, rgba(30,5,3,0.28) 100%);
+    border-color: rgba(192,57,43,0.12);
+    box-shadow: 0 0 50px rgba(192,57,43,0.06), inset 0 1px 0 rgba(192,57,43,0.12);
   }
   body.theme-blacklagoon .detail-timer-display {
     color: #e05040;
     text-shadow: 0 0 22px rgba(192,57,43,0.60), 0 0 55px rgba(192,57,43,0.16);
   }
   body.theme-blacklagoon .detail-notes-card {
-    background: linear-gradient(155deg, rgba(32,5,3,0.26) 0%, rgba(16,3,2,0.13) 100%);
-    border-color: rgba(192,57,43,0.14);
+    background: linear-gradient(155deg, rgba(48,8,5,0.45) 0%, rgba(24,4,2,0.22) 100%);
+    border-color: rgba(192,57,43,0.10);
   }
   body.theme-blacklagoon .detail-filmstrip::before,
   body.theme-blacklagoon .detail-filmstrip::after {
@@ -4515,20 +4529,27 @@
      Hell is a frequency. Deep demon-red bleeds into absolute
      black. The horror is in what you almost see.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-devilman {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(220,30,60,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)   0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(120,10,30,0.06)  0%, transparent 50%);
+  }
   body.theme-devilman::before {
     background:
-      radial-gradient(ellipse 48% 38% at 10% 2%,   rgba(220,30,60,0.10)  0%, transparent 60%),
-      radial-gradient(ellipse 40% 32% at 88% 90%,  rgba(160,0,60,0.09)   0%, transparent 55%),
-      radial-gradient(ellipse 30% 24% at 70% 6%,   rgba(220,30,60,0.05)  0%, transparent 50%),
-      radial-gradient(ellipse 35% 28% at 18% 82%,  rgba(80,0,30,0.04)    0%, transparent 50%);
+      radial-gradient(ellipse 48% 38% at 10% 2%,   rgba(220,30,60,0.09)  0%, transparent 60%),
+      radial-gradient(ellipse 40% 32% at 88% 90%,  rgba(160,0,60,0.07)   0%, transparent 55%),
+      radial-gradient(ellipse 30% 24% at 70% 6%,   rgba(220,30,60,0.04)  0%, transparent 50%),
+      radial-gradient(ellipse 35% 28% at 18% 82%,  rgba(80,0,30,0.03)    0%, transparent 50%);
   }
   body.theme-devilman #hex-grid polygon {
+    fill: none !important;
     stroke: #ff3b6b !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-devilman .detail-title {
     text-shadow: 0 0 38px rgba(220,30,60,0.45), 0 0 90px rgba(220,30,60,0.12), 0 2px 4px rgba(0,0,0,0.96);
-    color: #fff0f3;
+    color: #ff3b6b;
   }
   body.theme-devilman .ep-tile.watched {
     background: rgba(220,30,60,0.10);
@@ -4539,17 +4560,17 @@
   body.theme-devilman .ep-tile.watched .ep-check { color: #ff3b6b; }
   body.theme-devilman .ep-tile:hover             { border-color: rgba(220,30,60,0.20); }
   body.theme-devilman .detail-timer-card {
-    background: linear-gradient(155deg, rgba(55,5,15,0.28) 0%, rgba(28,3,8,0.14) 100%);
-    border-color: rgba(220,30,60,0.18);
-    box-shadow: 0 0 50px rgba(220,30,60,0.05), inset 0 1px 0 rgba(220,30,60,0.10);
+    background: linear-gradient(155deg, rgba(70,6,18,0.55) 0%, rgba(35,3,9,0.28) 100%);
+    border-color: rgba(220,30,60,0.12);
+    box-shadow: 0 0 30px rgba(220,30,60,0.03), inset 0 1px 0 rgba(220,30,60,0.07);
   }
   body.theme-devilman .detail-timer-display {
     color: #ff3b6b;
     text-shadow: 0 0 24px rgba(220,30,60,0.65), 0 0 60px rgba(220,30,60,0.18);
   }
   body.theme-devilman .detail-notes-card {
-    background: linear-gradient(155deg, rgba(40,3,10,0.26) 0%, rgba(20,2,6,0.13) 100%);
-    border-color: rgba(220,30,60,0.14);
+    background: linear-gradient(155deg, rgba(55,5,14,0.45) 0%, rgba(28,2,7,0.22) 100%);
+    border-color: rgba(220,30,60,0.10);
   }
   body.theme-devilman .detail-filmstrip::before,
   body.theme-devilman .detail-filmstrip::after {
@@ -4583,20 +4604,27 @@
      Broken heroes in a retrofuture. Cyan electricity and hot
      pink cut through the dark like neon signs in the rain.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-umbrella {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(0,238,255,0.08)  0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)    0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(255,45,149,0.05) 0%, transparent 50%);
+  }
   body.theme-umbrella::before {
     background:
-      radial-gradient(ellipse 50% 38% at 8% 0%,    rgba(0,238,255,0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 92% 90%,  rgba(255,45,149,0.09) 0%, transparent 55%),
-      radial-gradient(ellipse 30% 22% at 75% 6%,   rgba(0,180,220,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 28% at 18% 85%,  rgba(0,100,140,0.04) 0%, transparent 50%);
+      radial-gradient(ellipse 50% 38% at 8% 0%,    rgba(0,238,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 92% 90%,  rgba(255,45,149,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 30% 22% at 75% 6%,   rgba(0,180,220,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 35% 28% at 18% 85%,  rgba(0,100,140,0.03) 0%, transparent 50%);
   }
   body.theme-umbrella #hex-grid polygon {
+    fill: none !important;
     stroke: #00eeff !important;
-    stroke-opacity: 0.08 !important;
+    stroke-opacity: 0.13 !important;
   }
   body.theme-umbrella .detail-title {
     text-shadow: 0 0 36px rgba(0,238,255,0.40), 0 0 80px rgba(0,238,255,0.10), 0 2px 4px rgba(0,0,0,0.90);
-    color: #f0feff;
+    color: #00eeff;
   }
   body.theme-umbrella .ep-tile.watched {
     background: rgba(0,238,255,0.08);
@@ -4607,17 +4635,17 @@
   body.theme-umbrella .ep-tile.watched .ep-check { color: #00eeff; }
   body.theme-umbrella .ep-tile:hover             { border-color: rgba(0,238,255,0.20); }
   body.theme-umbrella .detail-timer-card {
-    background: linear-gradient(155deg, rgba(0,35,50,0.26) 0%, rgba(0,18,28,0.13) 100%);
-    border-color: rgba(0,238,255,0.18);
-    box-shadow: 0 0 50px rgba(0,238,255,0.04), inset 0 1px 0 rgba(0,238,255,0.10);
+    background: linear-gradient(155deg, rgba(0,50,65,0.55) 0%, rgba(0,25,35,0.28) 100%);
+    border-color: rgba(0,238,255,0.12);
+    box-shadow: 0 0 50px rgba(0,238,255,0.06), inset 0 1px 0 rgba(0,238,255,0.12);
   }
   body.theme-umbrella .detail-timer-display {
     color: #00eeff;
     text-shadow: 0 0 22px rgba(0,238,255,0.60), 0 0 55px rgba(0,238,255,0.16);
   }
   body.theme-umbrella .detail-notes-card {
-    background: linear-gradient(155deg, rgba(0,25,38,0.24) 0%, rgba(0,12,20,0.12) 100%);
-    border-color: rgba(0,238,255,0.14);
+    background: linear-gradient(155deg, rgba(0,40,52,0.45) 0%, rgba(0,20,28,0.22) 100%);
+    border-color: rgba(0,238,255,0.10);
   }
   body.theme-umbrella .detail-filmstrip::before,
   body.theme-umbrella .detail-filmstrip::after {
@@ -4651,20 +4679,27 @@
      A new scenario has begun. Deep indigo cosmos.
      You are the only one who has read to the end.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-orv-manhwa {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(120,50,220,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)    0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(80,20,160,0.06)  0%, transparent 50%);
+  }
   body.theme-orv-manhwa::before {
     background:
-      radial-gradient(ellipse 50% 38% at 8% 0%,    rgba(120,50,220,0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 92% 88%,  rgba(80,20,180,0.08)  0%, transparent 55%),
-      radial-gradient(ellipse 28% 22% at 72% 6%,   rgba(120,50,220,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 28% at 18% 85%,  rgba(50,10,100,0.04)  0%, transparent 50%);
+      radial-gradient(ellipse 50% 38% at 8% 0%,    rgba(120,50,220,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 92% 88%,  rgba(80,20,180,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 28% 22% at 72% 6%,   rgba(120,50,220,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 35% 28% at 18% 85%,  rgba(50,10,100,0.03)  0%, transparent 50%);
   }
   body.theme-orv-manhwa #hex-grid polygon {
+    fill: none !important;
     stroke: #9b59b6 !important;
-    stroke-opacity: 0.08 !important;
+    stroke-opacity: 0.13 !important;
   }
   body.theme-orv-manhwa .detail-title {
     text-shadow: 0 0 36px rgba(120,50,220,0.45), 0 0 85px rgba(100,20,200,0.12), 0 2px 4px rgba(0,0,0,0.94);
-    color: #f2eeff;
+    color: #9b59b6;
   }
   body.theme-orv-manhwa .ep-tile.watched {
     background: rgba(120,50,220,0.11);
@@ -4675,17 +4710,17 @@
   body.theme-orv-manhwa .ep-tile.watched .ep-check { color: #b06aff; }
   body.theme-orv-manhwa .ep-tile:hover             { border-color: rgba(120,50,220,0.20); }
   body.theme-orv-manhwa .detail-timer-card {
-    background: linear-gradient(155deg, rgba(28,8,60,0.28) 0%, rgba(14,4,32,0.14) 100%);
-    border-color: rgba(120,50,220,0.18);
-    box-shadow: 0 0 50px rgba(120,50,220,0.05), inset 0 1px 0 rgba(120,50,220,0.10);
+    background: linear-gradient(155deg, rgba(40,12,80,0.55) 0%, rgba(20,6,42,0.28) 100%);
+    border-color: rgba(120,50,220,0.12);
+    box-shadow: 0 0 30px rgba(120,50,220,0.03), inset 0 1px 0 rgba(120,50,220,0.07);
   }
   body.theme-orv-manhwa .detail-timer-display {
     color: #b06aff;
     text-shadow: 0 0 22px rgba(120,50,220,0.60), 0 0 55px rgba(100,20,200,0.18);
   }
   body.theme-orv-manhwa .detail-notes-card {
-    background: linear-gradient(155deg, rgba(20,5,45,0.26) 0%, rgba(10,3,24,0.13) 100%);
-    border-color: rgba(120,50,220,0.14);
+    background: linear-gradient(155deg, rgba(32,8,65,0.45) 0%, rgba(16,4,34,0.22) 100%);
+    border-color: rgba(120,50,220,0.10);
   }
   body.theme-orv-manhwa .detail-filmstrip::before,
   body.theme-orv-manhwa .detail-filmstrip::after {
@@ -4719,20 +4754,27 @@
      The same story. Read in silence, at 3am.
      Quieter indigo. Stars fall slowly through literary dark.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-orv-novel {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(99,102,241,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)    0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(60,60,180,0.05)  0%, transparent 50%);
+  }
   body.theme-orv-novel::before {
     background:
-      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(99,102,241,0.09)  0%, transparent 60%),
-      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(124,58,237,0.08)  0%, transparent 55%),
-      radial-gradient(ellipse 26% 20% at 70% 6%,   rgba(79,70,229,0.05)   0%, transparent 50%),
+      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(99,102,241,0.08)  0%, transparent 60%),
+      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(124,58,237,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 26% 20% at 70% 6%,   rgba(79,70,229,0.04)   0%, transparent 50%),
       radial-gradient(ellipse 32% 26% at 18% 84%,  rgba(50,40,120,0.03)   0%, transparent 50%);
   }
   body.theme-orv-novel #hex-grid polygon {
+    fill: none !important;
     stroke: #818cf8 !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-orv-novel .detail-title {
     text-shadow: 0 0 34px rgba(99,102,241,0.40), 0 0 80px rgba(124,58,237,0.10), 0 2px 4px rgba(0,0,0,0.92);
-    color: #eeeeff;
+    color: #818cf8;
   }
   body.theme-orv-novel .ep-tile.watched {
     background: rgba(99,102,241,0.10);
@@ -4743,17 +4785,17 @@
   body.theme-orv-novel .ep-tile.watched .ep-check { color: #a5b4fc; }
   body.theme-orv-novel .ep-tile:hover             { border-color: rgba(99,102,241,0.18); }
   body.theme-orv-novel .detail-timer-card {
-    background: linear-gradient(155deg, rgba(18,18,50,0.26) 0%, rgba(9,9,28,0.13) 100%);
-    border-color: rgba(99,102,241,0.16);
-    box-shadow: 0 0 50px rgba(99,102,241,0.04), inset 0 1px 0 rgba(99,102,241,0.09);
+    background: linear-gradient(155deg, rgba(28,28,80,0.55) 0%, rgba(14,14,42,0.28) 100%);
+    border-color: rgba(99,102,241,0.12);
+    box-shadow: 0 0 50px rgba(99,102,241,0.06), inset 0 1px 0 rgba(99,102,241,0.12);
   }
   body.theme-orv-novel .detail-timer-display {
     color: #a5b4fc;
     text-shadow: 0 0 20px rgba(99,102,241,0.55), 0 0 52px rgba(124,58,237,0.16);
   }
   body.theme-orv-novel .detail-notes-card {
-    background: linear-gradient(155deg, rgba(13,13,38,0.24) 0%, rgba(6,6,20,0.12) 100%);
-    border-color: rgba(99,102,241,0.13);
+    background: linear-gradient(155deg, rgba(22,22,65,0.45) 0%, rgba(11,11,34,0.22) 100%);
+    border-color: rgba(99,102,241,0.10);
   }
   body.theme-orv-novel .detail-filmstrip::before,
   body.theme-orv-novel .detail-filmstrip::after {
@@ -4787,20 +4829,27 @@
      Music returned colour to a grey world. Soft sakura pink
      and warm piano gold — never overwhelming, always present.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-ylia {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(247,143,179,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)     0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(200,80,130,0.05)  0%, transparent 50%);
+  }
   body.theme-ylia::before {
     background:
-      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(247,143,179,0.09) 0%, transparent 60%),
-      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(255,185,60,0.07)  0%, transparent 55%),
-      radial-gradient(ellipse 28% 20% at 72% 6%,   rgba(220,100,140,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(247,143,179,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(255,185,60,0.06)  0%, transparent 55%),
+      radial-gradient(ellipse 28% 20% at 72% 6%,   rgba(220,100,140,0.04) 0%, transparent 50%),
       radial-gradient(ellipse 32% 26% at 18% 84%,  rgba(160,60,90,0.03)   0%, transparent 50%);
   }
   body.theme-ylia #hex-grid polygon {
+    fill: none !important;
     stroke: #f9a8d4 !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-ylia .detail-title {
     text-shadow: 0 0 34px rgba(247,143,179,0.38), 0 0 80px rgba(247,143,179,0.10), 0 2px 4px rgba(0,0,0,0.88);
-    color: #fff5f8;
+    color: #f78fb3;
     font-style: italic;
   }
   body.theme-ylia .ep-tile.watched {
@@ -4812,17 +4861,17 @@
   body.theme-ylia .ep-tile.watched .ep-check { color: #f472b6; }
   body.theme-ylia .ep-tile:hover             { border-color: rgba(247,143,179,0.18); }
   body.theme-ylia .detail-timer-card {
-    background: linear-gradient(155deg, rgba(50,12,25,0.24) 0%, rgba(26,6,13,0.12) 100%);
-    border-color: rgba(247,143,179,0.16);
-    box-shadow: 0 0 50px rgba(247,143,179,0.04), inset 0 1px 0 rgba(247,143,179,0.09);
+    background: linear-gradient(155deg, rgba(70,16,35,0.55) 0%, rgba(36,8,18,0.28) 100%);
+    border-color: rgba(247,143,179,0.12);
+    box-shadow: 0 0 30px rgba(247,143,179,0.03), inset 0 1px 0 rgba(247,143,179,0.07);
   }
   body.theme-ylia .detail-timer-display {
     color: #f472b6;
     text-shadow: 0 0 20px rgba(247,143,179,0.55), 0 0 52px rgba(247,143,179,0.14);
   }
   body.theme-ylia .detail-notes-card {
-    background: linear-gradient(155deg, rgba(38,8,18,0.22) 0%, rgba(20,4,10,0.11) 100%);
-    border-color: rgba(247,143,179,0.12);
+    background: linear-gradient(155deg, rgba(56,12,28,0.45) 0%, rgba(28,6,14,0.22) 100%);
+    border-color: rgba(247,143,179,0.10);
   }
   body.theme-ylia .detail-filmstrip::before,
   body.theme-ylia .detail-filmstrip::after {
@@ -4857,20 +4906,27 @@
      The Processors fight and die in cold quiet. No colour
      survives the Republic — only a precise military steel-blue.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-86 {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(98,114,164,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)    0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(50,70,120,0.05)  0%, transparent 50%);
+  }
   body.theme-86::before {
     background:
-      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(98,114,164,0.09) 0%, transparent 60%),
-      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(68,80,120,0.08)  0%, transparent 55%),
-      radial-gradient(ellipse 26% 20% at 72% 6%,   rgba(80,100,150,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 48% 36% at 8% 0%,    rgba(98,114,164,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 38% 28% at 92% 88%,  rgba(68,80,120,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 26% 20% at 72% 6%,   rgba(80,100,150,0.03) 0%, transparent 50%),
       radial-gradient(ellipse 32% 26% at 18% 84%,  rgba(30,40,80,0.03)   0%, transparent 50%);
   }
   body.theme-86 #hex-grid polygon {
+    fill: none !important;
     stroke: #6272a4 !important;
-    stroke-opacity: 0.08 !important;
+    stroke-opacity: 0.13 !important;
   }
   body.theme-86 .detail-title {
     text-shadow: 0 0 32px rgba(98,114,164,0.45), 0 0 75px rgba(68,80,120,0.12), 0 2px 4px rgba(0,0,0,0.96);
-    color: #dde4ff;
+    color: #8090c4;
     font-family: var(--font-mono);
     letter-spacing: 0.10em;
   }
@@ -4883,9 +4939,9 @@
   body.theme-86 .ep-tile.watched .ep-check { color: #8899cc; }
   body.theme-86 .ep-tile:hover             { border-color: rgba(98,114,164,0.20); }
   body.theme-86 .detail-timer-card {
-    background: linear-gradient(155deg, rgba(10,14,36,0.28) 0%, rgba(5,7,20,0.14) 100%);
-    border-color: rgba(98,114,164,0.18);
-    box-shadow: 0 0 50px rgba(98,114,164,0.04), inset 0 1px 0 rgba(98,114,164,0.10);
+    background: linear-gradient(155deg, rgba(16,22,55,0.55) 0%, rgba(8,11,28,0.28) 100%);
+    border-color: rgba(98,114,164,0.12);
+    box-shadow: 0 0 30px rgba(98,114,164,0.03), inset 0 1px 0 rgba(98,114,164,0.07);
   }
   body.theme-86 .detail-timer-display {
     color: #8899cc;
@@ -4894,8 +4950,8 @@
     letter-spacing: 0.12em;
   }
   body.theme-86 .detail-notes-card {
-    background: linear-gradient(155deg, rgba(7,10,28,0.26) 0%, rgba(4,5,16,0.13) 100%);
-    border-color: rgba(98,114,164,0.13);
+    background: linear-gradient(155deg, rgba(12,18,44,0.45) 0%, rgba(6,9,22,0.22) 100%);
+    border-color: rgba(98,114,164,0.10);
   }
   body.theme-86 .detail-filmstrip::before,
   body.theme-86 .detail-filmstrip::after {
@@ -4928,18 +4984,19 @@
   /* ── THEME: PERFECT BLUE — cold navy + paranoia red ── */
   body.theme-perfect-blue {
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,46,99,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,46,99,0.20) 0%, transparent 60%),
       radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)   0%, transparent 50%),
-      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(255,46,99,0.07) 0%, transparent 50%);
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(255,46,99,0.14) 0%, transparent 50%);
   }
   body.theme-perfect-blue::before {
     background:
-      radial-gradient(ellipse 55% 45% at 10% 0%,   rgba(255,46,99,0.14)  0%, transparent 65%),
-      radial-gradient(ellipse 45% 35% at 92% 85%,  rgba(100,10,30,0.22)  0%, transparent 60%),
-      radial-gradient(ellipse 35% 28% at 78% 12%,  rgba(255,46,99,0.10)  0%, transparent 50%),
+      radial-gradient(ellipse 55% 45% at 10% 0%,   rgba(255,46,99,0.22)  0%, transparent 65%),
+      radial-gradient(ellipse 45% 35% at 92% 85%,  rgba(100,10,30,0.33)  0%, transparent 60%),
+      radial-gradient(ellipse 35% 28% at 78% 12%,  rgba(255,46,99,0.16)  0%, transparent 50%),
       radial-gradient(ellipse 40% 35% at 35% 55%,  rgba(15,23,42,0.60)   0%, transparent 50%),
-      radial-gradient(ellipse 30% 25% at 55% 92%,  rgba(255,46,99,0.09)  0%, transparent 50%);
+      radial-gradient(ellipse 30% 25% at 55% 92%,  rgba(255,46,99,0.14)  0%, transparent 50%);
   }
+  body.theme-perfect-blue #hex-grid polygon { stroke: #ff2e63 !important; stroke-opacity: 0.12 !important; }
   body.theme-perfect-blue .ep-tile.watched {
     background: rgba(255,46,99,0.10);
     border-color: rgba(255,46,99,0.38);
@@ -4949,9 +5006,9 @@
   body.theme-perfect-blue .ep-tile.watched .ep-check { color: #ff2e63; }
   body.theme-perfect-blue .ep-tile:hover             { border-color: rgba(255,46,99,0.22); }
   body.theme-perfect-blue .detail-timer-card {
-    background: linear-gradient(155deg, rgba(20,5,12,0.35) 0%, rgba(8,2,6,0.18) 100%);
-    border-color: rgba(255,46,99,0.16);
-    box-shadow: 0 0 50px rgba(255,46,99,0.05), inset 0 1px 0 rgba(255,46,99,0.10);
+    background: linear-gradient(155deg, rgba(55,8,20,0.55) 0%, rgba(28,4,10,0.28) 100%);
+    border-color: rgba(255,46,99,0.22);
+    box-shadow: 0 0 50px rgba(255,46,99,0.06), inset 0 1px 0 rgba(255,46,99,0.12);
   }
   body.theme-perfect-blue .detail-timer-display {
     color: #ff2e63;
@@ -4960,8 +5017,8 @@
     letter-spacing: 0.12em;
   }
   body.theme-perfect-blue .detail-notes-card {
-    background: linear-gradient(155deg, rgba(15,5,10,0.28) 0%, rgba(6,2,5,0.14) 100%);
-    border-color: rgba(255,46,99,0.12);
+    background: linear-gradient(155deg, rgba(44,6,16,0.45) 0%, rgba(22,3,8,0.22) 100%);
+    border-color: rgba(255,46,99,0.18);
   }
   body.theme-perfect-blue .detail-filmstrip::before,
   body.theme-perfect-blue .detail-filmstrip::after {
@@ -5004,59 +5061,151 @@
 
 
   /* ══════════════════════════════════════════════════════════════
+     THEME-FMAB — Fullmetal Alchemist: Brotherhood (amber/gold + red)
+  ══════════════════════════════════════════════════════════════ */
+  body.theme-fmab {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(232,160,32,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)   0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(192,57,43,0.07) 0%, transparent 50%);
+  }
+  body.theme-fmab::before {
+    background:
+      radial-gradient(ellipse 55% 45% at 10% 0%,   rgba(232,160,32,0.11)  0%, transparent 65%),
+      radial-gradient(ellipse 45% 35% at 92% 85%,  rgba(192,57,43,0.14)   0%, transparent 60%),
+      radial-gradient(ellipse 35% 28% at 78% 12%,  rgba(232,160,32,0.08)  0%, transparent 50%),
+      radial-gradient(ellipse 40% 35% at 35% 55%,  rgba(15,23,42,0.60)    0%, transparent 50%),
+      radial-gradient(ellipse 30% 25% at 55% 92%,  rgba(232,160,32,0.07)  0%, transparent 50%);
+  }
+  body.theme-fmab #hex-grid polygon { fill: rgba(232,160,32,0.03) !important; stroke: #e8a020 !important; stroke-opacity: 0.12 !important; }
+  body.theme-fmab .detail-title { color: #e8a020; }
+  body.theme-fmab .ep-tile.watched {
+    background: rgba(232,160,32,0.10);
+    border-color: rgba(232,160,32,0.38);
+    box-shadow: inset 0 0 12px rgba(192,57,43,0.07), 0 0 6px rgba(232,160,32,0.12);
+  }
+  body.theme-fmab .ep-tile.watched .ep-num   { color: #e8a020; }
+  body.theme-fmab .ep-tile.watched .ep-check { color: #e8a020; }
+  body.theme-fmab .ep-tile:hover             { border-color: rgba(232,160,32,0.22); }
+  body.theme-fmab .detail-timer-card {
+    background: linear-gradient(155deg, rgba(42,26,5,0.55) 0%, rgba(21,13,2,0.28) 100%);
+    border-color: rgba(232,160,32,0.12);
+    box-shadow: 0 0 30px rgba(232,160,32,0.03), inset 0 1px 0 rgba(232,160,32,0.07);
+  }
+  body.theme-fmab .detail-timer-display {
+    color: #e8a020;
+    text-shadow: 0 0 20px rgba(232,160,32,0.55), 0 0 50px rgba(192,57,43,0.18);
+  }
+  body.theme-fmab .detail-notes-card {
+    background: linear-gradient(155deg, rgba(34,20,4,0.45) 0%, rgba(17,10,2,0.22) 100%);
+    border-color: rgba(232,160,32,0.10);
+  }
+  body.theme-fmab .detail-filmstrip::before,
+  body.theme-fmab .detail-filmstrip::after {
+    background-image: radial-gradient(circle, rgba(232,160,32,0.22) 4px, transparent 4px);
+    border-color: rgba(232,160,32,0.16);
+  }
+  body.theme-fmab .detail-season-tab.active { border-bottom-color: #e8a020; color: #e8a020; }
+  body.theme-fmab .detail-day-btn.active {
+    background: rgba(232,160,32,0.08); border-color: rgba(232,160,32,0.30); color: #e8a020;
+  }
+  body.theme-fmab .progress-bar-fill {
+    background: linear-gradient(90deg, #1a0a00, #8b4500, #e8a020);
+    box-shadow: 0 0 16px rgba(232,160,32,0.50);
+  }
+  body.theme-fmab .detail-arc-item  { border-color: rgba(232,160,32,0.10); }
+  body.theme-fmab .detail-arc-header { background: rgba(232,160,32,0.03); }
+  body.theme-fmab .detail-arc-header:hover { background: rgba(232,160,32,0.06); }
+  body.theme-fmab::after { opacity: 0.06; }
+  body.theme-fmab .stat-card-number { color: #e8a020; text-shadow: none; }
+  body.theme-fmab .stat-card-number::after { background: linear-gradient(90deg, transparent, #e8a020, transparent); }
+  body.theme-fmab .stat-card:nth-child(1) { border-bottom-color: rgba(232,160,32,0.55); }
+  body.theme-fmab .stat-card:nth-child(2) { border-bottom-color: rgba(192,57,43,0.55); }
+  body.theme-fmab .stat-card:nth-child(3) { border-bottom-color: rgba(232,160,32,0.35); }
+  body.theme-fmab .btn-ghost { border-color: rgba(232,160,32,0.18); color: rgba(232,160,32,0.75); }
+  body.theme-fmab .btn-ghost:hover {
+    border-color: rgba(232,160,32,0.45); color: #e8a020;
+    background: rgba(232,160,32,0.08);
+    box-shadow: 0 0 20px rgba(232,160,32,0.16), inset 0 0 20px rgba(232,160,32,0.04);
+  }
+
+
+  /* ══════════════════════════════════════════════════════════════
      THEME-CUSTOM — dynamic colour theme for user-added series.
      Uses CSS vars set by themeStyles, so any hex works.
      No series-specific values hardcoded here.
   ══════════════════════════════════════════════════════════════ */
+  body.theme-custom {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(var(--tc-rgb),0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 0%,   rgba(15,23,42,0.95)       0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 100% 50%, rgba(var(--tc-rgb),0.04) 0%, transparent 50%);
+  }
   body.theme-custom::before {
     background:
-      radial-gradient(ellipse 50% 38% at 8%  0%,   rgba(var(--tc-rgb),0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 92% 90%,  rgba(var(--tc-rgb),0.08) 0%, transparent 55%),
-      radial-gradient(ellipse 28% 22% at 74% 6%,   rgba(var(--tc-rgb),0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 28% at 18% 84%,  rgba(var(--tc-rgb),0.04) 0%, transparent 50%);
+      radial-gradient(ellipse 55% 45% at 10% 0%,   rgba(var(--tc-rgb),0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 45% 35% at 92% 85%,  rgba(var(--tc-rgb),0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 35% 28% at 78% 12%,  rgba(var(--tc-rgb),0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 35% at 35% 55%,  rgba(15,23,42,0.60)      0%, transparent 50%),
+      radial-gradient(ellipse 30% 25% at 55% 92%,  rgba(var(--tc-rgb),0.04) 0%, transparent 50%);
   }
   body.theme-custom #hex-grid polygon {
+    fill: rgba(var(--tc-rgb),0.02) !important;
     stroke: var(--accent-cool) !important;
-    stroke-opacity: 0.07 !important;
+    stroke-opacity: 0.12 !important;
   }
   body.theme-custom .detail-title {
+    color: var(--accent-cool);
     text-shadow: 0 0 36px var(--accent-cool-dim), 0 0 80px var(--accent-cool-dim), 0 2px 4px rgba(0,0,0,0.92);
   }
   body.theme-custom .ep-tile.watched {
-    background: var(--accent-cool-dim);
-    border-color: var(--accent-cool);
-    box-shadow: inset 0 0 12px var(--accent-cool-dim), 0 0 6px var(--accent-cool-dim);
-    opacity: 0.85;
+    background: rgba(var(--tc-rgb),0.14);
+    border-color: rgba(var(--tc-rgb),0.55);
+    box-shadow: inset 0 0 12px rgba(var(--tc-rgb),0.08), 0 0 8px rgba(var(--tc-rgb),0.18);
   }
   body.theme-custom .ep-tile.watched .ep-num   { color: var(--accent-cool); }
   body.theme-custom .ep-tile.watched .ep-check { color: var(--accent-cool); }
-  body.theme-custom .ep-tile:hover             { border-color: var(--accent-cool); opacity: 0.6; }
+  body.theme-custom .ep-tile:hover             { border-color: rgba(var(--tc-rgb),0.35); }
   body.theme-custom .detail-timer-card {
-    border-color: var(--accent-cool-dim);
+    background: linear-gradient(155deg, rgba(var(--tc-rgb),0.15) 0%, rgba(var(--tc-rgb),0.07) 100%);
+    border-color: rgba(var(--tc-rgb),0.12);
+    box-shadow: 0 0 20px rgba(var(--tc-rgb),0.03), inset 0 1px 0 rgba(var(--tc-rgb),0.07);
   }
   body.theme-custom .detail-timer-display {
     color: var(--accent-cool);
     text-shadow: 0 0 22px var(--accent-cool-dim), 0 0 55px var(--accent-cool-dim);
   }
-  body.theme-custom .detail-notes-card   { border-color: var(--accent-cool-dim); }
+  body.theme-custom .detail-notes-card {
+    background: linear-gradient(155deg, rgba(var(--tc-rgb),0.12) 0%, rgba(var(--tc-rgb),0.05) 100%);
+    border-color: rgba(var(--tc-rgb),0.10);
+  }
   body.theme-custom .detail-filmstrip::before,
   body.theme-custom .detail-filmstrip::after {
-    background-image: radial-gradient(circle, var(--accent-cool-dim) 4px, transparent 4px);
-    border-color: var(--accent-cool-dim);
+    background-image: radial-gradient(circle, rgba(var(--tc-rgb),0.30) 4px, transparent 4px);
+    border-color: rgba(var(--tc-rgb),0.22);
   }
   body.theme-custom .detail-season-tab.active { border-bottom-color: var(--accent-cool); color: var(--accent-cool); }
   body.theme-custom .detail-day-btn.active {
-    background: var(--accent-cool-dim); border-color: var(--accent-cool); color: var(--accent-cool);
+    background: rgba(var(--tc-rgb),0.12); border-color: rgba(var(--tc-rgb),0.40); color: var(--accent-cool);
   }
   body.theme-custom .progress-bar-fill {
-    background: linear-gradient(90deg, rgba(var(--tc-rgb),0.3), var(--accent-cool), var(--accent-warm));
-    box-shadow: 0 0 14px var(--accent-cool-dim);
+    background: linear-gradient(90deg, rgba(var(--tc-rgb),0.4), var(--accent-cool), var(--accent-warm));
+    box-shadow: 0 0 18px rgba(var(--tc-rgb),0.45);
   }
-  body.theme-custom .detail-arc-item   { border-color: var(--accent-cool-dim); }
-  body.theme-custom .detail-arc-header { background: var(--accent-cool-dim); }
-  body.theme-custom .detail-arc-header:hover { background: var(--accent-cool-dim); filter: brightness(1.3); }
+  body.theme-custom .detail-arc-item   { border-color: rgba(var(--tc-rgb),0.18); }
+  body.theme-custom .detail-arc-header { background: rgba(var(--tc-rgb),0.06); }
+  body.theme-custom .detail-arc-header:hover { background: rgba(var(--tc-rgb),0.10); }
   body.theme-custom .stat-card-number  { color: var(--accent-cool); text-shadow: none; }
   body.theme-custom .stat-card-number::after { background: linear-gradient(90deg, transparent, var(--accent-cool), transparent); }
+  body.theme-custom .stat-card:nth-child(1) { border-bottom-color: rgba(var(--tc-rgb),0.55); }
+  body.theme-custom .stat-card:nth-child(2) { border-bottom-color: rgba(var(--tc-rgb),0.40); }
+  body.theme-custom .stat-card:nth-child(3) { border-bottom-color: rgba(var(--tc-rgb),0.35); }
+  body.theme-custom .btn-ghost { border-color: rgba(var(--tc-rgb),0.25); color: var(--accent-cool); opacity: 0.80; }
+  body.theme-custom .btn-ghost:hover {
+    border-color: rgba(var(--tc-rgb),0.55); color: var(--accent-cool); opacity: 1;
+    background: rgba(var(--tc-rgb),0.10);
+    box-shadow: 0 0 20px rgba(var(--tc-rgb),0.20), inset 0 0 20px rgba(var(--tc-rgb),0.05);
+  }
   body.theme-custom .stat-card:nth-child(1) { border-bottom-color: var(--accent-cool); }
   body.theme-custom .stat-card:nth-child(2) { border-bottom-color: var(--accent-warm); }
   body.theme-custom .stat-card:nth-child(3) { border-bottom-color: var(--accent-cool-dim); }
@@ -9340,66 +9489,66 @@
     { label: 'None',         hex: null },
     { label: 'Cyber Cyan',   hex: '#00e5ff' },
     { label: 'Neon Green',   hex: '#39ff14' },
-    { label: 'Crimson',      hex: '#c0392b' },
+    { label: 'Crimson',      hex: '#e8372a' },
     { label: 'Demon Red',    hex: '#ff3b6b' },
     { label: 'Hot Pink',     hex: '#ff2d95' },
-    { label: 'Rose',         hex: '#F78FB3' },
+    { label: 'Rose',         hex: '#ff6eb4' },
     { label: 'Violet',       hex: '#a855f7' },
-    { label: 'Deep Purple',  hex: '#7c3aed' },
+    { label: 'Deep Purple',  hex: '#8b5cf6' },
     { label: 'Royal Blue',   hex: '#3b82f6' },
-    { label: 'Steel Blue',   hex: '#6272a4' },
+    { label: 'Steel Blue',   hex: '#7b92d4' },
     { label: 'Aqua',         hex: '#00eeff' },
-    { label: 'Teal',         hex: '#00b4a0' },
+    { label: 'Teal',         hex: '#00d4bc' },
     { label: 'Mint',         hex: '#00ffaa' },
     { label: 'Gold',         hex: '#ffe14d' },
     { label: 'Amber',        hex: '#ff9900' },
     { label: 'Orange',       hex: '#ff6040' },
     { label: 'Blood Orange', hex: '#ff4500' },
-    { label: 'Sakura',       hex: '#ff8fa3' },
-    { label: 'Ice White',    hex: '#c8d6e5' },
+    { label: 'Sakura',       hex: '#ff6fa3' },
+    { label: 'Ice White',    hex: '#ddeeff' },
     { label: 'Sunset Orange', hex: '#ff7e5f' },
 { label: 'Magenta',       hex: '#ff006e' },
-{ label: 'Indigo',        hex: '#4f46e5' },
-{ label: 'Emerald',       hex: '#10b981' },
-{ label: 'Cyan Blue',     hex: '#06b6d4' },
-{ label: 'Purple Haze',   hex: '#d946ef' },
-{ label: 'Scarlet',       hex: '#ef4444' },
-{ label: 'Lime',          hex: '#84cc16' },
-{ label: 'Midnight Blue', hex: '#1d4ed8' },
-{ label: 'Electric Indigo', hex: '#4338ca' },
+{ label: 'Indigo',        hex: '#6366f1' },
+{ label: 'Emerald',       hex: '#10e881' },
+{ label: 'Cyan Blue',     hex: '#06d4f4' },
+{ label: 'Purple Haze',   hex: '#e946ef' },
+{ label: 'Scarlet',       hex: '#ff3333' },
+{ label: 'Lime',          hex: '#a3e635' },
+{ label: 'Midnight Blue', hex: '#3b6eef' },
+{ label: 'Electric Indigo', hex: '#6554f5' },
 { label: 'Lavender',      hex: '#c084fc' },
 { label: 'Arctic Mint',   hex: '#5eead4' },
 { label: 'Ocean Deep',    hex: '#0ea5e9' },
-{ label: 'Coral',         hex: '#fb7185' },
-{ label: 'Cherry Red',    hex: '#dc2626' },
-{ label: 'Peach',         hex: '#fdba74' },
-{ label: 'Neon Yellow',   hex: '#eab308' },
-{ label: 'Forest',        hex: '#16a34a' },
-{ label: 'Slate',         hex: '#64748b' },
-{ label: 'Obsidian',      hex: '#111827' },
-{ label: 'Graphite',      hex: '#374151' },
-{ label: 'Silver',        hex: '#94a3b8' },
-{ label: 'Frost',         hex: '#bfdbfe' },
+{ label: 'Coral',         hex: '#ff6085' },
+{ label: 'Cherry Red',    hex: '#f92020' },
+{ label: 'Peach',         hex: '#ffb056' },
+{ label: 'Neon Yellow',   hex: '#f5d800' },
+{ label: 'Forest',        hex: '#20d460' },
+{ label: 'Slate',         hex: '#7e9abf' },
+{ label: 'Obsidian',      hex: '#2a3a5c' },
+{ label: 'Graphite',      hex: '#5a6a82' },
+{ label: 'Silver',        hex: '#b8d0e8' },
+{ label: 'Frost',         hex: '#a0c8ff' },
 { label: 'Periwinkle',    hex: '#818cf8' },
-{ label: 'Azure',         hex: '#2563eb' },
+{ label: 'Azure',         hex: '#2d80f5' },
 { label: 'Skyline',       hex: '#38bdf8' },
 { label: 'Turquoise',     hex: '#2dd4bf' },
 { label: 'Seafoam',       hex: '#34d399' },
-{ label: 'Jade',          hex: '#22c55e' },
-{ label: 'Olive',         hex: '#65a30d' },
+{ label: 'Jade',          hex: '#22e55e' },
+{ label: 'Olive',         hex: '#8bc820' },
 { label: 'Sunflower',     hex: '#facc15' },
-{ label: 'Sand',          hex: '#fcd34d' },
-{ label: 'Apricot',       hex: '#fdba74' },
-{ label: 'Tangerine',     hex: '#fb923c' },
-{ label: 'Burnt Sienna',  hex: '#ea580c' },
-{ label: 'Brick',         hex: '#b91c1c' },
-{ label: 'Ruby',          hex: '#e11d48' },
-{ label: 'Fuchsia',       hex: '#c026d3' },
-{ label: 'Orchid',        hex: '#a21caf' },
-{ label: 'Plum',          hex: '#7e22ce' },
-{ label: 'Grape',         hex: '#6d28d9' },
-{ label: 'Storm',         hex: '#475569' },
-{ label: 'Moonlight',     hex: '#e2e8f0' },
+{ label: 'Sand',          hex: '#ffdf6d' },
+{ label: 'Apricot',       hex: '#ffaa54' },
+{ label: 'Tangerine',     hex: '#ff8c1a' },
+{ label: 'Burnt Sienna',  hex: '#ff6820' },
+{ label: 'Brick',         hex: '#e82222' },
+{ label: 'Ruby',          hex: '#f01d48' },
+{ label: 'Fuchsia',       hex: '#e030e8' },
+{ label: 'Orchid',        hex: '#c428d4' },
+{ label: 'Plum',          hex: '#9b30e8' },
+{ label: 'Grape',         hex: '#8438f0' },
+{ label: 'Storm',         hex: '#6880a8' },
+{ label: 'Moonlight',     hex: '#c0d8ff' },
   ]
 
   function openAddModal(onSuccess) {
@@ -10628,7 +10777,7 @@
       if (seriesRatingIMDb) { var _imdbVal = Number(seriesRatingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); dualRatingHTML += '<div class="detail-rating-chip chip-imdb"><span class="chip-label">IMDb</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
       if (seriesRatingMAL)  dualRatingHTML += '<div class="detail-rating-chip chip-mal"><span class="chip-label">MAL</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
       if (seriesPersonalRating) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display"><span class="chip-label">MY RATING</span><span class="chip-val">' + seriesPersonalRating + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
-      else if (item.seasons && item.seasons.length > 0) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.4;cursor:default;"><span class="chip-label">MY RATING</span><span class="chip-val" style="font-size:10px;">Rate seasons<span style="font-size:9px;opacity:0.6"></span></span></div>'
+      else if (item.seasons && item.seasons.length > 1) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.4;cursor:default;"><span class="chip-label">MY RATING</span><span class="chip-val" style="font-size:10px;">Rate seasons<span style="font-size:9px;opacity:0.6"></span></span></div>'
       else dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.5;"><span class="chip-label">MY RATING</span><span class="chip-val">\u2605<span style="font-size:9px;opacity:0.6"> Rate</span></span></div>'
       dualRatingHTML += '</div>'
     }
@@ -10941,8 +11090,8 @@
     setTimeout(function() {
       var ratingChip = document.getElementById('detail-personal-rating-display')
       if (ratingChip) {
-        // If series has seasons, don't allow manual rating
-        if (item.seasons && item.seasons.length > 0) {
+        // If series has multiple seasons, don't allow manual rating (derive from season ratings)
+        if (item.seasons && item.seasons.length > 1) {
           ratingChip.style.cursor = 'default'
           ratingChip.addEventListener('click', function(e) {
             e.stopPropagation()
@@ -10965,14 +11114,18 @@
           document.querySelectorAll('.detail-personal-rating-popup').forEach(function(p) { p.remove() })
           var popup = document.createElement('div')
           popup.className = 'detail-personal-rating-popup'
-          popup.style.cssText = 'position:absolute;top:100%;left:0;margin-top:8px;background:rgba(12,10,30,1);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.8);'
+          popup.style.cssText = 'position:fixed;background:#1a1630;border:1px solid rgba(130,160,255,0.5);border-radius:var(--radius-sm);padding:8px 10px;display:flex;gap:4px;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,0.9);'
+          // Position it below the rating chip
+          var chipRect = ratingChip.getBoundingClientRect()
+          popup.style.top = (chipRect.bottom + 8) + 'px'
+          popup.style.left = chipRect.left + 'px'
           
           for (var s = 1; s <= 10; s++) {
             var star = document.createElement('button')
             star.className = 'series-rate-star' + (item.personalRating >= s ? ' filled' : '')
             star.textContent = '\u2605'
             star.dataset.val = s
-            star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;'
+            star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:0;line-height:1;'
             if (item.personalRating >= s) {
               star.style.color = '#ff8a4c'
             }
@@ -10981,7 +11134,7 @@
               this.style.transform = 'scale(1.15)'
             })
             star.addEventListener('mouseout', function() {
-              this.style.color = (item.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'var(--text-dim)'
+              this.style.color = (item.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'rgba(180,190,220,0.55)'
               this.style.transform = 'scale(1)'
             })
             star.addEventListener('click', function(ev) {
@@ -11034,8 +11187,7 @@
             popup.appendChild(clearBtn)
           }
           
-          ratingChip.style.position = 'relative'
-          ratingChip.appendChild(popup)
+          document.body.appendChild(popup)
           
           // Close on outside click
           setTimeout(function() {
@@ -11786,7 +11938,15 @@
           })
           popup.appendChild(clearBtn)
         }
-        tile.appendChild(popup)
+        // Position fixed relative to rateBtn, append to body to escape tile opacity
+        var tileRect = tile.getBoundingClientRect()
+        popup.style.position = 'fixed'
+        popup.style.left = (tileRect.left + tileRect.width / 2) + 'px'
+        popup.style.bottom = (window.innerHeight - tileRect.top + 3) + 'px'
+        popup.style.top = 'auto'
+        popup.style.transform = 'translateX(-50%)'
+        popup.style.zIndex = '9999'
+        document.body.appendChild(popup)
         // Close on outside click
         setTimeout(function() {
           document.addEventListener('click', function closePopup() {
@@ -12061,22 +12221,22 @@
       var seasonRatingMAL = season.ratingMAL ? Number(season.ratingMAL).toFixed(1) : seasonMAL
       var seasonPersonalRating = season.personalRating ? Number(season.personalRating).toFixed(1) : personalAvg
       
-      // Calculate overall average from all three sources
+      // Calculate overall average — personal component uses episode ratings only (personalAvg), not manual season rating
       var overallAvg = null
-      if (seasonRatingIMDb || seasonRatingMAL || seasonPersonalRating) {
+      if (seasonRatingIMDb || seasonRatingMAL || personalAvg) {
         var count = 0
         var total = 0
         if (seasonRatingIMDb) { total += Number(seasonRatingIMDb); count++ }
         if (seasonRatingMAL) { total += Number(seasonRatingMAL) * 2; count++ } // MAL is out of 5, convert to 10
-        if (seasonPersonalRating) { total += Number(seasonPersonalRating); count++ }
+        if (personalAvg) { total += Number(personalAvg); count++ }
         if (count > 0) overallAvg = (total / count).toFixed(1)
       }
       
       // Build rating display with bars inside the card
       var ratingHTML = ''
-      if (overallAvg && !isReadingType) {
+      if (!isReadingType) {
         ratingHTML = '<div class="stat-card">' +
-          '<div class="stat-card-number">' + overallAvg + '</div>' +
+          '<div class="stat-card-number">' + (overallAvg || '\u2014') + '</div>' +
           '<div class="stat-card-label">Avg Rating</div>' +
           '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center;">'
         
@@ -12085,16 +12245,12 @@
           var imdbStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(245,197,24,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#F5C518;' + (imdbLink ? 'cursor:pointer;transition:all 0.2s;' : '')
           var imdbHover = imdbLink ? ' onmouseover="this.style.background=\'rgba(245,197,24,0.22)\'" onmouseout="this.style.background=\'rgba(245,197,24,0.12)\'"' : ''
           ratingHTML += '<div class="season-imdb-chip" style="' + imdbStyle + '"' + imdbHover + '><span>IMDb</span><span>' + seasonRatingIMDb + '</span></div>'
-        } else {
-          ratingHTML += '<div class="season-imdb-chip season-add-link" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(245,197,24,0.08);border:1px dashed rgba(245,197,24,0.3);border-radius:3px;font-size:10px;font-weight:600;color:#F5C518;cursor:pointer;opacity:0.6;transition:all 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.6\'"><span>+ IMDb</span></div>'
         }
         if (seasonRatingMAL) {
           var malLink = season.malUrl || ''
           var malStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(95,143,219,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#5f8fdb;' + (malLink ? 'cursor:pointer;transition:all 0.2s;' : '')
           var malHover = malLink ? ' onmouseover="this.style.background=\'rgba(95,143,219,0.22)\'" onmouseout="this.style.background=\'rgba(95,143,219,0.12)\'"' : ''
           ratingHTML += '<div class="season-mal-chip" style="' + malStyle + '"' + malHover + '><span>MAL</span><span>' + seasonRatingMAL + '</span></div>'
-        } else {
-          ratingHTML += '<div class="season-mal-chip season-add-link" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(95,143,219,0.08);border:1px dashed rgba(95,143,219,0.3);border-radius:3px;font-size:10px;font-weight:600;color:#5f8fdb;cursor:pointer;opacity:0.6;transition:all 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.6\'"><span>+ MAL</span></div>'
         }
         if (seasonPersonalRating) {
           ratingHTML += '<div class="season-personal-rating-btn" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(255,138,76,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#ff8a4c;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,138,76,0.22)\'" onmouseout="this.style.background=\'rgba(255,138,76,0.12)\'"><span>MY</span><span>' + seasonPersonalRating + '</span></div>'
@@ -12351,7 +12507,7 @@
       star.className = 'season-rate-star' + (season.personalRating >= s ? ' filled' : '')
       star.textContent = '\u2605'
       star.dataset.val = s
-      star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;padding:0;line-height:1;flex-shrink:0;'
+      star.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:rgba(180,190,220,0.55);transition:all 0.2s;padding:0;line-height:1;flex-shrink:0;'
       if (season.personalRating >= s) {
         star.style.color = '#ff8a4c'
       }
@@ -12360,7 +12516,7 @@
         this.style.transform = 'scale(1.15)'
       })
       star.addEventListener('mouseout', function() {
-        this.style.color = (season.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'var(--text-dim)'
+        this.style.color = (season.personalRating >= parseInt(this.dataset.val)) ? '#ff8a4c' : 'rgba(180,190,220,0.55)'
         this.style.transform = 'scale(1)'
       })
       if (season.personalRating >= s) {

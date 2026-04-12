@@ -12547,7 +12547,7 @@
         if (seasonRatingIMDb) {
           ratingsCardInner +=
             '<div class="season-imdb-chip" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'1\'">' +
-              '<span style="font:600 11px var(--font-mono);color:rgba(245,197,24,0.55);letter-spacing:0.12em;">IMDB (Avg)' + (season.imdbUrl ? ' ↗' : '') + '</span>' +
+              '<span style="font:600 11px var(--font-mono);color:rgba(245,197,24,0.55);letter-spacing:0.12em;">IMDB<span style=\"font-size:8px;opacity:0.45;margin-left:3px;letter-spacing:0.04em;\">(Avg)</span>' + (season.imdbUrl ? ' ↗' : '') + '</span>' +
               '<span style="font:700 22px var(--font-display);color:#F5C518;letter-spacing:0.04em;">' + seasonRatingIMDb + '</span>' +
             '</div>'
           ratingsRowCount++

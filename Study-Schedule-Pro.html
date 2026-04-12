@@ -17149,11 +17149,14 @@ All code is well-commented and organized by feature.
                 const lastAction = subject.history[subject.history.length - 1];
                 
                 // Revert the action
-                if (lastAction.type === 'present' || lastAction.type === 'duty') {
+                if (lastAction.type === 'present') {
                     subject.present--;
                     subject.total--;
                     subject.currentPresent--;
                     subject.currentTotal--;
+                } else if (lastAction.type === 'duty') {
+                    subject.present--;
+                    subject.currentPresent--;
                 } else if (lastAction.type === 'absent') {
                     subject.total--;
                     subject.currentTotal--;
@@ -17375,15 +17378,9 @@ All code is well-commented and organized by feature.
                     timestamp: Date.now()
                 };
 
-                // Duty leave: counts as present (doesn't hurt attendance)
-                if (subject.futureTotal > 0) {
-                    subject.futureTotal--;
-                }
-
+                // Duty leave: replaces a missed class, counts as present (doesn't add to total)
                 subject.present++;
-                subject.total++;
                 subject.currentPresent++;
-                subject.currentTotal++;
                 subject.history.push({ date: new Date().toISOString(), type: 'duty' });
                 saveAttendanceState();
                 renderTrackedSubjects();
@@ -17486,6 +17483,16 @@ All code is well-commented and organized by feature.
                 saveAttendanceState();
                 renderTrackedSubjects();
                 showToast(`${subject.name} archived`, 'success');
+            }
+        }
+
+        function deleteSubject(subjectId) {
+            const subject = attendanceState.subjects.find(s => s.id === subjectId);
+            if (subject && confirm(`Permanently delete "${subject.name}"? This cannot be undone.`)) {
+                attendanceState.subjects = attendanceState.subjects.filter(s => s.id !== subjectId);
+                saveAttendanceState();
+                renderTrackedSubjects();
+                showToast(`${subject.name} deleted`, 'success');
             }
         }
 

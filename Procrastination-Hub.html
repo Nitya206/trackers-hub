@@ -10957,13 +10957,9 @@
     var seriesRatingMAL = item.ratingMAL
     var seriesPersonalRating = item.personalRating
     if (item.seasons && item.seasons.length > 0) {
-      var seasonsWithIMDb = item.seasons.filter(function(s) { return s.ratingIMDb })
       var seasonsWithMAL = item.seasons.filter(function(s) { return s.ratingMAL })
       var seasonsWithPersonal = item.seasons.filter(function(s) { return s.personalRating })
-      if (seasonsWithIMDb.length > 0) {
-        var avgIMDb = seasonsWithIMDb.reduce(function(sum, s) { return sum + Number(s.ratingIMDb) }, 0) / seasonsWithIMDb.length
-        seriesRatingIMDb = avgIMDb
-      }
+      // IMDb has no per-season rating — seriesRatingIMDb stays as item.ratingIMDb only
       if (seasonsWithMAL.length > 0) {
         // season.ratingMAL set via popup = /10; auto-populated from episode avg = /5
         // Detect scale: auto-populated values are always ≤ 5, manually entered are typically > 5

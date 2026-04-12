@@ -4315,6 +4315,8 @@
     .detail-rating-chip.chip-imdb .chip-val   { color: #F5C518; text-shadow: 0 0 16px rgba(245,197,24,0.5); }
     .detail-rating-chip.chip-mal  .chip-label { color: #5f8fdb; font-size:10px; }
     .detail-rating-chip.chip-mal  .chip-val   { color: #5f8fdb; text-shadow: 0 0 16px rgba(94,143,219,0.4); }
+    #detail-series-imdb-chip:hover { opacity: 0.8; }
+    #detail-series-mal-chip:hover  { opacity: 0.8; }
     .detail-rating-chip.chip-personal .chip-label { color: var(--accent-warm); font-size:10px; }
     .detail-rating-chip.chip-personal .chip-val   { color: var(--accent-warm); text-shadow: 0 0 16px rgba(255,96,64,0.4); }
     /* Small brand-colored IMDb/MAL labels in library cards */
@@ -5462,6 +5464,7 @@
   ════════════════════════════════════════════════════════════════ */
 
   /* Detail season stat grids — class-based so media queries can override */
+  .detail-stat-grid-4col { grid-template-columns: repeat(4, 1fr); }
   .detail-stat-grid-3col { grid-template-columns: repeat(3, 1fr); }
   .detail-stat-grid-2col { grid-template-columns: repeat(2, 1fr); }
 
@@ -5565,9 +5568,15 @@
     }
 
     /* ── Detail season stat grids: collapse to 2-col / 1-col ── */
+    .detail-stat-grid-4col { grid-template-columns: repeat(2, 1fr); }
     .detail-stat-grid-3col { grid-template-columns: repeat(2, 1fr); }
     .detail-stat-grid-2col { grid-template-columns: 1fr; }
     .detail-season-stats   { grid-template-columns: repeat(2, 1fr) !important; }
+
+    /* ── Stat card numbers: scale with card width on mobile ── */
+    .detail-season-stats .stat-card-number[style] {
+      font-size: clamp(22px, 9vw, 42px) !important;
+    }
 
     /* ── Session overlay: ring + title scale down ── */
     .session-overlay-title {
@@ -6337,8 +6346,8 @@
         seasons: [
           {
             id: 's1', name: 'Season 1',
+            ratingMAL: 8.03,
             episodes: [
-              { number: 1,  title: 'The Black Lagoon',                 ratingIMDb: 7.4, ratingMAL: 4.2 },
               { number: 2,  title: 'Mangrove Heaven',                  ratingIMDb: 7.7, ratingMAL: 4.2 },
               { number: 3,  title: 'Ring-Ding Ship Chase',             ratingIMDb: 7.3, ratingMAL: 4.2 },
               { number: 4,  title: 'Die Rückkehr des Adlers',          ratingIMDb: 7.3, ratingMAL: 4.2 },
@@ -6512,6 +6521,7 @@
           seasons: [
             {
               id: 's1', name: 'Season 1',
+              ratingMAL: 8.03,
               episodes: [
                 { number: 1,  title: 'The Black Lagoon',                 ratingIMDb: 7.4, ratingMAL: 4.2 },
                 { number: 2,  title: 'Mangrove Heaven',                  ratingIMDb: 7.7, ratingMAL: 4.2 },
@@ -7595,8 +7605,21 @@
       localStorage.setItem('phub_fmab_tags_v2', 'true')
     }
 
+    // Always-run patch: set Black Lagoon Season 1 ratingMAL to 8.03
+    ;(function() {
+      var _blLib = loadData(KEYS.library, [])
+      var _blIt = _blLib.find(function(it) { return it.id === 'black-lagoon-seed' })
+      if (_blIt && _blIt.seasons) {
+        var _s1 = _blIt.seasons.find(function(s) { return s.id === 's1' })
+        if (_s1 && _s1.ratingMAL !== 8.03) {
+          _s1.ratingMAL = 8.03
+          saveData(KEYS.library, _blLib)
+        }
+      }
+    })()
+
     // Migration: calculate season-level ratings from episode averages for Black Lagoon
-    if (!localStorage.getItem('phub_bl_season_ratings_v1')) {
+    if (!localStorage.getItem('phub_bl_season_ratings_v2')) {
       var _blRatLib = loadData(KEYS.library, [])
       var _blRatEntry = _blRatLib.find(function(it) { return it.id === 'black-lagoon-seed' })
       if (_blRatEntry && _blRatEntry.seasons) {
@@ -7604,18 +7627,18 @@
           var eps = season.episodes || []
           var imdbEps = eps.filter(function(e) { return e.ratingIMDb })
           var malEps = eps.filter(function(e) { return e.ratingMAL })
-          if (imdbEps.length > 0) {
+          if (imdbEps.length > 0 && !season.ratingIMDb) {
             var avgIMDb = imdbEps.reduce(function(sum, e) { return sum + Number(e.ratingIMDb) }, 0) / imdbEps.length
             season.ratingIMDb = avgIMDb
           }
-          if (malEps.length > 0) {
+          if (malEps.length > 0 && !season.ratingMAL) {
             var avgMAL = malEps.reduce(function(sum, e) { return sum + Number(e.ratingMAL) }, 0) / malEps.length
             season.ratingMAL = avgMAL
           }
         })
         saveData(KEYS.library, _blRatLib)
       }
-      localStorage.setItem('phub_bl_season_ratings_v1', 'true')
+      localStorage.setItem('phub_bl_season_ratings_v2', 'true')
     }
 
     // Migration: calculate season-level ratings from episode averages for 86
@@ -10942,8 +10965,24 @@
         seriesRatingIMDb = avgIMDb
       }
       if (seasonsWithMAL.length > 0) {
-        var avgMAL = seasonsWithMAL.reduce(function(sum, s) { return sum + Number(s.ratingMAL) }, 0) / seasonsWithMAL.length
-        seriesRatingMAL = avgMAL
+        // season.ratingMAL set via popup = /10; auto-populated from episode avg = /5
+        // Detect scale: auto-populated values are always ≤ 5, manually entered are typically > 5
+        var malSum = seasonsWithMAL.reduce(function(sum, s) {
+          var v = Number(s.ratingMAL)
+          return sum + (v <= 5 ? v * 2 : v) // normalise to /10
+        }, 0)
+        seriesRatingMAL = malSum / seasonsWithMAL.length
+      } else {
+        // No season-level MAL — fall back to each season's episode MAL avg
+        var seasonMALVals = item.seasons.map(function(s) {
+          var malEps = (s.episodes || []).filter(function(e) { return e.ratingMAL })
+          if (!malEps.length) return null
+          return malEps.reduce(function(sum, e) { return sum + Number(e.ratingMAL) }, 0) / malEps.length
+        }).filter(function(v) { return v !== null })
+        if (seasonMALVals.length > 0) {
+          // episode ratingMAL is /5, ×2 to normalise to /10
+          seriesRatingMAL = (seasonMALVals.reduce(function(a, b) { return a + b }, 0) / seasonMALVals.length) * 2
+        }
       }
       if (seasonsWithPersonal.length > 0) {
         var avgPersonal = seasonsWithPersonal.reduce(function(sum, s) { return sum + Number(s.personalRating) }, 0) / seasonsWithPersonal.length
@@ -10956,8 +10995,8 @@
     var dualRatingHTML = ''
     if (seriesRatingIMDb || seriesRatingMAL || seriesPersonalRating) {
       dualRatingHTML = '<div class="detail-ratings-row">'
-      if (seriesRatingIMDb) { var _imdbVal = Number(seriesRatingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); dualRatingHTML += '<div class="detail-rating-chip chip-imdb"><span class="chip-label">IMDb</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
-      if (seriesRatingMAL)  dualRatingHTML += '<div class="detail-rating-chip chip-mal"><span class="chip-label">MAL</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      if (seriesRatingIMDb) { var _imdbVal = Number(seriesRatingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); var _imdbLinkIcon = item.imdbUrl ? '<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>' : '<span style="font-size:8px;opacity:0.4;margin-left:2px;" title="Add IMDb link">+</span>'; dualRatingHTML += '<div class="detail-rating-chip chip-imdb" id="detail-series-imdb-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">IMDb' + _imdbLinkIcon + '</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
+      if (seriesRatingMAL)  { var _malLinkIcon = item.malUrl ? '<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>' : '<span style="font-size:8px;opacity:0.4;margin-left:2px;" title="Add MAL link">+</span>'; dualRatingHTML += '<div class="detail-rating-chip chip-mal" id="detail-series-mal-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">MAL' + _malLinkIcon + '</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
       if (seriesPersonalRating) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display"><span class="chip-label">MY RATING</span><span class="chip-val">' + seriesPersonalRating + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
       else if (item.seasons && item.seasons.length > 1) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.4;cursor:default;"><span class="chip-label">MY RATING</span><span class="chip-val" style="font-size:10px;">Rate seasons<span style="font-size:9px;opacity:0.6"></span></span></div>'
       else dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.5;"><span class="chip-label">MY RATING</span><span class="chip-val">\u2605<span style="font-size:9px;opacity:0.6"> Rate</span></span></div>'
@@ -11385,6 +11424,57 @@
               }
             })
           }, 100)
+        })
+      }
+    }, 0)
+
+    // -- Series-level IMDb chip click listener --
+    setTimeout(function() {
+      var seriesImdbChip = document.getElementById('detail-series-imdb-chip')
+      if (seriesImdbChip) {
+        seriesImdbChip.addEventListener('click', function(e) {
+          e.stopPropagation()
+          if (item.imdbUrl) {
+            window.open(item.imdbUrl, '_blank')
+          } else {
+            showInputModal('Add IMDb Link', 'Enter IMDb URL for ' + (item.title || '').trim(), seriesImdbChip, function(url, rating) {
+              item.imdbUrl = url
+              if (rating !== null) item.ratingIMDb = rating
+              var lib = loadData(KEYS.library, [])
+              var libItem = lib.find(function(i) { return i.id === id })
+              if (libItem) {
+                libItem.imdbUrl = url
+                if (rating !== null) libItem.ratingIMDb = rating
+                saveData(KEYS.library, lib)
+              }
+              var lbl = seriesImdbChip.querySelector('.chip-label')
+              if (lbl) lbl.innerHTML = 'IMDb<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>'
+            }, { ratingLabel: 'IMDb /10', ratingPlaceholder: 'e.g. 8.6', ratingMax: 10, currentRating: item.ratingIMDb || '', accentColor: 'rgba(245,197,24,0.8)' })
+          }
+        })
+      }
+      // -- Series-level MAL chip click listener --
+      var seriesMalChip = document.getElementById('detail-series-mal-chip')
+      if (seriesMalChip) {
+        seriesMalChip.addEventListener('click', function(e) {
+          e.stopPropagation()
+          if (item.malUrl) {
+            window.open(item.malUrl, '_blank')
+          } else {
+            showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + (item.title || '').trim(), seriesMalChip, function(url, rating) {
+              item.malUrl = url
+              if (rating !== null) item.ratingMAL = rating
+              var lib = loadData(KEYS.library, [])
+              var libItem = lib.find(function(i) { return i.id === id })
+              if (libItem) {
+                libItem.malUrl = url
+                if (rating !== null) libItem.ratingMAL = rating
+                saveData(KEYS.library, lib)
+              }
+              var lbl = seriesMalChip.querySelector('.chip-label')
+              if (lbl) lbl.innerHTML = 'MAL<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>'
+            }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: item.ratingMAL || '', accentColor: 'rgba(95,143,219,0.8)' })
+          }
         })
       }
     }, 0)
@@ -12397,6 +12487,13 @@
       var sum = ratedEps.reduce(function(s, e) { return s + (Number(e.rating) * 2) }, 0)
       return (sum / ratedEps.length).toFixed(1)
     }
+    function statFontSize(str) {
+      var len = String(str).length
+      if (len <= 3) return '52px'
+      if (len <= 5) return '40px'
+      if (len <= 7) return '32px'
+      return '28px'
+    }
     function refreshStats(watchedEps) {
       var newWatched = watchedEps ? watchedEps.filter(function(n) { return epNums.includes(n) }).length : 0
       var newPct = eps.length > 0 ? Math.round((newWatched / eps.length) * 100) : 0
@@ -12417,63 +12514,102 @@
       }
       
       // Use season-level rating if set, otherwise use calculated average
+      // Track MAL scale: season.ratingMAL is /10, episode avg is /5
       var seasonRatingIMDb = season.ratingIMDb ? Number(season.ratingIMDb).toFixed(1) : seasonIMDb
-      var seasonRatingMAL = season.ratingMAL ? Number(season.ratingMAL).toFixed(1) : seasonMAL
+      var seasonRatingMALRaw = season.ratingMAL ? Number(season.ratingMAL) : (seasonMAL ? Number(seasonMAL) : null)
+      var seasonRatingMALIsBase10 = !!season.ratingMAL // explicit season rating is /10; episode avg is /5
+      var seasonRatingMAL = seasonRatingMALRaw !== null ? seasonRatingMALRaw.toFixed(seasonRatingMALIsBase10 ? 2 : 1) : null
+      var seasonRatingMALMax = seasonRatingMALIsBase10 ? 10 : 5
       var seasonPersonalRating = season.personalRating ? Number(season.personalRating).toFixed(1) : personalAvg
       
-      // Calculate overall average — personal component uses episode ratings only (personalAvg), not manual season rating
+      // Calculate overall average — 3-way average: IMDb avg + MAL avg (normalised to /10) + season personal rating
+      // Each component counts as 1 slot. MAL ep avg is /5 so ×2 to normalise.
+      // Personal rating only counts when a season-level rating has been explicitly set.
       var overallAvg = null
-      if (seasonRatingIMDb || seasonRatingMAL || personalAvg) {
-        var count = 0
-        var total = 0
-        if (seasonRatingIMDb) { total += Number(seasonRatingIMDb); count++ }
-        if (seasonRatingMAL) { total += Number(seasonRatingMAL) * 2; count++ } // MAL is out of 5, convert to 10
-        if (personalAvg) { total += Number(personalAvg); count++ }
-        if (count > 0) overallAvg = (total / count).toFixed(1)
+      var _imdbVal   = seasonRatingIMDb ? Number(seasonRatingIMDb) : null
+      var _malVal    = seasonRatingMALRaw !== null ? (seasonRatingMALIsBase10 ? seasonRatingMALRaw : seasonRatingMALRaw * 2) : null
+      var _myVal     = personalAvg ? Number(personalAvg) : null  // avg of per-episode ratings each ×2, already on /10 scale
+      var _avgParts  = [_imdbVal, _malVal, _myVal].filter(function(v) { return v !== null })
+      if (_avgParts.length > 0) {
+        overallAvg = (_avgParts.reduce(function(s, v) { return s + v }, 0) / _avgParts.length).toFixed(1)
       }
       
       // Build rating display with bars inside the card
       var ratingHTML = ''
-      if (!isReadingType) {
+      if (true) { // show rating cards for ALL types including reading
+        // Card 1: clean Avg Rating (no chips inside)
         ratingHTML = '<div class="stat-card">' +
-          '<div class="stat-card-number">' + (overallAvg || '\u2014') + '</div>' +
+          '<div class="stat-card-number" style="font-size:' + statFontSize(overallAvg || '-') + ';white-space:nowrap;">' + (overallAvg || '\u2014') + '</div>' +
           '<div class="stat-card-label">Avg Rating</div>' +
-          '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center;">'
-        
+          '</div>'
+
+        // Card 4: Ratings breakdown — IMDb, MAL, MY RATING as rows
+        var ratingsCardInner = ''
+        var ratingsRowCount = 0  // count of real data rows (not placeholders)
+        var divider = '<div style="height:1px;background:rgba(100,120,255,0.1);width:100%;"></div>'
+
         if (seasonRatingIMDb) {
-          var imdbLink = season.imdbUrl || ''
-          var imdbStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(245,197,24,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#F5C518;' + (imdbLink ? 'cursor:pointer;transition:all 0.2s;' : '')
-          var imdbHover = imdbLink ? ' onmouseover="this.style.background=\'rgba(245,197,24,0.22)\'" onmouseout="this.style.background=\'rgba(245,197,24,0.12)\'"' : ''
-          ratingHTML += '<div class="season-imdb-chip" style="' + imdbStyle + '"' + imdbHover + '><span>IMDb</span><span>' + seasonRatingIMDb + '</span></div>'
+          ratingsCardInner +=
+            '<div class="season-imdb-chip" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'1\'">' +
+              '<span style="font:600 11px var(--font-mono);color:rgba(245,197,24,0.55);letter-spacing:0.12em;">IMDB' + (season.imdbUrl ? ' ↗' : '') + '</span>' +
+              '<span style="font:700 22px var(--font-display);color:#F5C518;letter-spacing:0.04em;">' + seasonRatingIMDb + '</span>' +
+            '</div>'
+          ratingsRowCount++
         }
         if (seasonRatingMAL) {
-          var malLink = season.malUrl || ''
-          var malStyle = 'display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(95,143,219,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#5f8fdb;' + (malLink ? 'cursor:pointer;transition:all 0.2s;' : '')
-          var malHover = malLink ? ' onmouseover="this.style.background=\'rgba(95,143,219,0.22)\'" onmouseout="this.style.background=\'rgba(95,143,219,0.12)\'"' : ''
-          ratingHTML += '<div class="season-mal-chip" style="' + malStyle + '"' + malHover + '><span>MAL</span><span>' + seasonRatingMAL + '</span></div>'
+          var malLinkIcon = season.malUrl ? ' ↗' : ''
+          ratingsCardInner +=
+            (ratingsRowCount > 0 ? divider : '') +
+            '<div class="season-mal-chip" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'1\'">' +
+              '<span style="font:600 11px var(--font-mono);color:rgba(95,143,219,0.55);letter-spacing:0.12em;">MAL' + malLinkIcon + '</span>' +
+              '<span style="font:700 22px var(--font-display);color:#5f8fdb;letter-spacing:0.04em;">' + seasonRatingMAL + '</span>' +
+            '</div>'
+          ratingsRowCount++
         }
         if (seasonPersonalRating) {
-          ratingHTML += '<div class="season-personal-rating-btn" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(255,138,76,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#ff8a4c;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,138,76,0.22)\'" onmouseout="this.style.background=\'rgba(255,138,76,0.12)\'"><span>MY</span><span>' + seasonPersonalRating + '</span></div>'
+          ratingsCardInner +=
+            (ratingsRowCount > 0 ? divider : '') +
+            '<div class="season-personal-rating-btn" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'1\'">' +
+              '<span style="font:600 11px var(--font-mono);color:rgba(255,138,76,0.55);letter-spacing:0.12em;">MY</span>' +
+              '<span style="font:700 22px var(--font-display);color:#ff8a4c;letter-spacing:0.04em;">' + seasonPersonalRating + '</span>' +
+            '</div>'
+          ratingsRowCount++
         } else {
-          ratingHTML += '<div class="season-personal-rating-btn" style="display:flex;align-items:center;gap:3px;padding:3px 6px;background:rgba(255,138,76,0.12);border-radius:3px;font-size:10px;font-weight:600;color:#ff8a4c;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,138,76,0.22)\'" onmouseout="this.style.background=\'rgba(255,138,76,0.12)\'"><span>RATE</span></div>'
+          // Only show divider above placeholder if there are 2+ real rows above it
+          ratingsCardInner +=
+            (ratingsRowCount >= 2 ? divider : '') +
+            '<div class="season-personal-rating-btn" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;opacity:0.45;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'0.45\'">' +
+              '<span style="font:600 11px var(--font-mono);color:rgba(255,138,76,0.55);letter-spacing:0.12em;">MY</span>' +
+              '<span style="font:600 13px var(--font-mono);color:#ff8a4c;">\u2605 Rate</span>' +
+            '</div>'
         }
-        
-        ratingHTML += '</div></div>'
+
+        var ratingsCard = ratingsCardInner
+          ? '<div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:8px;border-bottom:none;">' +
+              ratingsCardInner +
+              '<div class="stat-card-label" style="margin-top:4px;text-align:center;">Ratings</div>' +
+            '</div>'
+          : ''
+
+        ratingHTML = ratingHTML + (ratingsCard || '')
       }
       
-      if (isReadingType || !ratingHTML) {
+      var unitLabel = isReadingType ? 'Read' : 'Watched'
+      if (!ratingHTML) {
         stats.style.cssText = 'display:grid;gap:16px;'
+        stats.classList.remove('detail-stat-grid-4col', 'detail-stat-grid-3col')
         stats.classList.add('detail-stat-grid-2col')
         stats.innerHTML =
-          '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + (isReadingType ? 'Read' : 'Watched') + '</div></div>' +
-          '<div class="stat-card"><div class="stat-card-number">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
+          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newWatched + ' / ' + eps.length) + ';white-space:nowrap;">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + unitLabel + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newPct + '%') + ';white-space:nowrap;">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
       } else {
         stats.style.cssText = 'display:grid;gap:16px;'
-        stats.classList.add('detail-stat-grid-3col')
+        stats.classList.remove('detail-stat-grid-2col', 'detail-stat-grid-3col')
+        stats.classList.add('detail-stat-grid-4col')
         stats.innerHTML =
           ratingHTML +
-          '<div class="stat-card"><div class="stat-card-number">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">Watched</div></div>' +
-          '<div class="stat-card"><div class="stat-card-number">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
+          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newWatched + ' / ' + eps.length) + ';white-space:nowrap;">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + unitLabel + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newPct + '%') + ';white-space:nowrap;">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
         
         // Add click handler for season rating
         var ratingBtn = stats.querySelector('.season-personal-rating-btn')
@@ -12496,32 +12632,7 @@
           })
         }
         
-        // Add click handlers for IMDb/MAL chips
-        var imdbChip = stats.querySelector('.season-imdb-chip')
-        if (imdbChip) {
-          imdbChip.addEventListener('click', function(e) {
-            e.stopPropagation()
-            if (season.imdbUrl) {
-              window.open(season.imdbUrl, '_blank')
-            } else {
-              // Show custom input modal for IMDb URL
-              showInputModal('Add IMDb Link', 'Enter IMDb URL for ' + season.name, imdbChip, function(url) {
-                season.imdbUrl = url
-                var lib = loadData(KEYS.library, [])
-                var libItem = lib.find(function(i) { return i.id === item.id })
-                if (libItem && libItem.seasons) {
-                  var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
-                  if (libSeason) {
-                    libSeason.imdbUrl = url
-                    saveData(KEYS.library, lib)
-                    refreshStats(item.watchedEpisodes)
-                  }
-                }
-              })
-            }
-          })
-        }
-        
+        // Add click handlers for MAL chip only (IMDb has no per-season link)
         var malChip = stats.querySelector('.season-mal-chip')
         if (malChip) {
           malChip.addEventListener('click', function(e) {
@@ -12529,15 +12640,40 @@
             if (season.malUrl) {
               window.open(season.malUrl, '_blank')
             } else {
-              // Show custom input modal for MAL URL
-              showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + season.name, malChip, function(url) {
+              showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + (season.name || '').trim(), malChip, function(url, rating) {
                 season.malUrl = url
+                if (rating !== null) season.ratingMAL = rating
                 var lib = loadData(KEYS.library, [])
                 var libItem = lib.find(function(i) { return i.id === item.id })
                 if (libItem && libItem.seasons) {
                   var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
                   if (libSeason) {
                     libSeason.malUrl = url
+                    if (rating !== null) libSeason.ratingMAL = rating
+                    saveData(KEYS.library, lib)
+                    refreshStats(item.watchedEpisodes)
+                  }
+                }
+              }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: season.ratingMAL || '', accentColor: 'rgba(95,143,219,0.8)' })
+            }
+          })
+        }
+
+        var imdbChip = stats.querySelector('.season-imdb-chip')
+        if (imdbChip) {
+          imdbChip.addEventListener('click', function(e) {
+            e.stopPropagation()
+            if (season.imdbUrl) {
+              window.open(season.imdbUrl, '_blank')
+            } else {
+              showInputModal('Add IMDb Link', 'Enter IMDb URL for ' + (season.name || '').trim(), imdbChip, function(url) {
+                season.imdbUrl = url
+                var lib = loadData(KEYS.library, [])
+                var libItem = lib.find(function(i) { return i.id === item.id })
+                if (libItem && libItem.seasons) {
+                  var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
+                  if (libSeason) {
+                    libSeason.imdbUrl = url
                     saveData(KEYS.library, lib)
                     refreshStats(item.watchedEpisodes)
                   }
@@ -12568,113 +12704,133 @@
   }
 
   // Custom input modal (replaces browser prompt) - small inline popup
-  function showInputModal(title, placeholder, buttonEl, onSubmit) {
+  // opts (optional): { ratingLabel, ratingPlaceholder, ratingMax, currentRating, accentColor }
+  function showInputModal(title, placeholder, buttonEl, onSubmit, opts) {
     // Remove any existing modals
     document.querySelectorAll('.custom-input-modal').forEach(function(m) { m.remove() })
-    
+    opts = opts || {}
+
     var popup = document.createElement('div')
     popup.className = 'custom-input-modal'
-    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,0.98);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:10px 12px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);min-width:350px;max-width:500px;'
-    
+    var estimatedWidth = Math.min(600, Math.max(320, (placeholder || '').length * 7.5 + 120))
+    popup.style.cssText = 'position:fixed;background:rgba(12,10,30,0.98);border:1px solid rgba(130,160,255,0.3);border-radius:var(--radius-sm);padding:10px 12px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,0.8);width:' + estimatedWidth + 'px;max-width:calc(100vw - 24px);'
+
     var titleEl = document.createElement('div')
     titleEl.style.cssText = 'font:600 10px var(--font-sans);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;'
     titleEl.textContent = title
     popup.appendChild(titleEl)
-    
+
+    var inputRow = document.createElement('div')
+    inputRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;align-items:flex-end;'
+
+    var urlWrap = document.createElement('div')
+    urlWrap.style.cssText = 'display:flex;flex:1;min-width:0;'
+
     var input = document.createElement('input')
     input.type = 'text'
     input.placeholder = placeholder || ''
-    input.style.cssText = 'width:100%;padding:6px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font:400 11px var(--font-sans);margin-bottom:8px;box-sizing:border-box;outline:none;'
-    input.addEventListener('focus', function() {
-      this.style.borderColor = 'rgba(130,160,255,0.4)'
-    })
-    input.addEventListener('blur', function() {
-      this.style.borderColor = 'var(--border)'
-    })
-    popup.appendChild(input)
-    
+    input.style.cssText = 'width:100%;padding:6px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font:400 11px var(--font-sans);box-sizing:border-box;outline:none;'
+    input.addEventListener('focus', function() { this.style.borderColor = 'rgba(130,160,255,0.4)' })
+    input.addEventListener('blur',  function() { this.style.borderColor = 'var(--border)' })
+    urlWrap.appendChild(input)
+    inputRow.appendChild(urlWrap)
+
+    // Optional rating field — label above, input below, URL input height synced via JS after render
+    var ratingInput = null
+    if (opts.ratingLabel) {
+      var accent = opts.accentColor || 'rgba(130,160,255,0.7)'
+      var ratingWrap = document.createElement('div')
+      ratingWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:center;'
+
+      var ratingLbl = document.createElement('div')
+      ratingLbl.style.cssText = 'font:600 9px var(--font-mono);color:' + accent + ';text-transform:uppercase;letter-spacing:0.06em;text-align:center;white-space:nowrap;'
+      ratingLbl.textContent = opts.ratingLabel
+      ratingWrap.appendChild(ratingLbl)
+
+      ratingInput = document.createElement('input')
+      ratingInput.type = 'number'
+      ratingInput.min = '0'
+      ratingInput.max = String(opts.ratingMax || 10)
+      ratingInput.step = '0.1'
+      ratingInput.placeholder = opts.ratingPlaceholder || '—'
+      if (opts.currentRating) ratingInput.value = opts.currentRating
+      ratingInput.style.cssText = 'width:56px;padding:6px 6px;background:var(--surface-2);border:1px solid ' + accent.replace('0.7','0.35') + ';border-radius:4px;color:' + accent.replace('0.7','1') + ';font:600 11px var(--font-mono);box-sizing:border-box;outline:none;text-align:center;'
+      ratingInput.addEventListener('focus', function() { this.style.borderColor = accent })
+      ratingInput.addEventListener('blur',  function() { this.style.borderColor = accent.replace('0.7','0.35') })
+      ratingWrap.appendChild(ratingInput)
+      inputRow.appendChild(ratingWrap)
+
+      // After DOM is painted, sync rating input height to match URL input's natural height
+      requestAnimationFrame(function() {
+        var urlH = input.offsetHeight
+        if (urlH > 0) ratingInput.style.height = urlH + 'px'
+      })
+    }
+
+    popup.appendChild(inputRow)
+
     var btnRow = document.createElement('div')
     btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;'
-    
+
     var cancelBtn = document.createElement('button')
     cancelBtn.textContent = '✕'
     cancelBtn.style.cssText = 'padding:4px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);font:600 11px var(--font-sans);cursor:pointer;transition:all 0.2s;line-height:1;'
-    cancelBtn.addEventListener('mouseover', function() {
-      this.style.borderColor = '#ff4444'
-      this.style.color = '#ff4444'
-    })
-    cancelBtn.addEventListener('mouseout', function() {
-      this.style.borderColor = 'var(--border)'
-      this.style.color = 'var(--text-dim)'
-    })
-    cancelBtn.addEventListener('click', function() {
-      popup.remove()
-    })
+    cancelBtn.addEventListener('mouseover', function() { this.style.borderColor = '#ff4444'; this.style.color = '#ff4444' })
+    cancelBtn.addEventListener('mouseout',  function() { this.style.borderColor = 'var(--border)'; this.style.color = 'var(--text-dim)' })
+    cancelBtn.addEventListener('click', function() { popup.remove() })
     btnRow.appendChild(cancelBtn)
-    
+
     var submitBtn = document.createElement('button')
     submitBtn.textContent = '✓'
     submitBtn.style.cssText = 'padding:4px 8px;background:var(--accent-cool);border:none;border-radius:3px;color:var(--bg);font:600 11px var(--font-sans);cursor:pointer;transition:all 0.2s;line-height:1;'
-    submitBtn.addEventListener('mouseover', function() {
-      this.style.opacity = '0.85'
-    })
-    submitBtn.addEventListener('mouseout', function() {
-      this.style.opacity = '1'
-    })
+    submitBtn.addEventListener('mouseover', function() { this.style.opacity = '0.85' })
+    submitBtn.addEventListener('mouseout',  function() { this.style.opacity = '1' })
     submitBtn.addEventListener('click', function() {
       var value = input.value.trim()
       if (value) {
-        onSubmit(value)
+        var ratingVal = ratingInput ? (parseFloat(ratingInput.value) || null) : null
+        onSubmit(value, ratingVal)
         popup.remove()
       }
     })
     btnRow.appendChild(submitBtn)
-    
+
     popup.appendChild(btnRow)
-    
     document.body.appendChild(popup)
-    
+
     // Position relative to button with viewport constraints
     var rect = buttonEl.getBoundingClientRect()
-    var popupWidth = 350 // min-width
-    
-    // Calculate horizontal position (centered on button)
+    var popupWidth = estimatedWidth
+
     var left = rect.left + rect.width / 2
-    
-    // Constrain to viewport horizontally
     var minLeft = popupWidth / 2 + 10
     var maxLeft = window.innerWidth - popupWidth / 2 - 10
     left = Math.max(minLeft, Math.min(maxLeft, left))
-    
-    // Calculate vertical position (above button)
+
     var bottom = window.innerHeight - rect.top + 10
-    
-    // Check if popup would go off top
     if (rect.top < 120) {
-      // Position below button instead
       popup.style.top = (rect.bottom + 10) + 'px'
       popup.style.bottom = 'auto'
     } else {
       popup.style.bottom = bottom + 'px'
       popup.style.top = 'auto'
     }
-    
     popup.style.left = left + 'px'
     popup.style.transform = 'translateX(-50%)'
-    
-    // Focus input
+
     setTimeout(function() { input.focus() }, 100)
-    
-    // Submit on Enter, close on Escape
+
     input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        submitBtn.click()
-      } else if (e.key === 'Escape') {
-        popup.remove()
-      }
+      if (e.key === 'Enter') { submitBtn.click() }
+      else if (e.key === 'Escape') { popup.remove() }
     })
-    
-    // Close on outside click
+    if (ratingInput) {
+      ratingInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { submitBtn.click() }
+        else if (e.key === 'Escape') { popup.remove() }
+      })
+    }
+
     setTimeout(function() {
       document.addEventListener('click', function closePopup(e) {
         if (!popup.contains(e.target)) {

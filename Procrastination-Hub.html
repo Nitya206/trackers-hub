@@ -8392,6 +8392,7 @@
     }, 0)
     const totalComplete   = library.filter(i => i.status === 'completed').length
     const totalEpsDone    = library.reduce((acc, i) => {
+      if (i.status === 'graveyard' || i.status === 'on-hold') return acc
       if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
       return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
     }, 0)
@@ -9047,6 +9048,7 @@
         (i.totalEpisodes > 0 && (i.watchedEpisodes && i.watchedEpisodes.length >= i.totalEpisodes))
       ).length
       const totalEpsDone    = library.reduce((acc, i) => {
+        if (i.status === 'graveyard' || i.status === 'on-hold') return acc
         if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
         return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
       }, 0)
@@ -19620,5 +19622,3 @@
   // ════════════════════════════════════════════════════════════
   </script>
   <script src="hub-nav.js"></script>
-</body>
-</html>

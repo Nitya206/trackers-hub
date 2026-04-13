@@ -136,6 +136,7 @@
       { label: '🗺️ Overview',    navFunc: 'navigateTo', navArg: 'overview'    },
       { label: '⚰️ Graveyard',   navFunc: 'navigateTo', navArg: 'graveyard'   },
       { label: '📋 Session Log',  navFunc: 'navigateTo', navArg: 'sessionlog'  },
+      { label: '⚙️ Settings',    navFunc: 'navigateTo', navArg: 'settings'    },
     ],
     orv: [
       { label: '📕 Novel Mode',        navFunc: 'M', navArg: 'novel'  },

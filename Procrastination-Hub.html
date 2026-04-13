@@ -382,11 +382,11 @@
     }
     /* Per-card accent bottom borders + number tint */
     .stat-card:nth-child(1) { border-bottom: 2px solid rgba(168,85,247,0.5); }
-    .stat-card:nth-child(1) .stat-card-number { color: #a855f7; text-shadow: 0 0 24px rgba(168,85,247,0.3); }
+    .stat-card:nth-child(1) .stat-card-number { color: #a855f7; text-shadow: none; }
     .stat-card:nth-child(1) .stat-card-number::after { background: linear-gradient(90deg,transparent,#a855f7,transparent); }
     .stat-card:nth-child(2) { border-bottom: 2px solid rgba(0,229,255,0.5); }
     .stat-card:nth-child(3) { border-bottom: 2px solid rgba(0,255,170,0.5); }
-    .stat-card:nth-child(3) .stat-card-number { color: #00ffaa; text-shadow: 0 0 24px rgba(0,255,170,0.3); }
+    .stat-card:nth-child(3) .stat-card-number { color: #00ffaa; text-shadow: none; }
     .stat-card:nth-child(3) .stat-card-number::after { background: linear-gradient(90deg,transparent,#00ffaa,transparent); }
     .stat-card:nth-child(4) { border-bottom: 2px solid rgba(255,96,64,0.5); }
     .stat-card::before {
@@ -417,7 +417,10 @@
       color: var(--accent-cool);
       line-height: 0.85;
       letter-spacing: 0.06em;
-      text-shadow: 0 1px 8px rgba(0,229,255,0.22);
+      text-shadow: none;
+      background: transparent;
+      box-shadow: none;
+      filter: none;
       position: relative;
       white-space: nowrap;
       max-width: 100%;
@@ -440,16 +443,10 @@
         gap: 6px;
       }
     }
-    /* Thin accent underline instead of blob glow */
+    /* Keep stat numbers clean: no decorative backplate/underline. */
     .stat-card-number::after {
-      content: '';
-      display: block;
-      margin: 8px auto 0;
-      width: 32px;
-      height: 2px;
-      border-radius: 99px;
-      background: linear-gradient(90deg, transparent, var(--accent-cool), transparent);
-      opacity: 0.6;
+      content: none;
+      display: none;
     }
     .stat-card-label {
       font: 500 13px var(--font-mono);
@@ -5970,8 +5967,16 @@
     }
 
     /* Stat card: 1st = violet, 3rd = green tint */
-    .dash-stats-grid .stat-card:nth-child(1) .stat-card-number { color: #a855f7 !important; text-shadow: 0 0 24px rgba(168,85,247,0.35) !important; }
-    .dash-stats-grid .stat-card:nth-child(3) .stat-card-number { color: #00ffaa !important; text-shadow: 0 0 24px rgba(0,255,170,0.35) !important; }
+    .dash-stats-grid .stat-card:nth-child(1) .stat-card-number { color: #a855f7 !important; text-shadow: none !important; }
+    .dash-stats-grid .stat-card:nth-child(3) .stat-card-number { color: #00ffaa !important; text-shadow: none !important; }
+
+    /* Prevent inline stat styles from bringing back clipped glow boxes. */
+    .stat-card-number {
+      background: transparent !important;
+      box-shadow: none !important;
+      filter: none !important;
+      text-shadow: none !important;
+    }
 
     /* Dash greeting gradient text */
     .dash-greeting {
@@ -9326,7 +9331,7 @@
     let activeType  = _libState.type  || 'all'
     let searchQuery = _libState.q     || ''
     let searchTimer = null
-    let showOnHold  = _libState.hold  || false
+    let showOnHold  = _libState.hold === true
 
     const MOOD_CHIP_COLORS = {
       'brain-off':       '#8888aa',
@@ -9614,6 +9619,7 @@
           var si = document.getElementById('lib-search')
           if (si) si.value = ''
           searchQuery = ''
+          _libState.q = ''; _saveLibState()
           filterCards()
         })
         noResults.appendChild(_clrBtn)
@@ -9731,6 +9737,7 @@
     })
 
     wireLibrarySortDropdown(filterCards)
+    filterCards()
   }
 
   function wireLibrarySortDropdown(onReordered) {
@@ -13247,7 +13254,7 @@
         stats.innerHTML =
           ratingHTML +
           '<div class="stat-card" style="border-bottom:2px solid rgba(0,229,255,0.5);"><div class="stat-card-number" style="font-size:' + statFontSize(newWatched + ' / ' + eps.length) + ';white-space:nowrap;">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + unitLabel + '</div></div>' +
-          '<div class="stat-card" style="border-bottom:2px solid rgba(0,255,170,0.5);"><div class="stat-card-number" style="font-size:' + statFontSize(newPct + '%') + ';white-space:nowrap;color:#00ffaa;text-shadow:0 0 20px rgba(0,255,170,0.3);">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
+          '<div class="stat-card" style="border-bottom:2px solid rgba(0,255,170,0.5);"><div class="stat-card-number" style="font-size:' + (function(s){var fs=parseInt(statFontSize(s));return Math.max(fs-12,20)+'px';})(newPct + '%') + ';white-space:nowrap;color:#00ffaa;text-shadow:0 0 20px rgba(0,255,170,0.3);">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
         
         // Add click handler for season rating
         var ratingBtn = stats.querySelector('.season-personal-rating-btn')
@@ -18067,7 +18074,7 @@
     wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 6px;gap:6px;'
 
     var numEl = document.createElement('div')
-    numEl.style.cssText = 'font:800 56px var(--font-display);color:' + info.color + ';line-height:1;letter-spacing:0.04em;text-shadow:' + info.glow + ';transition:all 600ms;'
+    numEl.style.cssText = 'font:800 56px var(--font-display);color:' + info.color + ';line-height:1;letter-spacing:0.04em;text-shadow:none;background:transparent;box-shadow:none;filter:none;transition:all 600ms;'
     numEl.textContent = '0'
     wrap.appendChild(numEl)
 
@@ -18918,7 +18925,7 @@
     el.style.cssText = 'padding:var(--space-4);text-align:center;position:relative;overflow:hidden;'
     el.innerHTML =
       '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;">Procrastination Debt</div>' +
-      '<div id="p7-debt-number" style="font:900 56px var(--font-display);color:' + color + ';line-height:1;letter-spacing:0.06em;text-shadow:0 0 30px ' + color + '88;">' + score + '</div>' +
+      '<div id="p7-debt-number" style="font:900 56px var(--font-display);color:' + color + ';line-height:1;letter-spacing:0.06em;text-shadow:none;background:transparent;box-shadow:none;filter:none;">' + score + '</div>' +
       '<div style="font:600 10px var(--font-mono);color:' + color + ';letter-spacing:0.2em;margin-top:4px;">' + label + '</div>' +
       '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:8px;line-height:1.5;">Missed schedules rise it.<br>Episodes watched lower it.</div>'
     // Pulse animation on high debt

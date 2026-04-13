@@ -785,8 +785,19 @@
       opacity: 0;
       transform: translateY(8px);
     }
+    .session-overlay-pause-btn {
+      margin-top: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      min-width: 140px;
+    }
     #session-overlay.active .session-overlay-stop-btn {
       animation: sessionFadeUp 400ms 1300ms var(--ease-out) forwards;
+    }
+    #session-overlay.active .session-overlay-pause-btn {
+      animation: sessionFadeUp 400ms 1450ms var(--ease-out) forwards;
     }
     @keyframes sessionFadeUp {
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -3122,7 +3133,7 @@
     }
     .ep-tile.watched .ep-check { opacity: 1; }
     /* Watched diagonal slash decoration */
-    .ep-tile.watched::before {
+    .ep-tile.watched:not([data-title])::before {
       content: '';
       position: absolute;
       inset: 0;
@@ -3137,6 +3148,10 @@
       font-size: 15px;
       background: transparent;
       border: none;
+      outline: none;
+      box-shadow: none;
+      -webkit-appearance: none;
+      appearance: none;
       color: var(--text-3);
       cursor: none;
       padding: 0;
@@ -5880,13 +5895,13 @@
       box-shadow: 0 0 80px rgba(0,212,255,0.35), 0 0 160px rgba(168,85,247,0.18), 0 30px 100px rgba(0,0,0,0.9) !important;
     }
 
-    /* EP tile title tooltip on hover via CSS content trick */
-    .ep-tile[data-title]:hover::after {
+    /* EP tile title tooltip on hover — uses ::before to avoid conflict with ::after sheen layer */
+    .ep-tile[data-title]::before {
       content: attr(data-title);
       position: absolute;
       bottom: calc(100% + 6px);
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(-50%) translateY(4px);
       background: rgba(6,6,20,0.95);
       border: 1px solid var(--border-bright);
       border-radius: 6px;
@@ -5901,8 +5916,14 @@
       pointer-events: none;
       letter-spacing: 0.03em;
       box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-      animation: epTipIn 120ms var(--ease-out) both;
+      opacity: 0;
+      transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out);
     }
+    .ep-tile[data-title]:hover::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     @keyframes epTipIn {
       from { opacity: 0; transform: translateX(-50%) translateY(4px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -6068,6 +6089,7 @@
       </div>
     </div>
     <button class="btn-danger session-overlay-stop-btn" id="session-overlay-stop-btn">■ END SESSION</button>
+    <button class="btn-ghost session-overlay-pause-btn" id="session-overlay-pause-btn">⏸ PAUSE</button>
   </div>
 
   <!-- ═══ APP SHELL ═══ -->
@@ -11304,9 +11326,13 @@
     var timerInterval  = null
     var timerStart     = null
     var timerEpLabel   = null
+    var timerPaused    = false
+    var timerPausedAt  = null
+    var timerElapsedBeforePause = 0  // accumulated ms before current pause
 
     function getElapsedStr(start) {
-      var elapsed = Math.floor((Date.now() - start) / 1000)
+      var totalMs = timerElapsedBeforePause + (Date.now() - start)
+      var elapsed = Math.floor(totalMs / 1000)
       var h = Math.floor(elapsed / 3600)
       var m = Math.floor((elapsed % 3600) / 60)
       var s = elapsed % 60
@@ -11370,6 +11396,14 @@
         if (stopBtn) {
           stopBtn.onclick = function() { stopTimer(); overlay.classList.remove('active') }
         }
+        // Wire pause btn in overlay
+        var pauseBtn = document.getElementById('session-overlay-pause-btn')
+        if (pauseBtn) {
+          pauseBtn.onclick = function() {
+            if (timerPaused) resumeTimer()
+            else pauseTimer()
+          }
+        }
       }
 
       timerInterval = setInterval(function() {
@@ -11381,11 +11415,14 @@
     }
 
     function stopTimer() {
-      if (!timerInterval) return
-      clearInterval(timerInterval)
-      timerInterval = null
-      var elapsed   = (Date.now() - timerStart) / 60000   // minutes
+      if (!timerInterval && !timerPaused) return
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
+      var totalMs = timerElapsedBeforePause + (timerPaused ? 0 : (Date.now() - timerStart))
+      var elapsed = totalMs / 60000   // minutes
       timerStart    = null
+      timerPaused   = false
+      timerPausedAt = null
+      timerElapsedBeforePause = 0
       // Save to item
       var lib2  = loadData(KEYS.library, [])
       var item2 = lib2.find(function(i) { return i.id === id })
@@ -11419,6 +11456,43 @@
       // Dismiss overlay if visible
       var overlay = document.getElementById('session-overlay')
       if (overlay) overlay.classList.remove('active')
+    }
+
+    function pauseTimer() {
+      if (!timerInterval || timerPaused) return
+      clearInterval(timerInterval)
+      timerInterval = null
+      timerPaused = true
+      timerElapsedBeforePause += (Date.now() - timerStart)
+      timerPausedAt = Date.now()
+      var pauseBtn = document.getElementById('session-overlay-pause-btn')
+      if (pauseBtn) { pauseBtn.textContent = '▶ RESUME'; pauseBtn.style.borderColor = 'var(--accent-yellow)'; pauseBtn.style.color = 'var(--accent-yellow)' }
+      var detailBtn = document.getElementById('detail-timer-btn')
+      if (detailBtn) { detailBtn.textContent = '▶ RESUME'; detailBtn.className = 'btn-ghost'; detailBtn.style.cssText = 'font-size:11px;padding:7px 16px;letter-spacing:0.08em;border-color:var(--accent-yellow);color:var(--accent-yellow);' }
+      var dispEl = document.getElementById('detail-timer-display')
+      if (dispEl) dispEl.style.opacity = '0.5'
+      var overlayTime = document.getElementById('session-overlay-time')
+      if (overlayTime) overlayTime.style.opacity = '0.5'
+    }
+
+    function resumeTimer() {
+      if (!timerPaused) return
+      timerPaused = false
+      timerStart = Date.now()
+      timerPausedAt = null
+      var dispEl   = document.getElementById('detail-timer-display')
+      var overlayTime = document.getElementById('session-overlay-time')
+      if (dispEl) dispEl.style.opacity = ''
+      if (overlayTime) overlayTime.style.opacity = ''
+      var pauseBtn = document.getElementById('session-overlay-pause-btn')
+      if (pauseBtn) { pauseBtn.textContent = '⏸ PAUSE'; pauseBtn.style.borderColor = ''; pauseBtn.style.color = '' }
+      var detailBtn = document.getElementById('detail-timer-btn')
+      if (detailBtn) { detailBtn.textContent = '■ STOP'; detailBtn.className = 'btn-danger'; detailBtn.style.cssText = '' }
+      timerInterval = setInterval(function() {
+        var elapsed = getElapsedStr(timerStart)
+        if (dispEl) dispEl.textContent = elapsed
+        if (overlayTime) overlayTime.textContent = elapsed
+      }, 1000)
     }
 
     // -- MULTI-SELECT STATE --
@@ -12015,7 +12089,8 @@
       var btn = document.getElementById('detail-timer-btn')
       if (btn) {
         btn.addEventListener('click', function() {
-          if (timerInterval) { stopTimer() }
+          if (timerPaused) { resumeTimer() }
+          else if (timerInterval) { stopTimer() }
           else { startTimer(null) }
         })
       }
@@ -12612,8 +12687,8 @@
       ratingsHTML +
       '<span class="ep-num">' + ep.number + '</span>' +
       '<span class="ep-check">\u2713</span>' +
-      '<button class="ep-rate-btn" title="Rate this episode">\u2605</button>' +
-      '<button class="ep-timer-btn" title="Start timer for this episode">\u23f1</button>'
+      '<button class="ep-rate-btn" aria-label="Rate this episode">\u2605</button>' +
+      '<button class="ep-timer-btn" aria-label="Start timer for this episode">\u23f1</button>'
 
     // Rate button — opens star popup
     var rateBtn = tile.querySelector('.ep-rate-btn')
@@ -18275,6 +18350,11 @@
       var progBar = document.querySelector('.detail-progress-label')
       if (!progBar || !progBar.parentElement) return
 
+      // Dedup guard: if MutationObserver (P7) already injected velocity, skip
+      var progFill = document.getElementById('detail-prog-fill')
+      if (progFill && progFill._p7VeloPatched) return
+      if (progFill) progFill._p7VeloPatched = true
+
       var velocityContainer = document.createElement('div')
       try { progBar.parentElement.insertBefore(velocityContainer, progBar.nextSibling) } catch(e) { progBar.parentElement.appendChild(velocityContainer) }
       renderVelocityWidget(item, velocityContainer)
@@ -18506,6 +18586,9 @@
 
     // SECTION: Behaviour
     var s1 = makeSection('Behaviour')
+    s1.appendChild(makeRow('UI Density', 'Comfortable has more padding; compact is tighter', makeSelect('uiDensity', settings.uiDensity, [
+      { value: 'comfortable', label: 'Comfortable' }, { value: 'compact', label: 'Compact' }
+    ])))
     s1.appendChild(makeRow('Default content status', 'Status applied when adding new library entries', makeSelect('defaultNewContentStatus', settings.defaultNewContentStatus, [
       { value: 'watching', label: 'Watching' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'on-hold', label: 'On Hold' }
     ])))
@@ -18521,6 +18604,18 @@
       { value: 'oldest', label: 'Oldest added' }, { value: 'newest', label: 'Newest added' }, { value: 'random', label: 'Random' }
     ])))
     s2.appendChild(makeRow('Overview lookahead (days)', 'How many days ahead the schedule calendar shows', makeNumber('overviewDateLookaheadDays', settings.overviewDateLookaheadDays, 7, 60, 1)))
+    s2.appendChild(makeRow('Default season prefix', 'Used when auto-naming new seasons (e.g. "Season", "Arc")', (function() {
+      var inp = document.createElement('input'); inp.type = 'text'; inp.value = settings.defaultNewSeasonPrefix || 'Season'
+      inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font:400 12px var(--font-mono);padding:6px 10px;width:110px;text-align:center;cursor:text;outline:none;flex-shrink:0;'
+      inp.addEventListener('change', function() { updateAppSetting('defaultNewSeasonPrefix', inp.value.trim() || 'Season') })
+      return inp
+    })()))
+    s2.appendChild(makeRow('Quick-add placeholder', 'Example text shown in the quick-add input', (function() {
+      var inp = document.createElement('input'); inp.type = 'text'; inp.value = settings.quickAddPlaceholder || 'One Piece | anime | 1122 eps'
+      inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font:400 12px var(--font-mono);padding:6px 10px;width:200px;cursor:text;outline:none;flex-shrink:0;'
+      inp.addEventListener('change', function() { updateAppSetting('quickAddPlaceholder', inp.value.trim() || APP_SETTINGS_DEFAULTS.quickAddPlaceholder) })
+      return inp
+    })()))
 
     // SECTION: Tasks
     var s3 = makeSection('Tasks')
@@ -19053,16 +19148,12 @@
     overlay.addEventListener('click', function(e) {
       if (e.target === overlay) closeP7Palette()
     })
-    document.addEventListener('keydown', function(e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'x') {
-        e.preventDefault()
-        if (overlay.classList.contains('open')) closeP7Palette()
-        else openP7Palette()
-      }
-    })
-
-    // Expose for boot sequence hint
-    window.p7OpenPalette = openP7Palette
+    // NOTE: keydown ⌘X is handled exclusively by the primary palette IIFE above.
+    // p7OpenPalette aliased to that palette so external callers still work.
+    window.p7OpenPalette = function() {
+      if (window.__openCommandPalette) window.__openCommandPalette()
+      else openP7Palette()
+    }
   }
 
   /* ── P7: WEEK VIEW IN SESSION LOG ─────────────────────────
@@ -19162,203 +19253,8 @@
     container.appendChild(wrap)
   }
 
-  /* ── P7: SETTINGS RENDERER ─────────────────────────────────
-     Exposes all 13 APP_SETTINGS_DEFAULTS keys as actual controls.
-     Plus JSON export/import for data safety.
-  ─────────────────────────────────────────────────────────── */
-  function renderSettings() {
-    var main = document.getElementById('app-main')
+  // P7: Settings renderer consolidated into the primary renderSettings above.
 
-    var hdrRow = document.createElement('div')
-    hdrRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:0;'
-    hdrRow.innerHTML = '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">SYSTEM SETTINGS</div>'
-    main.appendChild(hdrRow)
-
-    var sep = document.createElement('div')
-    sep.style.cssText = 'border-bottom:1px solid var(--border);margin-bottom:var(--space-5);'
-    main.appendChild(sep)
-
-    var s = getAppSettings()
-
-    function row(label, desc, control) {
-      var wrap = document.createElement('div')
-      wrap.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);'
-      var left = document.createElement('div')
-      left.innerHTML = '<div style="font:600 12px var(--font-mono);color:var(--text-1);letter-spacing:0.05em;">' + label + '</div>' +
-        (desc ? '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:2px;">' + desc + '</div>' : '')
-      wrap.appendChild(left)
-      wrap.appendChild(control)
-      return wrap
-    }
-
-    function toggle(key, val) {
-      var btn = document.createElement('button')
-      btn.className = 'btn-ghost'
-      btn.style.cssText = 'min-width:64px;text-align:center;font-size:10px;padding:6px 12px;flex-shrink:0;'
-      btn.textContent = val ? 'ON' : 'OFF'
-      btn.style.borderColor = val ? 'var(--accent-cool)' : ''
-      btn.style.color = val ? 'var(--accent-cool)' : ''
-      btn.addEventListener('click', function() {
-        val = !val
-        btn.textContent = val ? 'ON' : 'OFF'
-        btn.style.borderColor = val ? 'var(--accent-cool)' : ''
-        btn.style.color = val ? 'var(--accent-cool)' : ''
-        updateAppSetting(key, val)
-      })
-      return btn
-    }
-
-    function select(key, options, curVal) {
-      var sel = document.createElement('select')
-      sel.className = 'arc-nav-select'
-      sel.style.cssText = 'font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 10px;flex-shrink:0;min-width:130px;'
-      options.forEach(function(o) {
-        var opt = document.createElement('option')
-        opt.value = o.value; opt.textContent = o.label
-        if (o.value == curVal) opt.selected = true
-        sel.appendChild(opt)
-      })
-      sel.addEventListener('change', function() { updateAppSetting(key, sel.value) })
-      return sel
-    }
-
-    function numInput(key, val, min, max, suffix) {
-      var wrap = document.createElement('div')
-      wrap.style.cssText = 'display:flex;align-items:center;gap:6px;flex-shrink:0;'
-      var inp = document.createElement('input')
-      inp.type = 'number'; inp.min = min; inp.max = max; inp.value = val
-      inp.style.cssText = 'font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 8px;width:68px;text-align:center;'
-      inp.addEventListener('change', function() { updateAppSetting(key, parseFloat(inp.value) || val) })
-      if (suffix) {
-        var suf = document.createElement('span')
-        suf.style.cssText = 'font:600 9px var(--font-mono);color:var(--text-3);letter-spacing:0.1em;'
-        suf.textContent = suffix
-        wrap.appendChild(inp); wrap.appendChild(suf)
-      } else { wrap.appendChild(inp) }
-      return wrap
-    }
-
-    // ── Section: UI ──
-    var uiSec = document.createElement('div')
-    uiSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-4);">UI &amp; DISPLAY</div>'
-    main.appendChild(uiSec)
-
-    main.appendChild(row('Density', 'Comfortable has more padding; compact is tighter',
-      select('uiDensity', [{value:'comfortable',label:'Comfortable'},{value:'compact',label:'Compact'}], s.uiDensity)))
-    main.appendChild(row('Confirm Actions', 'Ask before marking graveyard / completing series',
-      toggle('detailConfirmActions', s.detailConfirmActions)))
-    main.appendChild(row('Auto-Focus Nav', 'Focus detail tab area for keyboard navigation',
-      toggle('autoFocusDetailNav', s.autoFocusDetailNav)))
-    main.appendChild(row('Quick Confirm Duration', 'How long the undo toast stays (ms)',
-      numInput('quickConfirmMs', s.quickConfirmMs, 1000, 8000, 'MS')))
-
-    // ── Section: Content ──
-    var contentSec = document.createElement('div')
-    contentSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">CONTENT DEFAULTS</div>'
-    main.appendChild(contentSec)
-
-    main.appendChild(row('Default New Status', 'Status for newly added content',
-      select('defaultNewContentStatus', [{value:'watching',label:'Watching'},{value:'upcoming',label:'Upcoming'},{value:'on-hold',label:'On Hold'}], s.defaultNewContentStatus)))
-    main.appendChild(row('Default Season Prefix', 'Used when auto-naming new seasons',
-      (function(){ var inp = document.createElement('input'); inp.type='text'; inp.value=s.defaultNewSeasonPrefix||'Season';
-        inp.style.cssText='font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 10px;width:110px;flex-shrink:0;';
-        inp.addEventListener('change',function(){updateAppSetting('defaultNewSeasonPrefix',inp.value.trim()||'Season')}); return inp })()))
-    main.appendChild(row('Dashboard Suggestion', 'How "Next Mission" picks a fallback series',
-      select('dashboardSuggestionMode', [{value:'oldest',label:'Oldest added'},{value:'newest',label:'Newest added'},{value:'random',label:'Random'}], s.dashboardSuggestionMode)))
-    main.appendChild(row('Library Default Sort', 'Default sort order for the library grid',
-      select('librarySortMode', LIBRARY_SORT_OPTIONS.map(function(o){return{value:o.value,label:o.label}}), s.librarySortMode)))
-    main.appendChild(row('Overview Lookahead', 'Days ahead shown in the schedule calendar',
-      numInput('overviewDateLookaheadDays', s.overviewDateLookaheadDays||14, 7, 60, 'DAYS')))
-
-    // ── Section: Budget & Tasks ──
-    var budgetSec = document.createElement('div')
-    budgetSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">BUDGET &amp; TASKS</div>'
-    main.appendChild(budgetSec)
-
-    main.appendChild(row('Daily Budget Hours', 'Your daily content time allowance',
-      numInput('budgetDefaultDailyHours', s.budgetDefaultDailyHours||4, 1, 24, 'HRS')))
-    main.appendChild(row('Default Task Duration', 'Pre-filled minutes when spawning a new task',
-      numInput('tasksDefaultDurationMin', s.tasksDefaultDurationMin||45, 5, 480, 'MIN')))
-    main.appendChild(row('Sound Effects', 'Play UI sounds (click, nav, success)',
-      toggle('muted', !s.muted)))
-
-    // ── Section: Data Export / Import ──
-    var dataSec = document.createElement('div')
-    dataSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">DATA SAFETY</div>'
-    main.appendChild(dataSec)
-
-    var exportWrap = document.createElement('div')
-    exportWrap.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:var(--space-4);'
-
-    var exportBtn = document.createElement('button')
-    exportBtn.className = 'btn-primary'
-    exportBtn.style.fontSize = '11px'
-    exportBtn.textContent = '⬇ EXPORT BACKUP'
-    exportBtn.addEventListener('click', function() {
-      var data = {}
-      Object.keys(KEYS).forEach(function(k) { data[k] = loadData(KEYS[k], null) })
-      data._exportDate = new Date().toISOString()
-      var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'})
-      var url  = URL.createObjectURL(blob)
-      var a    = document.createElement('a')
-      a.href = url; a.download = 'procrastination-hub-backup-' + localDateStr() + '.json'; a.click()
-      URL.revokeObjectURL(url)
-      logEvent('Exported data backup')
-    })
-
-    var importBtn = document.createElement('button')
-    importBtn.className = 'btn-ghost'
-    importBtn.style.fontSize = '11px'
-    importBtn.textContent = '⬆ IMPORT BACKUP'
-    var importInput = document.createElement('input')
-    importInput.type = 'file'; importInput.accept = '.json'; importInput.style.display = 'none'
-    importInput.addEventListener('change', function() {
-      var file = importInput.files[0]
-      if (!file) return
-      var reader = new FileReader()
-      reader.onload = function(ev) {
-        try {
-          var imported = JSON.parse(ev.target.result)
-          var validKeys = Object.keys(KEYS)
-          var found = 0
-          validKeys.forEach(function(k) {
-            if (imported[k] !== undefined && imported[k] !== null) {
-              saveData(KEYS[k], imported[k]); found++
-            }
-          })
-          logEvent('Imported backup (' + found + ' data keys restored)')
-          var flash = document.createElement('div')
-          flash.style.cssText = 'font:600 11px var(--font-mono);color:var(--success);padding:8px 0;'
-          flash.textContent = '✓ Backup restored. ' + found + ' keys imported.'
-          exportWrap.appendChild(flash)
-          setTimeout(function() { flash.remove() }, 3000)
-        } catch(e) {
-          alert('Invalid backup file.')
-        }
-      }
-      reader.readAsText(file)
-    })
-    importBtn.addEventListener('click', function() { importInput.click() })
-
-    exportWrap.appendChild(exportBtn)
-    exportWrap.appendChild(importBtn)
-    exportWrap.appendChild(importInput)
-    main.appendChild(exportWrap)
-
-    var safetyNote = document.createElement('div')
-    safetyNote.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);line-height:1.6;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);'
-    safetyNote.textContent = '⚠ All data lives in your browser localStorage. One clear = total wipe. Export a backup regularly. The import will overwrite current data with the backup.'
-    main.appendChild(safetyNote)
-
-    // ── Section: About ──
-    var aboutSec = document.createElement('div')
-    aboutSec.style.cssText = 'margin-top:var(--space-6);padding:var(--space-4);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);text-align:center;'
-    aboutSec.innerHTML =
-      '<div style="font:700 14px var(--font-display);color:var(--accent-cool);letter-spacing:0.15em;margin-bottom:4px;">PROC//HUB</div>' +
-      '<div style="font:400 10px var(--font-mono);color:var(--text-3);">Shame sensors: bypassed · Intelligence layer: online</div>' +
-      '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:4px;">Press <kbd style="font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;">⌘X</kbd> anywhere to open command palette</div>'
-    main.appendChild(aboutSec)
-  }
 
   // P7 dashboard patch consolidated into main renderDashboard at line ~18024
 

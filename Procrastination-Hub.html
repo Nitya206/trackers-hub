@@ -999,11 +999,17 @@
       right: 0;
       top: 0;
       bottom: 0;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: hidden;
       padding: 36px 48px 120px;
       z-index: 1;
+      scrollbar-color: rgba(0,229,255,0.4) transparent;
+      scrollbar-width: thin;
     }
+    #app-main::-webkit-scrollbar { width: 8px; }
+    #app-main::-webkit-scrollbar-track { background: transparent; }
+    #app-main::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.4); border-radius: 4px; }
+    #app-main::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.8); }
 
     /* Fade cards out at the very top edge when scrolling — purely decorative, doesn't affect modals */
         #scroll-fade-top {
@@ -1022,6 +1028,12 @@
     ::-webkit-scrollbar-track         { background: transparent; }
     ::-webkit-scrollbar-thumb         { background: rgba(255,255,255,0.06); border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover   { background: rgba(0,200,255,0.3); }
+
+    /* Settings container scrollbar */
+    #settings-container::-webkit-scrollbar              { width: 6px; }
+    #settings-container::-webkit-scrollbar-track        { background: transparent; }
+    #settings-container::-webkit-scrollbar-thumb        { background: rgba(0,229,255,0.3); border-radius: 3px; }
+    #settings-container::-webkit-scrollbar-thumb:hover  { background: rgba(0,229,255,0.6); }
 
     /* ── PART 6: IMMERSION LAYER ── */
 
@@ -5470,11 +5482,29 @@
     background: linear-gradient(160deg, rgba(18,16,40,0.98) 0%, rgba(10,9,26,0.99) 100%);
     border: 1px solid var(--border-bright);
     border-radius: var(--radius-lg);
-    padding: 28px;
+    padding: 0;
     width: min(420px, calc(100% - 48px));
+    max-height: calc(100vh - 60px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 24px 80px rgba(0,0,0,0.85), 0 0 60px rgba(0,229,255,0.06);
     transform: translateY(16px) scale(0.97);
     transition: transform 300ms var(--ease-spring);
+  }
+  .sched-modal-header {
+    padding: 28px 28px 0;
+    flex-shrink: 0;
+  }
+  .sched-modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding: 0 28px;
+  }
+  .sched-modal-footer {
+    padding: 0 28px 28px;
+    flex-shrink: 0;
   }
   .sched-modal-overlay.visible .sched-modal { transform: translateY(0) scale(1); }
   .sched-modal-title {
@@ -6167,7 +6197,9 @@
     overviewDateLookaheadDays: 14,
     quickAddPlaceholder: 'Attack on Titan | anime | 75 eps',
     dashboardSuggestionMode: 'oldest', // oldest | newest | random
-    librarySortMode: 'added-desc'
+    librarySortMode: 'added-desc',
+    libraryScrollSpeed: 300, // milliseconds for smooth scroll animation
+    librarySmoothScroll: true // enable smooth scrolling
   }
 
   function mergeSettingsWithDefaults(raw) {
@@ -7788,6 +7820,7 @@
           seasons: [
             {
               id: 's1', name: 'Season 1 — Ishval & Philosopher\'s Stone',
+              ratingMAL: 9.11,
               episodes: [
                 { number: 1,  title: 'Fullmetal Alchemist',                      ratingIMDb: 7.6, ratingMAL: 3.9 },
                 { number: 2,  title: 'The First Day',                            ratingIMDb: 8.4, ratingMAL: 4.1 },
@@ -7950,6 +7983,19 @@
       }
       localStorage.setItem('phub_fmab_tags_v2', 'true')
     }
+
+    // Always-run patch: set Fullmetal Alchemist Season 1 ratingMAL to 9.11
+    ;(function() {
+      var _fmabSeasonLib = loadData(KEYS.library, [])
+      var _fmabSeasonIt = _fmabSeasonLib.find(function(it) { return it.id === 'fmab-seed-v1' })
+      if (_fmabSeasonIt && _fmabSeasonIt.seasons) {
+        var _fmabS1 = _fmabSeasonIt.seasons.find(function(s) { return s.id === 's1' })
+        if (_fmabS1 && _fmabS1.ratingMAL !== 9.11) {
+          _fmabS1.ratingMAL = 9.11
+          saveData(KEYS.library, _fmabSeasonLib)
+        }
+      }
+    })()
 
     // Always-run patch: set Black Lagoon Season 1 ratingMAL to 8.03
     ;(function() {
@@ -10013,9 +10059,37 @@
       notes:           '',
       lastActivityAt:  new Date().toISOString()
     }
-    if (extras.ratingIMDb) item.ratingIMDb = extras.ratingIMDb
-    if (extras.ratingMAL)  item.ratingMAL  = extras.ratingMAL
+    if (extras.ratingIMDb) {
+      item.ratingIMDb = extras.ratingIMDb
+      if (extras.ratingIMDbManual) item.ratingIMDbManual = true
+    }
+    if (extras.ratingMAL) {
+      item.ratingMAL = extras.ratingMAL
+      if (extras.ratingMALManual) item.ratingMALManual = true
+    }
     return item
+  }
+
+  function isRatingLinkLocked(target, urlKey, manualKey) {
+    return !!(target && target[urlKey] && target[manualKey])
+  }
+
+  function ratingChipInlineIcon(isLocked, title) {
+    return isLocked
+      ? '<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>'
+      : '<span style="font-size:8px;opacity:0.4;margin-left:2px;" title="' + (title || 'Add link / rating') + '">+</span>'
+  }
+
+  function ratingRowTextIcon(isLocked) {
+    return isLocked ? ' ↗' : ' +'
+  }
+
+  function formatSeriesRatingValue(val) {
+    var n = Number(val)
+    if (!isFinite(n)) return ''
+    return (n % 1 !== 0 && String(n).split('.')[1] && String(n).split('.')[1].length > 1)
+      ? n.toFixed(2)
+      : n.toFixed(1)
   }
 
   // Parse line format: "Season 1 | 12" (or ":" / "-") for per-season counts.
@@ -10142,8 +10216,11 @@
     box.className = 'sched-modal'
     box.style.cssText = 'width:min(560px,calc(100% - 40px));'
     box.innerHTML =
+      '<div class="sched-modal-header">' +
       '<div class="sched-modal-title">Settings</div>' +
       '<div class="sched-modal-subtitle">Tune defaults (no code edits needed)</div>' +
+      '</div>' +
+      '<div class="sched-modal-body">' +
       '<div class="modal-section-card" style="margin-top:6px;">' +
       '<div class="modal-section-title">General</div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">UI Density</div><select class="sched-modal-input" id="set-density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>' +
@@ -10160,7 +10237,10 @@
       '<div class="sched-modal-field"><div class="sched-modal-label">Library Quick Add Placeholder</div><input class="sched-modal-input" id="set-quickadd-placeholder" type="text"/></div>' +
       '<div class="sched-modal-field"><label style="display:flex;gap:8px;align-items:center;font:500 11px var(--font-mono);color:var(--text-2);"><input id="set-detail-confirm" type="checkbox" style="accent-color:var(--accent-cool);"/> Ask confirmation for destructive detail actions</label></div>' +
       '</div>' +
-      '<div class="sched-modal-btns"><button class="sched-modal-cancel" id="set-reset">RESET DEFAULTS</button><button class="sched-modal-cancel" id="set-cancel">CLOSE</button><button class="sched-modal-save" id="set-save">SAVE</button></div>'
+      '</div>' +
+      '<div class="sched-modal-footer">' +
+      '<div class="sched-modal-btns"><button class="sched-modal-cancel" id="set-reset">RESET DEFAULTS</button><button class="sched-modal-cancel" id="set-cancel">CLOSE</button><button class="sched-modal-save" id="set-save">SAVE</button></div>' +
+      '</div>'
     overlay.appendChild(box)
     document.body.appendChild(overlay)
     document.body.style.overflow = 'hidden'
@@ -10561,6 +10641,8 @@
         rating:      0,
         ratingIMDb:  ratingIMDb > 0 ? Math.min(10, Math.max(0, ratingIMDb)) : undefined,
         ratingMAL:   ratingMAL  > 0 ? Math.min(10, Math.max(0, ratingMAL))  : undefined,
+        ratingIMDbManual: ratingIMDb > 0,
+        ratingMALManual:  ratingMAL > 0,
         seasons:     seasonsData,
         themeClass:  themeClass,
         themeStyles: themeStyles
@@ -11547,7 +11629,7 @@
       var seasonsWithMAL = item.seasons.filter(function(s) { return s.ratingMAL })
       var seasonsWithPersonal = item.seasons.filter(function(s) { return s.personalRating })
       // IMDb has no per-season rating — seriesRatingIMDb stays as item.ratingIMDb only
-      if (seasonsWithMAL.length > 0) {
+      if (!item.ratingMALManual && seasonsWithMAL.length > 0) {
         // season.ratingMAL set via popup = /10; auto-populated from episode avg = /5
         // Detect scale: auto-populated values are always ≤ 5, manually entered are typically > 5
         var malSum = seasonsWithMAL.reduce(function(sum, s) {
@@ -11555,7 +11637,7 @@
           return sum + (v <= 5 ? v * 2 : v) // normalise to /10
         }, 0)
         seriesRatingMAL = malSum / seasonsWithMAL.length
-      } else {
+      } else if (!item.ratingMALManual) {
         // No season-level MAL — fall back to each season's episode MAL avg
         var seasonMALVals = item.seasons.map(function(s) {
           var malEps = (s.episodes || []).filter(function(e) { return e.ratingMAL })
@@ -11578,8 +11660,15 @@
     var dualRatingHTML = ''
     if (seriesRatingIMDb || seriesRatingMAL || seriesPersonalRating) {
       dualRatingHTML = '<div class="detail-ratings-row">'
-      if (seriesRatingIMDb) { var _imdbVal = Number(seriesRatingIMDb); var _imdbStr = (_imdbVal % 1 !== 0 && String(_imdbVal).split('.')[1] && String(_imdbVal).split('.')[1].length > 1) ? _imdbVal.toFixed(2) : _imdbVal.toFixed(1); var _imdbLinkIcon = item.imdbUrl ? '<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>' : '<span style="font-size:8px;opacity:0.4;margin-left:2px;" title="Add IMDb link">+</span>'; dualRatingHTML += '<div class="detail-rating-chip chip-imdb" id="detail-series-imdb-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">IMDb' + _imdbLinkIcon + '</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
-      if (seriesRatingMAL)  { var _malLinkIcon = item.malUrl ? '<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>' : '<span style="font-size:8px;opacity:0.4;margin-left:2px;" title="Add MAL link">+</span>'; dualRatingHTML += '<div class="detail-rating-chip chip-mal" id="detail-series-mal-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">MAL' + _malLinkIcon + '</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>' }
+      if (seriesRatingIMDb) {
+        var _imdbStr = formatSeriesRatingValue(seriesRatingIMDb)
+        var _imdbLinkIcon = ratingChipInlineIcon(isRatingLinkLocked(item, 'imdbUrl', 'ratingIMDbManual'), 'Add IMDb link / rating')
+        dualRatingHTML += '<div class="detail-rating-chip chip-imdb" id="detail-series-imdb-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">IMDb' + _imdbLinkIcon + '</span><span class="chip-val">' + _imdbStr + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      }
+      if (seriesRatingMAL)  {
+        var _malLinkIcon = ratingChipInlineIcon(isRatingLinkLocked(item, 'malUrl', 'ratingMALManual'), 'Add MAL link / rating')
+        dualRatingHTML += '<div class="detail-rating-chip chip-mal" id="detail-series-mal-chip" style="cursor:pointer;transition:all 0.2s;"><span class="chip-label">MAL' + _malLinkIcon + '</span><span class="chip-val">'  + Number(seriesRatingMAL).toFixed(2)  + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
+      }
       if (seriesPersonalRating) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display"><span class="chip-label">MY RATING</span><span class="chip-val">' + seriesPersonalRating + '<span style="font-size:9px;opacity:0.6">/10</span></span></div>'
       else if (item.seasons && item.seasons.length > 1) dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.4;cursor:default;"><span class="chip-label">MY RATING</span><span class="chip-val" style="font-size:10px;">Rate seasons<span style="font-size:9px;opacity:0.6"></span></span></div>'
       else dualRatingHTML += '<div class="detail-rating-chip chip-personal" id="detail-personal-rating-display" style="opacity:0.5;"><span class="chip-label">MY RATING</span><span class="chip-val">\u2605<span style="font-size:9px;opacity:0.6"> Rate</span></span></div>'
@@ -12046,22 +12135,33 @@
       if (seriesImdbChip) {
         seriesImdbChip.addEventListener('click', function(e) {
           e.stopPropagation()
-          if (item.imdbUrl) {
+          if (isRatingLinkLocked(item, 'imdbUrl', 'ratingIMDbManual')) {
             window.open(item.imdbUrl, '_blank')
           } else {
-            showInputModal('Add IMDb Link', 'Enter IMDb URL for ' + (item.title || '').trim(), seriesImdbChip, function(url, rating) {
-              item.imdbUrl = url
-              if (rating !== null) item.ratingIMDb = rating
+            showInputModal('IMDb Link / Rating', 'Enter IMDb URL for ' + (item.title || '').trim(), seriesImdbChip, function(url, rating, meta) {
+              var nextUrl = (url || '').trim()
+              if (nextUrl) item.imdbUrl = nextUrl
+              if (rating !== null) {
+                item.ratingIMDb = rating
+                item.ratingIMDbManual = true
+              }
               var lib = loadData(KEYS.library, [])
               var libItem = lib.find(function(i) { return i.id === id })
               if (libItem) {
-                libItem.imdbUrl = url
-                if (rating !== null) libItem.ratingIMDb = rating
+                if (nextUrl) libItem.imdbUrl = nextUrl
+                if (rating !== null) {
+                  libItem.ratingIMDb = rating
+                  libItem.ratingIMDbManual = true
+                }
                 saveData(KEYS.library, lib)
               }
               var lbl = seriesImdbChip.querySelector('.chip-label')
-              if (lbl) lbl.innerHTML = 'IMDb<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>'
-            }, { ratingLabel: 'IMDb /10', ratingPlaceholder: 'e.g. 8.6', ratingMax: 10, currentRating: item.ratingIMDb || '', accentColor: 'rgba(245,197,24,0.8)' })
+              if (lbl) lbl.innerHTML = 'IMDb' + ratingChipInlineIcon(isRatingLinkLocked(item, 'imdbUrl', 'ratingIMDbManual'), 'Add IMDb link / rating')
+              if (rating !== null) {
+                var chipVal = seriesImdbChip.querySelector('.chip-val')
+                if (chipVal) chipVal.innerHTML = formatSeriesRatingValue(rating) + '<span style="font-size:9px;opacity:0.6">/10</span>'
+              }
+            }, { ratingLabel: 'IMDb /10', ratingPlaceholder: 'e.g. 8.6', ratingMax: 10, currentRating: item.ratingIMDb || '', currentUrl: item.imdbUrl || '', allowRatingOnly: true, accentColor: 'rgba(245,197,24,0.8)' })
           }
         })
       }
@@ -12070,22 +12170,33 @@
       if (seriesMalChip) {
         seriesMalChip.addEventListener('click', function(e) {
           e.stopPropagation()
-          if (item.malUrl) {
+          if (isRatingLinkLocked(item, 'malUrl', 'ratingMALManual')) {
             window.open(item.malUrl, '_blank')
           } else {
-            showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + (item.title || '').trim(), seriesMalChip, function(url, rating) {
-              item.malUrl = url
-              if (rating !== null) item.ratingMAL = rating
+            showInputModal('MAL Link / Rating', 'Enter MyAnimeList URL for ' + (item.title || '').trim(), seriesMalChip, function(url, rating, meta) {
+              var nextUrl = (url || '').trim()
+              if (nextUrl) item.malUrl = nextUrl
+              if (rating !== null) {
+                item.ratingMAL = rating
+                item.ratingMALManual = true
+              }
               var lib = loadData(KEYS.library, [])
               var libItem = lib.find(function(i) { return i.id === id })
               if (libItem) {
-                libItem.malUrl = url
-                if (rating !== null) libItem.ratingMAL = rating
+                if (nextUrl) libItem.malUrl = nextUrl
+                if (rating !== null) {
+                  libItem.ratingMAL = rating
+                  libItem.ratingMALManual = true
+                }
                 saveData(KEYS.library, lib)
               }
               var lbl = seriesMalChip.querySelector('.chip-label')
-              if (lbl) lbl.innerHTML = 'MAL<span style="font-size:8px;opacity:0.7;margin-left:2px;">↗</span>'
-            }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: item.ratingMAL || '', accentColor: 'rgba(95,143,219,0.8)' })
+              if (lbl) lbl.innerHTML = 'MAL' + ratingChipInlineIcon(isRatingLinkLocked(item, 'malUrl', 'ratingMALManual'), 'Add MAL link / rating')
+              if (rating !== null) {
+                var chipVal = seriesMalChip.querySelector('.chip-val')
+                if (chipVal) chipVal.innerHTML = Number(rating).toFixed(2) + '<span style="font-size:9px;opacity:0.6">/10</span>'
+              }
+            }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: item.ratingMALManual ? (item.ratingMAL || '') : (seriesRatingMAL || item.ratingMAL || ''), currentUrl: item.malUrl || '', allowRatingOnly: true, accentColor: 'rgba(95,143,219,0.8)' })
           }
         })
       }
@@ -12697,6 +12808,102 @@
       '<button class="ep-rate-btn" aria-label="Rate this episode">\u2605</button>' +
       '<button class="ep-timer-btn" aria-label="Start timer for this episode">\u23f1</button>'
 
+    function markEpisodeWatchedFromRating() {
+      var lib = loadData(KEYS.library, [])
+      var it  = lib.find(function(i) { return i.id === item.id })
+      if (!it) return false
+
+      if (!it.watchedEpisodes) it.watchedEpisodes = []
+      var wasWatched = it.watchedEpisodes.includes(epKey)
+      if (wasWatched) {
+        item.watchedEpisodes = it.watchedEpisodes.slice()
+        return false
+      }
+
+      var beforeCount = it.watchedEpisodes.length
+      it.watchedEpisodes.push(epKey)
+      tile.classList.add('watched', 'tile-flash')
+      setTimeout(function() { tile.classList.remove('tile-flash') }, 420)
+
+      if (it.status === 'upcoming') {
+        it.status = 'watching'
+        item.status = 'watching'
+        logEvent('Status updated: ' + item.title + ' \u2192 watching')
+      }
+      logEvent((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel' ? 'Read ch ' : 'Watched ep ') + ep.number + ' of ' + item.title)
+
+      item.watchedEpisodes = it.watchedEpisodes.slice()
+      touchLibraryItemActivity(it)
+      saveData(KEYS.library, lib)
+
+      var sched = loadData(KEYS.schedule, {})
+      var todayKey = localDateStr()
+      var isReading = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel')
+      var epLabelVariants = [
+        (isReading ? 'Ch. ' : 'Ep. ') + ep.number,
+        (isReading ? 'Ch.' : 'Ep.') + ep.number,
+        String(ep.number)
+      ]
+      var schedChanged = false
+      Object.keys(sched).forEach(function(dk) {
+        if (dk >= todayKey) return
+        var before = sched[dk].length
+        sched[dk] = sched[dk].filter(function(e) {
+          if (e.id !== it.id) return true
+          return !epLabelVariants.some(function(v) { return e.eps === v })
+        })
+        if (sched[dk].length !== before) {
+          schedChanged = true
+          if (sched[dk].length === 0) delete sched[dk]
+        }
+      })
+      if (schedChanged) {
+        saveData(KEYS.schedule, sched)
+        if (window.__refreshMissed) window.__refreshMissed()
+      }
+
+      var fill       = document.getElementById('detail-prog-fill')
+      var progLabel  = document.querySelector('.detail-progress-label')
+      var newWatched = it.watchedEpisodes.length
+      var newPct     = it.totalEpisodes > 0
+        ? Math.min((newWatched / it.totalEpisodes) * 100, 100) : 0
+      if (fill) fill.style.width = newPct + '%'
+      if (progLabel) {
+        var _isRead = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel')
+        var _pctStr = it.totalEpisodes > 0 ? ' \u2014 ' + Math.round(newPct) + '%' : ''
+        progLabel.textContent = newWatched + '/' + it.totalEpisodes + ' ' + (_isRead ? 'chapters read' : 'eps watched') + _pctStr
+      }
+
+      var libCard = document.querySelector('.library-card[data-title="' + it.title.toLowerCase() + '"]')
+      if (libCard) {
+        var libFill = libCard.querySelector('.progress-bar-fill')
+        var libProg = libCard.querySelector('.lib-card-progress-text')
+        var unit2 = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'ch' : 'eps'
+        if (libFill) libFill.style.width = newPct + '%'
+        if (libProg) libProg.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' + unit2 + (it.timerMinutes && it.timerMinutes >= 1 ? ' \u00b7 \u23f1 ' + fmtMins(it.timerMinutes) : '')
+      }
+
+      checkSeasonCompletion(it, beforeCount, tile)
+      if (it.status !== 'completed') {
+        var totalUnits = libraryTotalUnits(it)
+        var watchedNow = libraryWatchedCount(it)
+        if (totalUnits > 0 && watchedNow >= totalUnits) {
+          setTimeout(function() { phubFireSeriesComplete(it) }, 350)
+        }
+      }
+
+      var libGrid = document.getElementById('lib-grid')
+      if (libGrid) {
+        var currentSortMode = normalizeLibrarySortMode(getAppSettings().librarySortMode)
+        if (currentSortMode === 'activity') {
+          orderLibraryCardsInGrid(libGrid, currentSortMode)
+        }
+      }
+
+      document.dispatchEvent(new CustomEvent('ep-toggled', { detail: { itemId: item.id, watchedEpisodes: it.watchedEpisodes } }))
+      return true
+    }
+
     // Rate button — opens star popup
     var rateBtn = tile.querySelector('.ep-rate-btn')
     if (rateBtn) {
@@ -12752,6 +12959,7 @@
               }
               saveData(KEYS.library, lib)
             }
+            markEpisodeWatchedFromRating()
             popup.remove()
             // Update ratings bar on tile
             var existingBar = tile.querySelector('.ep-ratings-bar')
@@ -13202,7 +13410,7 @@
           ratingsRowCount++
         }
         if (seasonRatingMAL) {
-          var malLinkIcon = season.malUrl ? ' ↗' : ''
+          var malLinkIcon = ratingRowTextIcon(isRatingLinkLocked(season, 'malUrl', 'ratingMALManual'))
           ratingsCardInner +=
             (ratingsRowCount > 0 ? divider : '') +
             '<div class="season-mal-chip" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;" onmouseover="this.style.opacity=\'0.75\'" onmouseout="this.style.opacity=\'1\'">' +
@@ -13282,24 +13490,31 @@
         if (malChip) {
           malChip.addEventListener('click', function(e) {
             e.stopPropagation()
-            if (season.malUrl) {
+            if (isRatingLinkLocked(season, 'malUrl', 'ratingMALManual')) {
               window.open(season.malUrl, '_blank')
             } else {
-              showInputModal('Add MAL Link', 'Enter MyAnimeList URL for ' + (season.name || '').trim(), malChip, function(url, rating) {
-                season.malUrl = url
-                if (rating !== null) season.ratingMAL = rating
+              showInputModal('MAL Link / Rating', 'Enter MyAnimeList URL for ' + (season.name || '').trim(), malChip, function(url, rating, meta) {
+                var nextUrl = (url || '').trim()
+                if (nextUrl) season.malUrl = nextUrl
+                if (rating !== null) {
+                  season.ratingMAL = rating
+                  season.ratingMALManual = true
+                }
                 var lib = loadData(KEYS.library, [])
                 var libItem = lib.find(function(i) { return i.id === item.id })
                 if (libItem && libItem.seasons) {
                   var libSeason = libItem.seasons.find(function(s) { return s.id === season.id })
                   if (libSeason) {
-                    libSeason.malUrl = url
-                    if (rating !== null) libSeason.ratingMAL = rating
+                    if (nextUrl) libSeason.malUrl = nextUrl
+                    if (rating !== null) {
+                      libSeason.ratingMAL = rating
+                      libSeason.ratingMALManual = true
+                    }
                     saveData(KEYS.library, lib)
                     refreshStats(item.watchedEpisodes)
                   }
                 }
-              }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: season.ratingMAL || '', accentColor: 'rgba(95,143,219,0.8)' })
+              }, { ratingLabel: 'MAL /10', ratingPlaceholder: 'e.g. 8.32', ratingMax: 10, currentRating: season.ratingMAL || '', currentUrl: season.malUrl || '', allowRatingOnly: true, accentColor: 'rgba(95,143,219,0.8)' })
             }
           })
         }
@@ -13377,6 +13592,8 @@
     var input = document.createElement('input')
     input.type = 'text'
     input.placeholder = placeholder || ''
+    var initialUrl = opts.currentUrl || ''
+    if (initialUrl) input.value = initialUrl
     input.style.cssText = 'width:100%;padding:6px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font:400 11px var(--font-sans);box-sizing:border-box;outline:none;'
     input.addEventListener('focus', function() { this.style.borderColor = 'rgba(130,160,255,0.4)' })
     input.addEventListener('blur',  function() { this.style.borderColor = 'var(--border)' })
@@ -13385,6 +13602,7 @@
 
     // Optional rating field — label above, input below, URL input height synced via JS after render
     var ratingInput = null
+    var ratingTouched = false
     if (opts.ratingLabel) {
       var accent = opts.accentColor || 'rgba(130,160,255,0.7)'
       var ratingWrap = document.createElement('div')
@@ -13406,6 +13624,7 @@
       ratingInput.style.cssText = 'width:' + ratingW + ';padding:6px 6px;background:var(--surface-2);border:1px solid ' + accent.replace('0.7','0.35') + ';border-radius:4px;color:' + accent.replace('0.7','1') + ';font:600 11px var(--font-mono);box-sizing:border-box;outline:none;text-align:center;'
       ratingInput.addEventListener('focus', function() { this.style.borderColor = accent })
       ratingInput.addEventListener('blur',  function() { this.style.borderColor = accent.replace('0.7','0.35') })
+      ratingInput.addEventListener('input', function() { ratingTouched = true })
       ratingWrap.appendChild(ratingInput)
       inputRow.appendChild(ratingWrap)
 
@@ -13436,9 +13655,22 @@
     submitBtn.addEventListener('mouseout',  function() { this.style.opacity = '1' })
     submitBtn.addEventListener('click', function() {
       var value = input.value.trim()
-      if (value) {
-        var ratingVal = ratingInput ? (parseFloat(ratingInput.value) || null) : null
-        onSubmit(value, ratingVal)
+      var ratingVal = null
+      if (ratingInput && ratingTouched) {
+        var rawRating = ratingInput.value.trim()
+        if (rawRating) {
+          var parsedRating = parseFloat(rawRating)
+          if (!isNaN(parsedRating)) {
+            var maxRating = opts.ratingMax || 10
+            ratingVal = Math.min(maxRating, Math.max(0, parsedRating))
+          }
+        }
+      }
+      if (value || (opts.allowRatingOnly && ratingVal !== null)) {
+        onSubmit(value || null, ratingVal, {
+          urlChanged: value !== initialUrl,
+          ratingChanged: ratingVal !== null
+        })
         popup.remove()
       }
     })
@@ -18516,11 +18748,16 @@
     var main = document.getElementById('app-main')
     var settings = getAppSettings()
 
+    // Create wrapper with scrolling
+    var wrapper = document.createElement('div')
+    wrapper.id = 'settings-wrapper'
+    wrapper.style.cssText = 'display:flex;flex-direction:column;height:100%;overflow-y:auto;padding-right:8px;'
+
     var frag = document.createDocumentFragment()
 
     // Header
     var headerRow = document.createElement('div')
-    headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding-top:28px;margin-bottom:var(--space-4);'
+    headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding-top:28px;margin-bottom:var(--space-4);flex-shrink:0;'
     headerRow.innerHTML = '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">SYSTEM SETTINGS</div>'
     frag.appendChild(headerRow)
 
@@ -18623,6 +18860,8 @@
       inp.addEventListener('change', function() { updateAppSetting('quickAddPlaceholder', inp.value.trim() || APP_SETTINGS_DEFAULTS.quickAddPlaceholder) })
       return inp
     })()))
+    s2.appendChild(makeRow('Smooth scrolling', 'Enable smooth animation when scrolling library cards', makeToggle('librarySmoothScroll', settings.librarySmoothScroll)))
+    s2.appendChild(makeRow('Library scroll speed (ms)', 'Animation duration for smooth scrolling (200-800ms)', makeNumber('libraryScrollSpeed', settings.libraryScrollSpeed, 200, 800, 50)))
 
     // SECTION: Tasks
     var s3 = makeSection('Tasks')
@@ -18730,7 +18969,8 @@
     exportRow.appendChild(exportBtns)
     s6.appendChild(exportRow)
 
-    main.appendChild(frag)
+    wrapper.appendChild(frag)
+    main.appendChild(wrapper)
 
     // Stagger entrance
     var allBlocks = main.querySelectorAll('div')

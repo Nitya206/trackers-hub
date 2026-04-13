@@ -2243,6 +2243,8 @@
     .lib-status-dot.not-started { background: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
     .lib-status-label.not-started { color: var(--accent-yellow); }
     .lib-status-dot.graveyard { background: var(--danger); }
+    .lib-status-dot.on-hold { background: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
+    .lib-status-label.on-hold { color: var(--accent-yellow); }
     .lib-status-dot.upcoming {
       background: var(--accent-cool);
       box-shadow: 0 0 10px var(--accent-cool), 0 0 24px rgba(0,229,255,0.4);
@@ -7969,9 +7971,9 @@
       .toUpperCase().replace(',', ' ·').replace(',', ' ·')
 
     // ── Stats ──
-    const totalItems      = library.filter(i => i.status !== 'graveyard').length
+    const totalItems      = library.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length
     const totalEpsInLib   = library.reduce((acc, i) => {
-      if (i.status === 'graveyard') return acc
+      if (i.status === 'graveyard' || i.status === 'on-hold') return acc
       if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.length : 0)
       return acc + (i.totalEpisodes || 0)
     }, 0)
@@ -8589,9 +8591,9 @@
     try {
       const library = loadData(KEYS.library, [])
       const tasks   = loadData(KEYS.tasks, [])
-      const totalItems      = library.filter(i => i.status !== 'graveyard').length
+      const totalItems      = library.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length
       const totalEpsInLib   = library.reduce((acc, i) => {
-        if (i.status === 'graveyard') return acc
+        if (i.status === 'graveyard' || i.status === 'on-hold') return acc
         if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.length : 0)
         return acc + (i.totalEpisodes || 0)
       }, 0)
@@ -8924,6 +8926,7 @@
     let activeType  = 'all'
     let searchQuery = ''
     let searchTimer = null
+    let showOnHold  = false
 
     const MOOD_CHIP_COLORS = {
       'brain-off':       '#8888aa',
@@ -8950,7 +8953,7 @@
     row1.innerHTML =
       '<div class="lib-topbar-row1-left">' +
         '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">CONTENT MATRIX</div>' +
-        '<span class="lib-count-badge" id="lib-file-count">[' + library.filter(function(i){return i.status!=='graveyard'}).length + ' FILES]</span>' +
+        '<span class="lib-count-badge" id="lib-file-count">[' + library.filter(function(i){return i.status!=='graveyard' && i.status!=='on-hold'}).length + ' FILES]</span>' +
       '</div>' +
       '<div class="lib-topbar-row1-actions">' +
         '<button type="button" class="btn-ghost" id="lib-settings-btn" style="font-size:var(--text-xs);">Settings</button>' +
@@ -8985,6 +8988,22 @@
       })
       filterRow.appendChild(pill)
     })
+
+    // On Hold filter pill — separate, after type pills
+    var holdPill = document.createElement('button')
+    holdPill.className = 'lib-filter-pill'
+    holdPill.textContent = '⏸ ON HOLD'
+    holdPill.dataset.filterType = 'on-hold'
+    holdPill.style.cssText = 'border-color:rgba(255,225,77,0.3);color:var(--accent-yellow);'
+    holdPill.addEventListener('click', function() {
+      var isActive = holdPill.classList.contains('hold-active')
+      holdPill.classList.toggle('hold-active', !isActive)
+      holdPill.style.background = !isActive ? 'rgba(255,225,77,0.12)' : ''
+      holdPill.style.borderColor = !isActive ? 'rgba(255,225,77,0.5)' : 'rgba(255,225,77,0.3)'
+      showOnHold = !isActive
+      filterCards()
+    })
+    filterRow.appendChild(holdPill)
     topbar.appendChild(filterRow)
 
     // Search + quick-add row
@@ -9142,7 +9161,9 @@
         var typeOk    = activeType === 'all' || card.dataset.type === activeType
         var titleOk   = !q || card.dataset.title.includes(q)
         var notGrave  = card.dataset.status !== 'graveyard'
-        var show      = typeOk && titleOk && notGrave
+        var isOnHold  = card.dataset.status === 'on-hold'
+        var holdOk    = showOnHold ? isOnHold : !isOnHold
+        var show      = typeOk && titleOk && notGrave && (showOnHold ? isOnHold : !isOnHold)
         card.style.display = show ? '' : 'none'
         if (show) visible++
       })
@@ -9430,7 +9451,7 @@
       '<div class="lib-card-footer">' +
         '<div class="lib-card-footer-left">' +
           '<span class="lib-status-dot ' + (statusClass === 'watching' && watched === 0 ? 'not-started' : statusClass) + '"></span>' +
-          '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass.toUpperCase()) + '</span>' +
+          '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass === 'on-hold' ? 'ON HOLD' : statusClass.toUpperCase()) + '</span>' +
           dayHTML +
         '</div>' +
         '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File \u2192</button>' +
@@ -9613,7 +9634,7 @@
       '<div class="modal-section-card" style="margin-top:6px;">' +
       '<div class="modal-section-title">General</div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">UI Density</div><select class="sched-modal-input" id="set-density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>' +
-      '<div class="sched-modal-field"><div class="sched-modal-label">Default New Content Status</div><select class="sched-modal-input" id="set-default-status"><option value="watching">Watching / Active</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option></select></div>' +
+      '<div class="sched-modal-field"><div class="sched-modal-label">Default New Content Status</div><select class="sched-modal-input" id="set-default-status"><option value="watching">Watching / Active</option><option value="on-hold">On Hold</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option></select></div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">Dashboard Suggestion Mode</div><select class="sched-modal-input" id="set-suggest-mode"><option value="oldest">Oldest First</option><option value="newest">Newest First</option><option value="random">Random</option></select></div>' +
       '</div>' +
       '<div class="modal-section-card">' +
@@ -9813,6 +9834,7 @@
       '<label class="modal-field-label" style="margin-top:4px;">Status</label>' +
       '<select class="modal-select" id="modal-status">' +
         '<option value="watching">Watching / Active</option>' +
+        '<option value="on-hold">On Hold</option>' +
         '<option value="upcoming">Upcoming</option>' +
         '<option value="completed">Completed</option>' +
       '</select>' +
@@ -11172,6 +11194,35 @@
     // Drop to graveyard
     var gravWrap = document.createElement('div')
     gravWrap.className = 'detail-graveyard-wrap'
+
+    // Put on hold button
+    var holdBtn = document.createElement('button')
+    holdBtn.className = 'btn-ghost'
+    holdBtn.style.cssText = 'width:100%;margin-bottom:8px;border-color:rgba(255,225,77,0.3);color:var(--accent-yellow);'
+    var isOnHold = item.status === 'on-hold'
+    holdBtn.textContent = isOnHold ? '▶ Resume Series' : '⏸ Put on Hold'
+    holdBtn.addEventListener('click', function() {
+      var lib6 = loadData(KEYS.library, [])
+      var it6  = lib6.find(function(i) { return i.id === id })
+      if (it6) {
+        if (it6.status === 'on-hold') {
+          it6.status = 'watching'
+          holdBtn.textContent = '⏸ Put on Hold'
+          holdBtn.style.borderColor = 'rgba(255,225,77,0.3)'
+          logEvent('Resumed ' + item.title)
+        } else {
+          it6.status = 'on-hold'
+          holdBtn.textContent = '▶ Resume Series'
+          holdBtn.style.borderColor = 'rgba(255,225,77,0.6)'
+          logEvent('Put ' + item.title + ' on hold')
+        }
+        item.status = it6.status
+        saveData(KEYS.library, lib6)
+        showQuickConfirmWithUndo((it6.status === 'on-hold' ? 'ON HOLD: ' : 'RESUMED: ') + item.title.toUpperCase(), null)
+      }
+    })
+    gravWrap.appendChild(holdBtn)
+
     var gravBtn = document.createElement('button')
     gravBtn.className = 'btn-danger'
     gravBtn.style.width = '100%'
@@ -15142,7 +15193,7 @@
     // Status values: library items use watching/completed/graveyard
     //                tasks use active/done
     // Type values:   library content types + 'task' for task-only view
-    var LIBRARY_STATUS_PILLS = ['all','watching','reading','not started','upcoming','completed','graveyard']
+    var LIBRARY_STATUS_PILLS = ['all','watching','reading','not started','upcoming','completed','on hold','graveyard']
     var TASK_STATUS_PILLS    = ['active','done']
     var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel','social']
 
@@ -15223,11 +15274,12 @@
         entries.push({ kind: 'task', item: task, sortStatus: task.completed ? 'done' : 'active' })
       })
 
-      // Filter — "all" excludes graveyard (they live in the Graveyard section)
+      // Filter — "all" excludes graveyard and on-hold (they live in separate sections)
       var filtered = entries.filter(function(e) {
         var statusOk = true
         var typeOk   = true
         if (e.kind === 'library' && e.item.status === 'graveyard' && activeStatus === 'all') return false
+        if (e.kind === 'library' && e.item.status === 'on-hold' && activeStatus === 'all') return false
         if (activeStatus !== 'all') {
           if (e.kind === 'library') {
             var w = (e.item.watchedEpisodes || []).length
@@ -15236,6 +15288,7 @@
             else if (activeStatus === 'watching') statusOk = e.item.status === 'watching' && w > 0 && !isReadType
             else if (activeStatus === 'reading') statusOk = e.item.status === 'watching' && w > 0 && isReadType
             else if (activeStatus === 'upcoming') statusOk = e.item.status === 'upcoming'
+            else if (activeStatus === 'on hold') statusOk = e.item.status === 'on-hold'
             else statusOk = e.item.status === activeStatus
           }
           else statusOk = activeStatus === 'active' ? !e.item.completed : activeStatus === 'done' ? e.item.completed : false
@@ -15302,6 +15355,12 @@
       statusWrap.innerHTML =
         '<span class="manifest-status-watch-chip' + (itemWatched === 0 ? ' not-started' : '') + '">' +
           '<span class="chip-dot"' + (itemWatched === 0 ? ' style="background:var(--text-3)"' : '') + '></span>' + watchLabel +
+        '</span>'
+    } else if (item.status === 'on-hold') {
+      // Styled ON HOLD pill
+      statusWrap.innerHTML =
+        '<span class="manifest-status-watch-chip" style="background:rgba(255,225,77,0.1);border:1px solid rgba(255,225,77,0.3);color:var(--accent-yellow);">' +
+          '<span class="chip-dot" style="background:var(--accent-yellow);box-shadow:0 0 8px var(--accent-yellow);"></span>ON HOLD' +
         '</span>'
     } else if (item.status === 'upcoming') {
       // Styled UPCOMING pill

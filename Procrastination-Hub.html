@@ -849,6 +849,7 @@
     .bn-item:nth-child(5) { animation-delay: 360ms; }
     .bn-item:nth-child(6) { animation-delay: 400ms; }
     .bn-item:nth-child(7) { animation-delay: 440ms; }
+    .bn-item:nth-child(8) { animation-delay: 480ms; }
     @keyframes bn-item-in {
       from { opacity: 0; transform: translateY(12px) scale(0.76); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -7800,13 +7801,14 @@
     main.scrollTop = 0
     window.scrollTo({top: 0, behavior: 'instant'})
     const renderers = {
-      dashboard:  renderDashboard,
+      dashboard:  () => (window.renderDashboard || renderDashboard)(),
       library:    renderLibrary,
       moodqueue:  renderMoodQueue,
       tasks:      renderTasks,
       overview:   renderOverview,
       graveyard:  renderGraveyard,
-      sessionlog: renderSessionLog,
+      sessionlog: () => (window.renderSessionLog || renderSessionLog)(),
+      settings:   renderSettings,
       detail:     () => renderDetail(detailId)
     }
     renderers[section]?.()
@@ -11548,14 +11550,28 @@
 
     // -- Graveyard button --
     gravBtn.addEventListener('click', function() {
+      var DROP_REASONS = ['Lost interest','Got busy','Too slow','Hit a wall','Not the right time','Something better came along']
+      var reasonBtns = DROP_REASONS.map(function(r) {
+        return '<button class="btn-ghost" data-reason="' + r + '" style="font-size:10px;padding:5px 10px;letter-spacing:0.06em;">' + r + '</button>'
+      }).join('')
       gravWrap.innerHTML =
         '<div class="detail-graveyard-confirm">' +
-          '<div class="detail-graveyard-confirm-text">Drop this? Your honesty is noted.</div>' +
+          '<div class="detail-graveyard-confirm-text" style="margin-bottom:10px;">Drop this? Your honesty is noted.</div>' +
+          '<div style="font:600 9px var(--font-mono);color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Cause of death:</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="grav-reason-wrap">' + reasonBtns + '</div>' +
           '<div class="detail-graveyard-confirm-btns">' +
             '<button class="btn-danger" data-sfx="graveyard" id="grav-confirm">Confirm</button>' +
             '<button class="btn-ghost" id="grav-cancel">Never mind</button>' +
           '</div>' +
         '</div>'
+      var selectedReason = ''
+      gravWrap.querySelectorAll('[data-reason]').forEach(function(rb) {
+        rb.addEventListener('click', function() {
+          gravWrap.querySelectorAll('[data-reason]').forEach(function(x) { x.style.borderColor = ''; x.style.color = '' })
+          selectedReason = rb.dataset.reason
+          rb.style.borderColor = 'var(--accent-cool)'; rb.style.color = 'var(--accent-cool)'
+        })
+      })
       document.getElementById('grav-confirm').addEventListener('click', function() {
         if (timerInterval) stopTimer()
         var lib5 = loadData(KEYS.library, [])
@@ -11563,6 +11579,7 @@
         if (it5) {
           it5.status = 'graveyard'
           it5.graveyardDate = localDateStr()
+          if (selectedReason) it5.dropReason = selectedReason
           saveData(KEYS.library, lib5)
           // Clean up all schedule entries for this item
           var sched5 = loadData(KEYS.schedule, {})
@@ -12393,6 +12410,14 @@
         if (libProg) libProg.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' + unit2 + (it.timerMinutes && it.timerMinutes >= 1 ? ' · \u23f1 ' + fmtMins(it.timerMinutes) : '')
       }
       checkSeasonCompletion(it, beforeCount, tile)
+      // AUTO-COMPLETE: check if entire series is now done
+      if (!wasWatched && it.status !== 'completed') {
+        var totalUnits = libraryTotalUnits(it)
+        var watchedNow = libraryWatchedCount(it)
+        if (totalUnits > 0 && watchedNow >= totalUnits) {
+          setTimeout(function() { phubFireSeriesComplete(it) }, 350)
+        }
+      }
       // Re-order library grid if using activity sort (latest watching)
       var libGrid = document.getElementById('lib-grid')
       if (libGrid) {
@@ -15537,11 +15562,21 @@
       progWrap.innerHTML = '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%;"></div></div>'
       card.appendChild(progWrap)
 
-      // Dates
+      // Dates + time invested
       var dates = document.createElement('div')
       dates.className = 'graveyard-dates'
-      dates.textContent = 'Added: ' + addedFmt + '  \u00b7  Dropped: ' + droppedFmt
+      var _timeInvested = item.timerMinutes && item.timerMinutes >= 1 ? '  \u00b7  \u23f1 ' + fmtMins(item.timerMinutes) + ' invested' : ''
+      dates.textContent = 'Added: ' + addedFmt + '  \u00b7  Dropped: ' + droppedFmt + _timeInvested
       card.appendChild(dates)
+
+      // Drop reason badge (cause of death)
+      if (item.dropReason) {
+        var reasonEl = document.createElement('div')
+        reasonEl.style.cssText = 'margin-top:6px;'
+        reasonEl.innerHTML = '<span style="font:600 9px var(--font-mono);color:var(--text-3);letter-spacing:0.1em;text-transform:uppercase;">Cause: </span>' +
+          '<span style="font:600 10px var(--font-mono);color:var(--accent-warm);padding:2px 8px;border:1px solid rgba(255,96,64,0.3);border-radius:var(--radius-pill);background:rgba(255,96,64,0.08);">' + item.dropReason + '</span>'
+        card.appendChild(reasonEl)
+      }
 
       // Note
       if (item.graveyardNote) {
@@ -15948,6 +15983,14 @@
                <circle cx="8" cy="8" r="6.5"/>
                <polyline points="8,4.5 8,8 10.5,10.5"/>
              </svg>`
+    },
+    {
+      section: 'settings', label: 'Settings', separator: true,
+      icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+               <circle cx="8" cy="8" r="2.2"/>
+               <path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.2 3.2l.7.7M12.1 12.1l.7.7M12.8 3.2l-.7.7M3.9 12.1l-.7.7"/>
+             </svg>`
     }
   ]
 
@@ -15957,6 +16000,12 @@
     const fragment = document.createDocumentFragment()
 
     NAV_ITEMS.forEach(item => {
+      // Insert separator before items that request it
+      if (item.separator) {
+        const sep = document.createElement('div')
+        sep.className = 'hn-bn-sep'
+        fragment.appendChild(sep)
+      }
       const el = document.createElement('div')
       el.className       = 'bn-item'
       el.dataset.section = item.section
@@ -17063,6 +17112,1939 @@
       p6OverviewHeartbeat()
       p6InitMuteButton()
     }, 100)
+  })
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ═══ PART 8: THE SEVEN UPGRADES ═══
+  // ═══ 1. Cmd+X Global Command Palette ═══
+  // ═══ 2. Procrastination Debt Score ═══
+  // ═══ 3. Auto-Complete Detection ═══
+  // ═══ 4. Velocity Tracker (finish-date predictor) ═══
+  // ═══ 5. "What Did I Actually Do" Week View ═══
+  // ═══ 6. Graveyard: Cause of Death + Time Invested ═══
+  // ═══ 7. Settings Page ═══
+  // ═══════════════════════════════════════════════════════════════════
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 1: CMD+X GLOBAL COMMAND PALETTE
+     Fuzzy search across library titles, tasks, sections.
+     Opens on Ctrl+X / Cmd+X. Keyboard navigable.
+  ───────────────────────────────────────────────────────────────── */
+  ;(function() {
+    var paletteEl = null
+
+    var SECTIONS = [
+      { label: 'Dashboard',   icon: '◈', action: function() { navigateTo('dashboard') } },
+      { label: 'Library',     icon: '⊞', action: function() { navigateTo('library') } },
+      { label: 'Mood Queue',  icon: '◉', action: function() { navigateTo('moodqueue') } },
+      { label: 'Tasks',       icon: '▣', action: function() { navigateTo('tasks') } },
+      { label: 'Overview',    icon: '◎', action: function() { navigateTo('overview') } },
+      { label: 'Graveyard',   icon: '†', action: function() { navigateTo('graveyard') } },
+      { label: 'Session Log', icon: '⧖', action: function() { navigateTo('sessionlog') } },
+      { label: 'Settings',    icon: '⚙', action: function() { navigateTo('settings') } },
+    ]
+
+    function fuzzy(str, query) {
+      str = str.toLowerCase(); query = query.toLowerCase()
+      var si = 0
+      for (var qi = 0; qi < query.length; qi++) {
+        var idx = str.indexOf(query[qi], si)
+        if (idx === -1) return false
+        si = idx + 1
+      }
+      return true
+    }
+
+    function buildResults(query) {
+      var results = []
+      var lib = loadData(KEYS.library, [])
+      var tasks = loadData(KEYS.tasks, [])
+      if (!query.trim()) {
+        SECTIONS.forEach(function(s) { results.push({ label: s.label, sub: 'Navigate', icon: s.icon, action: s.action }) })
+      } else {
+        lib.forEach(function(item) {
+          if (fuzzy(item.title, query)) {
+            var watched = (item.watchedEpisodes||[]).length
+            var total = item.totalEpisodes || 0
+            var unit = (item.type==='manga'||item.type==='manhwa'||item.type==='novel') ? 'ch' : 'ep'
+            results.push({
+              label: item.title,
+              sub: item.type.toUpperCase() + ' · ' + watched + '/' + total + ' ' + unit,
+              icon: '▸',
+              action: (function(id) { return function() { navigateTo('detail', id) } })(item.id),
+              accentColor: item.themeStyles && item.themeStyles['--accent-cool'] ? item.themeStyles['--accent-cool'] : 'var(--accent-cool)'
+            })
+          }
+        })
+        tasks.filter(function(t) { return !t.completed }).forEach(function(t) {
+          if (fuzzy(t.name, query)) {
+            results.push({ label: t.name, sub: 'TASK' + (t.duration ? ' · ' + t.duration + 'min' : ''), icon: '⚡', action: function() { navigateTo('tasks') } })
+          }
+        })
+        SECTIONS.forEach(function(s) {
+          if (fuzzy(s.label, query)) results.push({ label: s.label, sub: 'Navigate', icon: s.icon, action: s.action })
+        })
+      }
+      return results.slice(0, 9)
+    }
+
+    function openPalette() {
+      if (paletteEl) return
+      var overlay = document.createElement('div')
+      overlay.id = 'cmd-palette-overlay'
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(4,4,14,0.88);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);'
+
+      var box = document.createElement('div')
+      box.style.cssText = 'width:min(580px,calc(100vw - 32px));background:rgba(10,8,28,0.97);border:1px solid rgba(0,229,255,0.25);border-radius:var(--radius-md);box-shadow:0 0 80px rgba(0,229,255,0.12),0 30px 80px rgba(0,0,0,0.8);overflow:hidden;'
+
+      var header = document.createElement('div')
+      header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(0,229,255,0.12);'
+
+      var prompt = document.createElement('span')
+      prompt.style.cssText = 'font:700 13px var(--font-mono);color:var(--accent-cool);opacity:0.7;flex-shrink:0;'
+      prompt.textContent = '⌘×'
+
+      var input = document.createElement('input')
+      input.type = 'text'
+      input.placeholder = 'Search series, tasks, sections...'
+      input.style.cssText = 'flex:1;background:transparent;border:none;outline:none;font:400 15px var(--font-mono);color:var(--text-1);caret-color:var(--accent-cool);'
+      input.autocomplete = 'off'
+
+      var hint = document.createElement('span')
+      hint.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);flex-shrink:0;'
+      hint.textContent = 'ESC to close'
+
+      header.appendChild(prompt)
+      header.appendChild(input)
+      header.appendChild(hint)
+      box.appendChild(header)
+
+      var list = document.createElement('div')
+      list.style.cssText = 'max-height:380px;overflow-y:auto;padding:6px;'
+
+      var activeIdx = 0
+
+      function render(query) {
+        list.innerHTML = ''
+        var results = buildResults(query)
+        if (results.length === 0) {
+          var empty = document.createElement('div')
+          empty.style.cssText = 'padding:24px;text-align:center;font:400 12px var(--font-mono);color:var(--text-3);'
+          empty.textContent = 'NO RESULTS — TRY A DIFFERENT QUERY'
+          list.appendChild(empty)
+          return
+        }
+        activeIdx = 0
+        results.forEach(function(r, i) {
+          var row = document.createElement('div')
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-sm);cursor:none;transition:background 120ms;' + (i === 0 ? 'background:rgba(0,229,255,0.09);' : '')
+          row.dataset.idx = i
+
+          var iconEl = document.createElement('span')
+          iconEl.style.cssText = 'font-size:14px;color:' + (r.accentColor || 'var(--accent-cool)') + ';width:20px;text-align:center;flex-shrink:0;'
+          iconEl.textContent = r.icon
+
+          var textWrap = document.createElement('div')
+          textWrap.style.cssText = 'flex:1;min-width:0;'
+          var labelEl = document.createElement('div')
+          labelEl.style.cssText = 'font:500 13px var(--font-mono);color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+          labelEl.textContent = r.label
+          var subEl = document.createElement('div')
+          subEl.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);margin-top:2px;'
+          subEl.textContent = r.sub
+          textWrap.appendChild(labelEl)
+          textWrap.appendChild(subEl)
+
+          var enterHint = document.createElement('span')
+          enterHint.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);flex-shrink:0;opacity:' + (i === 0 ? '1' : '0') + ';'
+          enterHint.textContent = '↵'
+
+          row.appendChild(iconEl)
+          row.appendChild(textWrap)
+          row.appendChild(enterHint)
+
+          row.addEventListener('mouseenter', function() {
+            setActive(i)
+          })
+          row.addEventListener('click', function() {
+            r.action()
+            closePalette()
+          })
+          list.appendChild(row)
+        })
+        window.__paletteResults = results
+      }
+
+      function setActive(idx) {
+        var results = window.__paletteResults || []
+        activeIdx = Math.max(0, Math.min(idx, results.length - 1))
+        list.querySelectorAll('div[data-idx]').forEach(function(row) {
+          var i = parseInt(row.dataset.idx)
+          row.style.background = i === activeIdx ? 'rgba(0,229,255,0.09)' : ''
+          var hint = row.querySelector('span:last-child')
+          if (hint) hint.style.opacity = i === activeIdx ? '1' : '0'
+        })
+      }
+
+      var debounceT = null
+      input.addEventListener('input', function() {
+        clearTimeout(debounceT)
+        debounceT = setTimeout(function() { render(input.value) }, 60)
+      })
+
+      input.addEventListener('keydown', function(e) {
+        var results = window.__paletteResults || []
+        if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIdx + 1) }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIdx - 1) }
+        else if (e.key === 'Enter') {
+          if (results[activeIdx]) { results[activeIdx].action(); closePalette() }
+        }
+        else if (e.key === 'Escape') { closePalette() }
+      })
+
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) closePalette() })
+
+      box.appendChild(list)
+      overlay.appendChild(box)
+      document.body.appendChild(overlay)
+      paletteEl = overlay
+
+      render('')
+      setTimeout(function() { input.focus() }, 50)
+    }
+
+    function closePalette() {
+      if (paletteEl) { paletteEl.remove(); paletteEl = null }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'x' && !e.shiftKey && !e.altKey) {
+        var active = document.activeElement
+        var isText = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)
+        if (isText && active.value && active.value.length > 0) return
+        e.preventDefault()
+        if (paletteEl) closePalette()
+        else openPalette()
+      }
+    })
+
+    window.__openCommandPalette = openPalette
+  })()
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 2: PROCRASTINATION DEBT SCORE
+     Rises when schedule entries are missed, falls when you watch/complete tasks.
+     Displayed on Dashboard as a pulsing score.
+  ───────────────────────────────────────────────────────────────── */
+  function computeDebtScore() {
+    var schedule = loadData(KEYS.schedule, {})
+    var log = loadData(KEYS.log, [])
+    var tasks = loadData(KEYS.tasks, [])
+    var library = loadData(KEYS.library, [])
+    var todayKey = localDateStr()
+    var score = 0
+
+    // +12 per past missed schedule entry (not completed library item)
+    Object.keys(schedule).sort().forEach(function(dk) {
+      if (dk >= todayKey) return
+      ;(schedule[dk] || []).forEach(function(entry) {
+        var libItem = library.find(function(i) { return i.id === entry.id })
+        if (libItem && libItem.status !== 'completed' && libItem.status !== 'graveyard') score += 12
+      })
+    })
+
+    // -5 per episode/chapter watched (from log, last 30 days)
+    var cutoff = Date.now() - 30 * 24 * 3600 * 1000
+    log.forEach(function(evt) {
+      if (new Date(evt.timestamp).getTime() < cutoff) return
+      var t = (evt.text || '').toLowerCase()
+      if (t.includes('watched ep') || t.includes('read ch')) score -= 5
+    })
+
+    // -8 per task completed (last 30 days)
+    tasks.forEach(function(t) {
+      if (t.completed && t.completedDate) {
+        var d = new Date(t.completedDate + 'T12:00:00').getTime()
+        if (d > cutoff) score -= 8
+      }
+    })
+
+    // -15 per series completed ever
+    library.filter(function(i) { return i.status === 'completed' }).forEach(function() { score -= 15 })
+
+    return Math.max(0, Math.min(999, Math.round(score)))
+  }
+
+  function getDebtLabel(score) {
+    if (score === 0) return { text: 'ZERO DEBT', color: 'var(--accent-green)', glow: '0 0 20px rgba(0,255,170,0.6)' }
+    if (score < 50)  return { text: 'MANAGEABLE', color: 'var(--accent-cool)', glow: '0 0 20px rgba(0,229,255,0.5)' }
+    if (score < 150) return { text: 'BUILDING UP', color: 'var(--accent-yellow)', glow: '0 0 20px rgba(255,225,77,0.5)' }
+    if (score < 300) return { text: 'FALLING BEHIND', color: 'var(--accent-warm)', glow: '0 0 20px rgba(255,96,64,0.5)' }
+    if (score < 500) return { text: 'IN THE RED', color: 'var(--danger)', glow: '0 0 24px rgba(255,59,107,0.6)' }
+    return { text: 'CRITICAL MASS', color: '#ff2222', glow: '0 0 30px rgba(255,34,34,0.8)' }
+  }
+
+  function renderDebtScore(container) {
+    var score = computeDebtScore()
+    var info = getDebtLabel(score)
+    container.innerHTML = ''
+    var wrap = document.createElement('div')
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 6px;gap:6px;'
+
+    var numEl = document.createElement('div')
+    numEl.style.cssText = 'font:800 56px var(--font-display);color:' + info.color + ';line-height:1;letter-spacing:0.04em;text-shadow:' + info.glow + ';transition:all 600ms;'
+    numEl.textContent = '0'
+    wrap.appendChild(numEl)
+
+    var labelEl = document.createElement('div')
+    labelEl.style.cssText = 'font:700 10px var(--font-mono);color:' + info.color + ';letter-spacing:0.18em;text-transform:uppercase;opacity:0.85;'
+    labelEl.textContent = info.text
+    wrap.appendChild(labelEl)
+
+    var descEl = document.createElement('div')
+    descEl.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);letter-spacing:0.06em;margin-top:2px;text-align:center;'
+    descEl.textContent = score === 0 ? 'You\'re actually on top of things.' : 'Missed schedule + unwatched content'
+    wrap.appendChild(descEl)
+
+    container.appendChild(wrap)
+
+    // Count up animation
+    var start = performance.now()
+    var dur = 800
+    ;(function tick(now) {
+      var p = Math.min((now - start) / dur, 1)
+      var eased = 1 - Math.pow(1 - p, 3)
+      numEl.textContent = Math.round(score * eased)
+      if (p < 1) requestAnimationFrame(tick)
+      else numEl.textContent = score
+    })(start)
+  }
+
+  // Patch renderDashboard to inject debt score block
+  var _origRenderDashboard = renderDashboard
+  window.renderDashboard = renderDashboard = function() {
+    _origRenderDashboard()
+    // Inject after the stat cards block (b2) — find the dash-stats-grid
+    var main = document.getElementById('app-main')
+    if (!main) return
+    var statsGrid = main.querySelector('.dash-stats-grid')
+    if (!statsGrid) return
+
+    var debtBlock = document.createElement('div')
+    debtBlock.className = 'dash-block'
+    debtBlock.style.marginBottom = '32px'
+    debtBlock.innerHTML = ''
+    var debtCard = document.createElement('div')
+    debtCard.className = 'card'
+    debtCard.style.cssText = 'display:flex;flex-direction:column;padding:var(--space-4) var(--space-5);'
+
+    var debtHeader = document.createElement('div')
+    debtHeader.style.cssText = 'font:700 11px var(--font-mono);color:var(--text-3);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:4px;'
+    debtHeader.textContent = 'PROCRASTINATION DEBT'
+    debtCard.appendChild(debtHeader)
+
+    var debtBody = document.createElement('div')
+    debtBody.id = 'debt-score-body'
+    debtCard.appendChild(debtBody)
+    debtBlock.appendChild(debtCard)
+
+    // Insert after stat cards parent block
+    var statParent = statsGrid.parentElement
+    if (statParent && statParent.nextSibling) {
+      main.insertBefore(debtBlock, statParent.nextSibling)
+    } else {
+      main.appendChild(debtBlock)
+    }
+
+    renderDebtScore(debtBody)
+    setTimeout(function() { requestAnimationFrame(function() { debtBlock.classList.add('entered') }) }, 120)
+
+    window.__refreshDebt = function() {
+      var b = document.getElementById('debt-score-body')
+      if (b) renderDebtScore(b)
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 3: AUTO-COMPLETE DETECTION
+     When last episode is ticked, fire a series-complete celebration.
+     Hooks into ep-toggled event and the existing session overlay.
+  ───────────────────────────────────────────────────────────────── */
+  ;(function() {
+    var _completedShown = new Set()
+
+    document.addEventListener('ep-toggled', function(e) {
+      var itemId = e.detail && e.detail.itemId
+      var watchedEpisodes = e.detail && e.detail.watchedEpisodes
+      if (!itemId || !watchedEpisodes) return
+      if (_completedShown.has(itemId)) return
+
+      var lib = loadData(KEYS.library, [])
+      var item = lib.find(function(i) { return i.id === itemId })
+      if (!item) return
+      if (item.status === 'completed') return
+
+      var total = item.totalEpisodes || 0
+      if (total <= 0) return
+      if (watchedEpisodes.length < total) return
+
+      // All episodes watched — fire completion
+      _completedShown.add(itemId)
+
+      // Update status to completed
+      item.status = 'completed'
+      saveData(KEYS.library, lib)
+      logEvent('Completed: ' + item.title)
+
+      // Get theme color
+      var accentColor = (item.themeStyles && item.themeStyles['--accent-cool']) || 'var(--accent-cool)'
+      var isReading = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
+
+      // Build celebration overlay
+      var overlay = document.createElement('div')
+      overlay.id = 'series-complete-overlay'
+      overlay.style.cssText = [
+        'position:fixed;inset:0;z-index:20000;display:flex;flex-direction:column;',
+        'align-items:center;justify-content:center;',
+        'background:rgba(3,3,10,0.97);',
+        'opacity:0;transition:opacity 400ms;pointer-events:all;'
+      ].join('')
+
+      // Animated bg
+      var bg = document.createElement('div')
+      bg.style.cssText = 'position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,' + accentColor.replace('var(--accent-cool)','rgba(0,229,255,0.12)') + ',transparent 70%);animation:sessionBgPulse 3s ease-in-out infinite;'
+      overlay.appendChild(bg)
+
+      // Scanlines
+      var sl = document.createElement('div')
+      sl.className = 'session-scanlines'
+      overlay.appendChild(sl)
+
+      // Corner brackets
+      ;['tl','tr','bl','br'].forEach(function(pos) {
+        var c = document.createElement('div')
+        c.className = 'session-overlay-corner ' + pos
+        c.style.borderColor = accentColor.replace('var(--accent-cool)','rgba(0,229,255,0.5)')
+        overlay.appendChild(c)
+      })
+
+      var label = document.createElement('div')
+      label.className = 'session-init-label'
+      label.style.cssText = 'font:600 11px var(--font-mono);color:' + accentColor.replace('var(--accent-cool)','var(--accent-cool)') + ';letter-spacing:0.35em;text-transform:uppercase;margin-bottom:20px;text-shadow:0 0 20px currentColor;opacity:0;transform:translateY(10px);animation:sessionFadeUp 400ms 200ms var(--ease-out) forwards;'
+      label.textContent = '// PROC//HUB MISSION COMPLETE //'
+      overlay.appendChild(label)
+
+      var title = document.createElement('div')
+      title.style.cssText = 'font:800 56px var(--font-display);color:var(--text-1);letter-spacing:0.14em;text-align:center;line-height:1.1;opacity:0;transform:scale(0.85) translateY(20px);animation:sessionZoomIn 700ms 400ms var(--ease-spring) forwards;text-shadow:0 0 30px rgba(0,229,255,0.2);'
+      title.textContent = isReading ? 'SERIES\nFINISHED' : 'SERIES\nCOMPLETE'
+      title.style.whiteSpace = 'pre-line'
+      overlay.appendChild(title)
+
+      var seriesName = document.createElement('div')
+      seriesName.style.cssText = 'font:600 16px var(--font-display);letter-spacing:0.15em;color:' + accentColor.replace('var(--accent-cool)','var(--accent-cool)') + ';margin-top:24px;opacity:0;transform:translateY(8px);animation:sessionFadeUp 400ms 900ms var(--ease-out) forwards;max-width:80%;text-align:center;overflow:hidden;text-overflow:ellipsis;'
+      seriesName.textContent = item.title.toUpperCase()
+      overlay.appendChild(seriesName)
+
+      var statsLine = document.createElement('div')
+      statsLine.style.cssText = 'font:400 12px var(--font-mono);color:var(--text-3);margin-top:10px;letter-spacing:0.12em;opacity:0;transform:translateY(6px);animation:sessionFadeUp 400ms 1100ms var(--ease-out) forwards;'
+      var timerStr = item.timerMinutes && item.timerMinutes >= 1 ? ' · ' + fmtMins(item.timerMinutes) + ' LOGGED' : ''
+      statsLine.textContent = total + ' ' + (isReading ? 'CHAPTERS' : 'EPISODES') + ' · STATUS: COMPLETED' + timerStr
+      overlay.appendChild(statsLine)
+
+      var closeBtn = document.createElement('button')
+      closeBtn.style.cssText = 'margin-top:48px;opacity:0;transform:translateY(8px);animation:sessionFadeUp 400ms 1400ms var(--ease-out) forwards;'
+      closeBtn.className = 'btn-ghost'
+      closeBtn.textContent = '◈ CLOSE'
+      closeBtn.addEventListener('click', function() {
+        overlay.style.opacity = '0'
+        overlay.style.transition = 'opacity 300ms'
+        setTimeout(function() { overlay.remove() }, 310)
+        // Refresh dashboard debt score if visible
+        if (window.__refreshDebt) window.__refreshDebt()
+        if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
+      })
+      overlay.appendChild(closeBtn)
+
+      document.body.appendChild(overlay)
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() { overlay.style.opacity = '1' })
+      })
+
+      // Dismiss on Escape
+      function onKey(e) { if (e.key === 'Escape') { closeBtn.click(); document.removeEventListener('keydown', onKey) } }
+      document.addEventListener('keydown', onKey)
+
+      // Play success sound if available
+      if (typeof P6SFX !== 'undefined' && P6SFX.UI_COMPLETE) P6SFX.UI_COMPLETE()
+    })
+  })()
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 4: VELOCITY TRACKER
+     Computed finish date displayed in the detail hero.
+     Uses lastActivityAt + watchedEpisodes history from the log.
+  ───────────────────────────────────────────────────────────────── */
+  function computeVelocity(item) {
+    // Gather watch events from log for this item
+    var log = loadData(KEYS.log, [])
+    var isReading = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
+    var keyword = isReading ? 'read ch' : 'watched ep'
+    var titleLower = (item.title || '').toLowerCase()
+
+    // Get timestamps of watch events for this item in last 60 days
+    var cutoff = Date.now() - 60 * 24 * 3600 * 1000
+    var watchDates = []
+    log.forEach(function(evt) {
+      var t = (evt.text || '').toLowerCase()
+      var ts = new Date(evt.timestamp).getTime()
+      if (ts < cutoff) return
+      if (t.includes(keyword) && t.includes(titleLower)) {
+        watchDates.push(ts)
+      }
+    })
+
+    if (watchDates.length < 2) {
+      // Check if stalled (nothing in 14 days)
+      if (item.lastActivityAt) {
+        var lastAct = new Date(item.lastActivityAt).getTime()
+        var daysSince = (Date.now() - lastAct) / (24 * 3600 * 1000)
+        if (daysSince > 14) return { stalled: true, days: Math.round(daysSince) }
+      }
+      return null
+    }
+
+    // Compute episodes per week
+    watchDates.sort()
+    var earliest = watchDates[0]
+    var latest = watchDates[watchDates.length - 1]
+    var weekSpan = Math.max((latest - earliest) / (7 * 24 * 3600 * 1000), 1 / 7)
+    var epsPerWeek = watchDates.length / weekSpan
+
+    var remaining = (item.totalEpisodes || 0) - (item.watchedEpisodes || []).length
+    if (remaining <= 0) return null
+    if (epsPerWeek < 0.05) return { stalled: false, never: true, epsPerWeek: epsPerWeek }
+
+    var weeksLeft = remaining / epsPerWeek
+    var finishDate = new Date(Date.now() + weeksLeft * 7 * 24 * 3600 * 1000)
+    if (weeksLeft > 52 * 3) return { stalled: false, never: true, epsPerWeek: epsPerWeek }
+
+    return {
+      stalled: false,
+      never: false,
+      epsPerWeek: epsPerWeek,
+      finishDate: finishDate,
+      weeksLeft: Math.round(weeksLeft)
+    }
+  }
+
+  function renderVelocityWidget(item, container) {
+    var v = computeVelocity(item)
+    if (!v) return
+
+    var el = document.createElement('div')
+    el.style.cssText = 'margin-top:10px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font:400 11px var(--font-mono);color:var(--text-3);'
+
+    if (v.stalled) {
+      el.innerHTML = '<span style="color:var(--accent-warm);">⚠ STALLED</span> — no activity in <strong style="color:var(--text-2);">' + v.days + ' days</strong>'
+    } else if (v.never) {
+      var rateStr = v.epsPerWeek.toFixed(1)
+      var isReading = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
+      el.innerHTML = '<span style="color:var(--danger);">⚠ AT YOUR PACE</span> (' + rateStr + ' ' + (isReading ? 'ch' : 'ep') + '/wk): <strong style="color:var(--danger);">estimated never — be honest</strong>'
+    } else {
+      var isReading2 = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
+      var rateStr2 = v.epsPerWeek.toFixed(1)
+      var dateStr = v.finishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      el.innerHTML = '◉ At your pace <span style="color:var(--text-2);">(' + rateStr2 + ' ' + (isReading2 ? 'ch' : 'ep') + '/wk)</span>: done by <strong style="color:var(--accent-cool);">' + dateStr + '</strong>'
+    }
+
+    container.appendChild(el)
+  }
+
+  // Patch renderDetail to inject velocity widget into hero after progress bar
+  var _origRenderDetail = renderDetail
+  window.renderDetail = renderDetail = function(id) {
+    _origRenderDetail(id)
+    // Wait for DOM, then inject after progress label
+    setTimeout(function() {
+      var lib = loadData(KEYS.library, [])
+      var item = lib.find(function(i) { return i.id === id })
+      if (!item || item.status === 'completed' || item.status === 'graveyard') return
+
+      var progBar = document.querySelector('.detail-progress-label')
+      if (!progBar || !progBar.parentElement) return
+
+      var velocityContainer = document.createElement('div')
+      progBar.parentElement.insertBefore(velocityContainer, progBar.nextSibling)
+      renderVelocityWidget(item, velocityContainer)
+    }, 80)
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 5: "WHAT DID I ACTUALLY DO" WEEK VIEW
+     A tab in Session Log showing plan vs. reality for last 7 days.
+  ───────────────────────────────────────────────────────────────── */
+  var _origRenderSessionLog = renderSessionLog
+  window.renderSessionLog = renderSessionLog = function() {
+    _origRenderSessionLog()
+
+    var main = document.getElementById('app-main')
+    if (!main) return
+
+    // Find the header row and inject tabs
+    var headerRow = main.querySelector('.log-header-row')
+    if (!headerRow) return
+
+    // Build tab switcher
+    var tabBar = document.createElement('div')
+    tabBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin:var(--space-2) 0 0;'
+
+    function makeTab(label, isActive) {
+      var btn = document.createElement('button')
+      btn.style.cssText = 'flex:1;padding:8px 12px;background:none;border:none;border-bottom:2px solid ' + (isActive ? 'var(--accent-cool)' : 'transparent') + ';color:' + (isActive ? 'var(--accent-cool)' : 'var(--text-3)') + ';font:700 10px var(--font-mono);letter-spacing:0.12em;text-transform:uppercase;cursor:none;transition:all 150ms;'
+      btn.textContent = label
+      return btn
+    }
+
+    var tabLog = makeTab('SYSTEM LOG', true)
+    var tabWeek = makeTab('THIS WEEK — PLAN VS REALITY', false)
+    tabBar.appendChild(tabLog)
+    tabBar.appendChild(tabWeek)
+
+    var sep = main.querySelector('.log-header-row + div')
+    if (sep) main.insertBefore(tabBar, sep)
+
+    var feedWrap = document.getElementById('log-feed-wrap')
+    var weekView = document.createElement('div')
+    weekView.id = 'week-reality-view'
+    weekView.style.display = 'none'
+    if (feedWrap) feedWrap.parentElement.insertBefore(weekView, feedWrap.nextSibling)
+
+    tabLog.addEventListener('click', function() {
+      tabLog.style.borderBottomColor = 'var(--accent-cool)'; tabLog.style.color = 'var(--accent-cool)'
+      tabWeek.style.borderBottomColor = 'transparent'; tabWeek.style.color = 'var(--text-3)'
+      if (feedWrap) feedWrap.style.display = ''
+      weekView.style.display = 'none'
+    })
+
+    tabWeek.addEventListener('click', function() {
+      tabWeek.style.borderBottomColor = 'var(--accent-cool)'; tabWeek.style.color = 'var(--accent-cool)'
+      tabLog.style.borderBottomColor = 'transparent'; tabLog.style.color = 'var(--text-3)'
+      if (feedWrap) feedWrap.style.display = 'none'
+      weekView.style.display = ''
+      renderWeekReality(weekView)
+    })
+  }
+
+  function renderWeekReality(container) {
+    container.innerHTML = ''
+    var log = loadData(KEYS.log, [])
+    var schedule = loadData(KEYS.schedule, {})
+    var library = loadData(KEYS.library, [])
+
+    // Build 7-day range (today + last 6 days)
+    var days = []
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i)
+      days.push(localDateStr(d))
+    }
+
+    var DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+    // Index log by date and item
+    var logByDate = {}
+    var titleLower = {}
+    library.forEach(function(item) { titleLower[item.id] = (item.title || '').toLowerCase() })
+
+    log.forEach(function(evt) {
+      var dk = evt.timestamp.slice(0, 10)
+      if (!logByDate[dk]) logByDate[dk] = []
+      logByDate[dk].push(evt.text || '')
+    })
+
+    var grid = document.createElement('div')
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--space-4);'
+
+    var legend = document.createElement('div')
+    legend.style.cssText = 'display:flex;gap:16px;margin-top:var(--space-4);flex-wrap:wrap;'
+    ;[
+      { color: 'rgba(255,59,107,0.15)', border: 'rgba(255,59,107,0.4)', label: 'Planned, not done' },
+      { color: 'rgba(0,255,170,0.1)',   border: 'rgba(0,255,170,0.35)', label: 'Unplanned — spontaneous' },
+      { color: 'rgba(0,229,255,0.1)',   border: 'rgba(0,229,255,0.25)', label: 'Planned and done' },
+    ].forEach(function(l) {
+      var row = document.createElement('div')
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;font:400 10px var(--font-mono);color:var(--text-3);'
+      var dot = document.createElement('div')
+      dot.style.cssText = 'width:10px;height:10px;border-radius:2px;background:' + l.color + ';border:1px solid ' + l.border + ';flex-shrink:0;'
+      row.appendChild(dot)
+      row.appendChild(document.createTextNode(l.label))
+      legend.appendChild(row)
+    })
+
+    days.forEach(function(dk) {
+      var d = new Date(dk + 'T00:00:00')
+      var dayName = DAY_NAMES[d.getDay()]
+      var dayNum = d.getDate()
+      var isToday = dk === localDateStr()
+
+      var col = document.createElement('div')
+      col.style.cssText = 'display:flex;flex-direction:column;gap:4px;'
+
+      var hdr = document.createElement('div')
+      hdr.style.cssText = 'text-align:center;padding:4px 2px 6px;border-bottom:1px solid var(--border);'
+      hdr.innerHTML = '<div style="font:700 9px var(--font-mono);color:' + (isToday ? 'var(--accent-cool)' : 'var(--text-3)') + ';letter-spacing:0.1em;">' + dayName + '</div>' +
+        '<div style="font:600 16px var(--font-display);color:' + (isToday ? 'var(--text-1)' : 'var(--text-2)') + ';">' + dayNum + '</div>'
+      col.appendChild(hdr)
+
+      // What was planned for this day
+      var planned = schedule[dk] || []
+      var actualLog = logByDate[dk] || []
+
+      // Find what was actually watched/read this day
+      var actualItems = {}
+      actualLog.forEach(function(text) {
+        var t = text.toLowerCase()
+        library.forEach(function(item) {
+          var tl = (item.title || '').toLowerCase()
+          if (tl.length > 3 && (t.includes('watched ep') || t.includes('read ch')) && t.includes(tl)) {
+            if (!actualItems[item.id]) actualItems[item.id] = { item: item, count: 0 }
+            actualItems[item.id].count++
+          }
+        })
+      })
+
+      var plannedIds = planned.map(function(p) { return p.id })
+      var actualIds = Object.keys(actualItems)
+
+      // Planned but not done (missed)
+      planned.forEach(function(entry) {
+        var done = actualIds.includes(entry.id)
+        var cell = document.createElement('div')
+        cell.style.cssText = 'padding:5px 6px;border-radius:4px;font:500 9px var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
+          (done ? 'background:rgba(0,229,255,0.10);border:1px solid rgba(0,229,255,0.25);color:var(--accent-cool);' :
+                  'background:rgba(255,59,107,0.12);border:1px solid rgba(255,59,107,0.35);color:rgba(255,80,100,0.9);')
+        cell.title = entry.title + (done ? ' ✓' : ' (missed)')
+        cell.textContent = (done ? '✓ ' : '✗ ') + (entry.title || 'Unknown')
+        col.appendChild(cell)
+      })
+
+      // Actually done but not planned (spontaneous)
+      actualIds.forEach(function(id) {
+        if (!plannedIds.includes(id)) {
+          var info = actualItems[id]
+          var cell = document.createElement('div')
+          cell.style.cssText = 'padding:5px 6px;border-radius:4px;font:500 9px var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.3);color:rgba(0,220,140,0.9);'
+          cell.title = info.item.title + ' — spontaneous'
+          cell.textContent = '★ ' + info.item.title
+          col.appendChild(cell)
+        }
+      })
+
+      if (planned.length === 0 && actualIds.length === 0) {
+        var empty = document.createElement('div')
+        empty.style.cssText = 'text-align:center;font:400 10px var(--font-mono);color:var(--text-3);padding:8px 0;opacity:0.5;'
+        empty.textContent = '—'
+        col.appendChild(empty)
+      }
+
+      grid.appendChild(col)
+    })
+
+    var titleEl = document.createElement('div')
+    titleEl.style.cssText = 'font:700 11px var(--font-mono);color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:var(--space-2);'
+    titleEl.textContent = 'LAST 7 DAYS — WHAT YOU PLANNED VS. WHAT YOU DID'
+    container.appendChild(titleEl)
+    container.appendChild(grid)
+    container.appendChild(legend)
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 6: GRAVEYARD ENHANCEMENT
+     A) Cause of death tag (preset reasons) on drop flow
+     B) Time invested displayed on graveyard cards
+  ───────────────────────────────────────────────────────────────── */
+  // Patch the graveyard confirm button in renderDetail to add drop reason
+  var _origGraveyardSection = null
+  document.addEventListener('DOMContentLoaded', function() {
+    // Watch for grav-confirm clicks and inject reason selector before them
+    document.addEventListener('click', function(e) {
+      var confirmBtn = e.target.closest && e.target.closest('.detail-graveyard-confirm')
+      if (!confirmBtn) return
+
+      var gravConfirmBtn = confirmBtn.querySelector && confirmBtn.querySelector('#grav-confirm')
+      if (!gravConfirmBtn) return
+
+      // Check if reason selector already injected
+      if (confirmBtn.querySelector('.drop-reason-select')) return
+
+      var REASONS = [
+        { key: 'lost-interest', label: '◦ Lost interest' },
+        { key: 'got-busy',      label: '◦ Got busy' },
+        { key: 'too-slow',      label: '◦ Too slow' },
+        { key: 'hit-a-wall',   label: '◦ Hit a wall' },
+        { key: 'wrong-time',   label: '◦ Wrong time' },
+        { key: 'something-better', label: '◦ Something better came along' },
+      ]
+
+      var reasonWrap = document.createElement('div')
+      reasonWrap.style.cssText = 'margin-bottom:10px;'
+
+      var reasonLabel = document.createElement('div')
+      reasonLabel.style.cssText = 'font:600 9px var(--font-mono);color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;'
+      reasonLabel.textContent = 'Cause of death'
+      reasonWrap.appendChild(reasonLabel)
+
+      var reasonBtns = document.createElement('div')
+      reasonBtns.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;'
+      var selectedReason = null
+
+      REASONS.forEach(function(r) {
+        var btn = document.createElement('button')
+        btn.className = 'btn-ghost drop-reason-select'
+        btn.style.cssText = 'font-size:10px;padding:4px 10px;transition:all 150ms;'
+        btn.textContent = r.label
+        btn.dataset.reason = r.key
+        btn.addEventListener('click', function(ev) {
+          ev.stopPropagation()
+          selectedReason = r.key
+          reasonBtns.querySelectorAll('.drop-reason-select').forEach(function(b) {
+            b.style.borderColor = b.dataset.reason === r.key ? 'var(--danger)' : ''
+            b.style.color = b.dataset.reason === r.key ? 'var(--danger)' : ''
+          })
+        })
+        reasonBtns.appendChild(btn)
+      })
+
+      reasonWrap.appendChild(reasonBtns)
+      confirmBtn.insertBefore(reasonWrap, confirmBtn.querySelector('.detail-graveyard-confirm-btns'))
+
+      // Patch grav-confirm to also save reason
+      var originalClick = gravConfirmBtn.onclick
+      gravConfirmBtn.addEventListener('click', function() {
+        if (selectedReason) {
+          // Will be saved by the main grav-confirm handler via lib update
+          // We inject into the item just before save fires
+          window.__pendingDropReason = selectedReason
+        }
+      }, true)
+    }, true)
+  })
+
+  // Patch saveData to intercept graveyard saves with pending drop reason
+  var _origSaveData = saveData
+  window.saveData = saveData = function(key, data) {
+    if (key === KEYS.library && window.__pendingDropReason) {
+      var reason = window.__pendingDropReason
+      window.__pendingDropReason = null
+      if (Array.isArray(data)) {
+        var gravItem = data.find(function(i) { return i.status === 'graveyard' && !i.dropReason })
+        if (gravItem) gravItem.dropReason = reason
+      }
+    }
+    _origSaveData(key, data)
+  }
+
+  // Patch renderGraveyard to show time invested and drop reason badge
+  var _origRenderGraveyard = renderGraveyard
+  window.renderGraveyard = renderGraveyard = function() {
+    _origRenderGraveyard()
+
+    var DROP_REASON_LABELS = {
+      'lost-interest':    { label: 'Lost interest',       color: 'rgba(168,85,247,0.7)' },
+      'got-busy':         { label: 'Got busy',            color: 'rgba(255,96,64,0.7)' },
+      'too-slow':         { label: 'Too slow',            color: 'rgba(0,229,255,0.6)' },
+      'hit-a-wall':       { label: 'Hit a wall',          color: 'rgba(255,59,107,0.7)' },
+      'wrong-time':       { label: 'Wrong time',          color: 'rgba(255,225,77,0.7)' },
+      'something-better': { label: 'Something better',   color: 'rgba(0,255,170,0.6)' },
+    }
+
+    // Enhance each graveyard card
+    var section = document.querySelector('.graveyard-section')
+    if (!section) return
+    var lib = loadData(KEYS.library, [])
+
+    section.querySelectorAll('.graveyard-card').forEach(function(card) {
+      // Find matching item by title (graveyard cards have the title in .graveyard-title)
+      var titleEl = card.querySelector('.graveyard-title')
+      if (!titleEl) return
+      var title = titleEl.textContent.trim()
+      var item = lib.find(function(i) { return i.title === title && i.status === 'graveyard' })
+      if (!item) return
+
+      var datesEl = card.querySelector('.graveyard-dates')
+      if (!datesEl) return
+
+      // Inject time invested
+      if (item.timerMinutes && item.timerMinutes >= 1) {
+        var timeEl = document.createElement('div')
+        timeEl.style.cssText = 'font:500 11px var(--font-mono);color:var(--text-3);margin-top:4px;'
+        timeEl.innerHTML = '<span style="color:var(--accent-cool);opacity:0.7;">⏱</span> Invested: <strong style="color:var(--text-2);">' + fmtMins(item.timerMinutes) + '</strong> before dropping'
+        datesEl.parentElement.insertBefore(timeEl, datesEl.nextSibling)
+      }
+
+      // Inject drop reason badge
+      if (item.dropReason && DROP_REASON_LABELS[item.dropReason]) {
+        var info = DROP_REASON_LABELS[item.dropReason]
+        var badge = document.createElement('span')
+        badge.style.cssText = 'display:inline-block;margin-top:6px;padding:3px 10px;border-radius:var(--radius-pill);font:700 9px var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;border:1px solid ' + info.color + ';color:' + info.color + ';'
+        badge.textContent = '† ' + info.label
+        datesEl.parentElement.insertBefore(badge, datesEl.nextSibling)
+      }
+    })
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     FEATURE 7: SETTINGS PAGE
+     Exposes all 13 APP_SETTINGS_DEFAULTS keys via a proper UI.
+     Also includes JSON export/import for data safety.
+  ───────────────────────────────────────────────────────────────── */
+  function renderSettings() {
+    var main = document.getElementById('app-main')
+    var settings = getAppSettings()
+
+    var frag = document.createDocumentFragment()
+
+    // Header
+    var headerRow = document.createElement('div')
+    headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding-top:28px;margin-bottom:var(--space-4);'
+    headerRow.innerHTML = '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">SYSTEM SETTINGS</div>'
+    frag.appendChild(headerRow)
+
+    var sep = document.createElement('div')
+    sep.style.cssText = 'border-bottom:1px solid var(--border);margin-bottom:var(--space-5);'
+    frag.appendChild(sep)
+
+    function makeSection(title) {
+      var s = document.createElement('div')
+      s.style.cssText = 'margin-bottom:var(--space-6);'
+      var h = document.createElement('div')
+      h.style.cssText = 'font:700 10px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);padding-bottom:var(--space-2);border-bottom:1px solid var(--border);'
+      h.textContent = title
+      s.appendChild(h)
+      frag.appendChild(s)
+      return s
+    }
+
+    function makeRow(label, desc, controlEl) {
+      var row = document.createElement('div')
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(100,120,255,0.06);'
+      var left = document.createElement('div')
+      left.style.cssText = 'flex:1;min-width:0;'
+      var lbl = document.createElement('div')
+      lbl.style.cssText = 'font:500 13px var(--font-ui);color:var(--text-1);margin-bottom:2px;'
+      lbl.textContent = label
+      var d = document.createElement('div')
+      d.style.cssText = 'font:400 11px var(--font-mono);color:var(--text-3);'
+      d.textContent = desc
+      left.appendChild(lbl)
+      left.appendChild(d)
+      row.appendChild(left)
+      row.appendChild(controlEl)
+      return row
+    }
+
+    function makeToggle(key, current) {
+      var wrap = document.createElement('label')
+      wrap.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:none;flex-shrink:0;'
+      var inp = document.createElement('input')
+      inp.type = 'checkbox'
+      inp.checked = !!current
+      inp.style.cssText = 'accent-color:var(--accent-cool);width:16px;height:16px;cursor:none;'
+      inp.addEventListener('change', function() { updateAppSetting(key, inp.checked) })
+      wrap.appendChild(inp)
+      return wrap
+    }
+
+    function makeSelect(key, current, options) {
+      var sel = document.createElement('select')
+      sel.style.cssText = 'background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font:400 12px var(--font-mono);padding:6px 10px;cursor:none;outline:none;flex-shrink:0;'
+      options.forEach(function(o) {
+        var opt = document.createElement('option')
+        opt.value = o.value; opt.textContent = o.label
+        if (o.value === current) opt.selected = true
+        sel.appendChild(opt)
+      })
+      sel.addEventListener('change', function() { updateAppSetting(key, sel.value) })
+      return sel
+    }
+
+    function makeNumber(key, current, min, max, step) {
+      var inp = document.createElement('input')
+      inp.type = 'number'; inp.min = String(min); inp.max = String(max || 9999); inp.step = String(step || 1)
+      inp.value = String(current)
+      inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font:400 12px var(--font-mono);padding:6px 10px;width:80px;text-align:center;cursor:none;outline:none;flex-shrink:0;'
+      inp.addEventListener('change', function() { updateAppSetting(key, parseFloat(inp.value) || current) })
+      return inp
+    }
+
+    // SECTION: Behaviour
+    var s1 = makeSection('Behaviour')
+    s1.appendChild(makeRow('Default content status', 'Status applied when adding new library entries', makeSelect('defaultNewContentStatus', settings.defaultNewContentStatus, [
+      { value: 'watching', label: 'Watching' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'on-hold', label: 'On Hold' }
+    ])))
+    s1.appendChild(makeRow('Confirm destructive actions', 'Ask before marking all watched / graveyard drops', makeToggle('detailConfirmActions', settings.detailConfirmActions)))
+    s1.appendChild(makeRow('Auto-focus detail nav', 'Focus season/arc nav on open for keyboard shortcuts', makeToggle('autoFocusDetailNav', settings.autoFocusDetailNav)))
+    s1.appendChild(makeRow('Quick-confirm duration (ms)', 'Milliseconds before undo toast disappears', makeNumber('quickConfirmMs', settings.quickConfirmMs, 1000, 8000, 500)))
+    s1.appendChild(makeRow('Auto-show upcoming', 'Show recurring schedule for upcoming items', makeToggle('autoShowRecurringForUpcoming', settings.autoShowRecurringForUpcoming)))
+
+    // SECTION: Library
+    var s2 = makeSection('Library')
+    s2.appendChild(makeRow('Default sort mode', 'How library cards are ordered by default', makeSelect('librarySortMode', settings.librarySortMode, LIBRARY_SORT_OPTIONS.map(function(o) { return { value: o.value, label: o.label } }))))
+    s2.appendChild(makeRow('Dashboard suggestion mode', 'Which series is suggested as "Next Mission"', makeSelect('dashboardSuggestionMode', settings.dashboardSuggestionMode, [
+      { value: 'oldest', label: 'Oldest added' }, { value: 'newest', label: 'Newest added' }, { value: 'random', label: 'Random' }
+    ])))
+    s2.appendChild(makeRow('Overview lookahead (days)', 'How many days ahead the schedule calendar shows', makeNumber('overviewDateLookaheadDays', settings.overviewDateLookaheadDays, 7, 60, 1)))
+
+    // SECTION: Tasks
+    var s3 = makeSection('Tasks')
+    s3.appendChild(makeRow('Default task duration (min)', 'Pre-filled duration when spawning a new process', makeNumber('tasksDefaultDurationMin', settings.tasksDefaultDurationMin, 5, 480, 5)))
+
+    // SECTION: Budget
+    var s4 = makeSection('Budget')
+    s4.appendChild(makeRow('Daily budget (hours)', 'Daily entertainment/procrastination time cap', makeNumber('budgetDefaultDailyHours', settings.budgetDefaultDailyHours, 0.5, 24, 0.5)))
+
+    // SECTION: Audio
+    var s5 = makeSection('Audio')
+    s5.appendChild(makeRow('Sound effects', 'UI interaction sounds, boot sequence, session events', makeToggle('muted', !settings.muted)))
+    var muteToggle = s5.querySelector('input[type=checkbox]')
+    if (muteToggle) {
+      muteToggle.addEventListener('change', function() {
+        var newMuted = !muteToggle.checked
+        updateAppSetting('muted', newMuted)
+        var muteBtn = document.getElementById('p6-mute-btn')
+        if (muteBtn) muteBtn.textContent = newMuted ? '○' : '◉'
+      })
+    }
+
+    // SECTION: Data
+    var s6 = makeSection('Data — Export / Import')
+
+    var exportRow = document.createElement('div')
+    exportRow.style.cssText = 'display:flex;flex-direction:column;gap:10px;padding:12px 0;'
+
+    var exportDesc = document.createElement('div')
+    exportDesc.style.cssText = 'font:400 11px var(--font-mono);color:var(--text-3);'
+    exportDesc.textContent = 'All data lives in localStorage. Export a backup JSON regularly — one browser clear wipes everything.'
+    exportRow.appendChild(exportDesc)
+
+    var exportBtns = document.createElement('div')
+    exportBtns.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;'
+
+    var exportBtn = document.createElement('button')
+    exportBtn.className = 'btn-primary'
+    exportBtn.style.cssText = 'font-size:11px;'
+    exportBtn.textContent = '⬇ Export All Data'
+    exportBtn.addEventListener('click', function() {
+      var backup = {}
+      Object.values(KEYS).forEach(function(k) {
+        try { backup[k] = JSON.parse(localStorage.getItem(k)) } catch(e) {}
+      })
+      backup._exportedAt = new Date().toISOString()
+      backup._version = '1.0'
+      var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+      var url = URL.createObjectURL(blob)
+      var a = document.createElement('a')
+      a.href = url; a.download = 'prochub-backup-' + localDateStr() + '.json'
+      a.click(); URL.revokeObjectURL(url)
+      logEvent('Exported data backup')
+    })
+
+    var importBtn = document.createElement('button')
+    importBtn.className = 'btn-ghost'
+    importBtn.style.cssText = 'font-size:11px;'
+    importBtn.textContent = '⬆ Import Backup'
+    importBtn.addEventListener('click', function() {
+      var fileIn = document.createElement('input')
+      fileIn.type = 'file'; fileIn.accept = '.json'
+      fileIn.addEventListener('change', function() {
+        var file = fileIn.files[0]; if (!file) return
+        var reader = new FileReader()
+        reader.onload = function(ev) {
+          try {
+            var data = JSON.parse(ev.target.result)
+            var confirmed = confirm('This will overwrite all current data with the backup. Continue?')
+            if (!confirmed) return
+            Object.values(KEYS).forEach(function(k) {
+              if (data[k] !== undefined) saveData(k, data[k])
+            })
+            logEvent('Imported data backup from ' + file.name)
+            navigateTo('dashboard')
+          } catch(e) {
+            alert('Invalid backup file. Make sure it was exported from PROC//HUB.')
+          }
+        }
+        reader.readAsText(file)
+      })
+      fileIn.click()
+    })
+
+    var clearBtn2 = document.createElement('button')
+    clearBtn2.className = 'btn-danger'
+    clearBtn2.style.cssText = 'font-size:11px;'
+    clearBtn2.textContent = '⚠ Clear All Data'
+    var clearPending = false
+    clearBtn2.addEventListener('click', function() {
+      if (!clearPending) {
+        clearPending = true
+        clearBtn2.textContent = 'CONFIRM — WIPE EVERYTHING?'
+        clearBtn2.style.borderColor = 'var(--danger)'
+        setTimeout(function() { clearPending = false; clearBtn2.textContent = '⚠ Clear All Data'; clearBtn2.style.borderColor = '' }, 4000)
+      } else {
+        Object.values(KEYS).forEach(function(k) { localStorage.removeItem(k) })
+        navigateTo('dashboard')
+      }
+    })
+
+    exportBtns.appendChild(exportBtn)
+    exportBtns.appendChild(importBtn)
+    exportBtns.appendChild(clearBtn2)
+    exportRow.appendChild(exportBtns)
+    s6.appendChild(exportRow)
+
+    main.appendChild(frag)
+
+    // Stagger entrance
+    var allBlocks = main.querySelectorAll('div')
+    setTimeout(function() { allBlocks.forEach(function(b) { b.classList.add('entered') }) }, 50)
+  }
+
+  // Register settings section in the router
+  var _origNavigateTo = navigateTo
+  window.navigateTo = navigateTo = function(section, detailId, skipPush) {
+    if (section === 'settings') {
+      if (window.__detailCleanup) { window.__detailCleanup(); window.__detailCleanup = null }
+      var _sb2 = document.getElementById('detail-select-bar'); if (_sb2) _sb2.remove()
+      currentSection = 'settings'
+      currentDetailId = null
+      updateSidebarActive('settings')
+      var main2 = document.getElementById('app-main')
+      main2.innerHTML = ''
+      main2.scrollTop = 0
+      renderSettings()
+      if (!skipPush) history.pushState({ section: 'settings', detailId: null }, '', null)
+      return
+    }
+    _origNavigateTo(section, detailId, skipPush)
+  }
+
+  // Add Settings to bottom nav
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var nav = document.getElementById('bottom-nav')
+      if (!nav) return
+
+      // Settings icon SVG
+      var settingsIcon = '<svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.7 2.7l1.1 1.1M12.2 12.2l1.1 1.1M2.7 13.3l1.1-1.1M12.2 3.8l1.1-1.1"/></svg>'
+
+      // Check if settings btn already added
+      if (nav.querySelector('[data-section="settings"]')) return
+
+      // Add separator
+      var sep2 = document.createElement('div')
+      sep2.className = 'hn-bn-sep'
+      nav.appendChild(sep2)
+
+      var settingsBtn = document.createElement('button')
+      settingsBtn.className = 'bn-item'
+      settingsBtn.dataset.section = 'settings'
+      settingsBtn.title = 'Settings'
+      settingsBtn.innerHTML = settingsIcon
+      settingsBtn.addEventListener('click', function() { navigateTo('settings') })
+      nav.appendChild(settingsBtn)
+    }, 200)
+  })
+
+
+  // ════════════════════════════════════════════════════════════
+  // PART 7 — INTELLIGENCE LAYER
+  // Features: Velocity Tracker · Auto-Complete · Debt Score
+  //           Cmd+X Palette · Week View · Settings · Graveyard++
+  // ════════════════════════════════════════════════════════════
+
+  /* ── P7: VELOCITY TRACKER ──────────────────────────────────
+     Computes episodes/chapters per week from lastActivityAt
+     and watchedEpisodes count. Displayed in detail hero.
+  ─────────────────────────────────────────────────────────── */
+  function p7ComputeVelocity(item) {
+    if (!item || !item.lastActivityAt) return null
+    var watched = (item.watchedEpisodes || []).length
+    if (watched === 0) return null
+    var addedMs = new Date(item.addedDate + 'T00:00:00').getTime()
+    var lastMs  = new Date(item.lastActivityAt).getTime()
+    if (isNaN(addedMs) || isNaN(lastMs)) return null
+    var nowMs   = Date.now()
+    var spanMs  = Math.max(lastMs - addedMs, 7 * 24 * 3600 * 1000) // min 1 week span
+    var weeks   = spanMs / (7 * 24 * 3600 * 1000)
+    var perWeek = watched / weeks
+    if (perWeek <= 0) return null
+    var remaining = (item.totalEpisodes || 0) - watched
+    if (remaining <= 0) return null
+    var weeksLeft  = remaining / perWeek
+    var finishDate = new Date(nowMs + weeksLeft * 7 * 24 * 3600 * 1000)
+    var isReading  = ['manga','manhwa','novel'].includes(item.type)
+    var unit       = isReading ? 'ch' : 'ep'
+    var daysSinceActivity = (nowMs - lastMs) / (24 * 3600 * 1000)
+    return {
+      perWeek: perWeek,
+      finishDate: finishDate,
+      remaining: remaining,
+      unit: unit,
+      stalled: daysSinceActivity > 14,
+      stalledDays: Math.floor(daysSinceActivity)
+    }
+  }
+
+  function p7RenderVelocityBadge(item, container) {
+    var v = p7ComputeVelocity(item)
+    if (!v) return
+    var badge = document.createElement('div')
+    badge.style.cssText = 'margin-top:var(--space-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;'
+    if (v.stalled) {
+      badge.innerHTML =
+        '<span style="font:600 10px var(--font-mono);color:var(--accent-warm);letter-spacing:0.1em;padding:3px 10px;border:1px solid rgba(255,96,64,0.35);border-radius:var(--radius-pill);background:rgba(255,96,64,0.08);">' +
+        '⚠ STALLED — no activity in ' + v.stalledDays + ' days</span>'
+    } else {
+      var rateStr = v.perWeek >= 1 ? v.perWeek.toFixed(1) : (v.perWeek * 7).toFixed(1)
+      var rateLabel = v.perWeek >= 1 ? (rateStr + ' ' + v.unit + '/wk') : (rateStr + ' ' + v.unit + '/day')
+      var opts = { month: 'short', day: 'numeric' }
+      var weeksLeft = v.remaining / v.perWeek
+      var finStr = weeksLeft > 365 ? 'never, be honest' : v.finishDate.toLocaleDateString('en-US', opts)
+      badge.innerHTML =
+        '<span style="font:600 10px var(--font-mono);color:var(--accent-cool);letter-spacing:0.08em;padding:3px 10px;border:1px solid rgba(0,229,255,0.25);border-radius:var(--radius-pill);background:rgba(0,229,255,0.07);">' +
+        '▸ ' + rateLabel + ' · done by ' + finStr + '</span>'
+    }
+    container.appendChild(badge)
+  }
+
+  // Hook into detail render: patch progress section
+  var _p7OrigRenderDetail = window.renderDetail || renderDetail
+  document.addEventListener('phub-detail-rendered', function(e) {
+    var itemId = e.detail && e.detail.id
+    if (!itemId) return
+    var lib = loadData(KEYS.library, [])
+    var item = lib.find(function(i) { return i.id === itemId })
+    if (!item) return
+    var progWrap = document.querySelector('.detail-progress-wrap') || document.querySelector('.detail-hero-right')
+    if (progWrap) p7RenderVelocityBadge(item, progWrap)
+  })
+
+  /* ── P7: SERIES AUTO-COMPLETE ──────────────────────────────
+     Called from ep-tile click when watchedEpisodes === totalEpisodes.
+     Re-uses session overlay infrastructure for a cinematic moment.
+  ─────────────────────────────────────────────────────────── */
+  function phubFireSeriesComplete(it) {
+    // Mark completed in storage
+    var lib = loadData(KEYS.library, [])
+    var stored = lib.find(function(x) { return x.id === it.id })
+    if (stored && stored.status !== 'completed') {
+      stored.status = 'completed'
+      saveData(KEYS.library, lib)
+      logEvent('Completed: ' + it.title)
+      if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
+    }
+    // Fire existing confetti + banner
+    if (typeof fireCompletionCelebration === 'function') fireCompletionCelebration(it.title)
+    // Update progress label
+    var progLabel = document.querySelector('.detail-progress-label')
+    if (progLabel) {
+      var isReading = ['manga','manhwa','novel'].includes(it.type)
+      progLabel.textContent = it.totalEpisodes + ' of ' + it.totalEpisodes + ' ' + (isReading ? 'chapters read' : 'eps watched')
+    }
+    // Update status badge in hero if visible
+    var statusBadge = document.querySelector('.detail-status-badge')
+    if (statusBadge) { statusBadge.textContent = 'completed'; statusBadge.dataset.status = 'completed' }
+  }
+
+  /* ── P7: PROCRASTINATION DEBT SCORE ───────────────────────
+     Rises when scheduled items are missed, falls when caught up.
+     Dashboard widget: pulsing number. Stored in localStorage.
+  ─────────────────────────────────────────────────────────── */
+  var DEBT_KEY = 'phub_debt_score'
+
+  function p7ComputeDebt() {
+    var sched   = loadData(KEYS.schedule, {})
+    var log     = loadData(KEYS.log, [])
+    var todayKey = localDateStr()
+    // Count missed past schedule entries
+    var missed = 0
+    Object.keys(sched).forEach(function(dk) {
+      if (dk >= todayKey) return
+      missed += (sched[dk] || []).length
+    })
+    // Count log watch/read events in last 14 days
+    var cutoff = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
+    var caught = log.filter(function(e) {
+      return e.timestamp >= cutoff && (e.text.indexOf('Watched ep') !== -1 || e.text.indexOf('Read ch') !== -1)
+    }).length
+    // Count tasks completed in last 14 days
+    var tasks = loadData(KEYS.tasks, [])
+    var tasksDone = tasks.filter(function(t) {
+      return t.completed && t.completedDate && (t.completedDate + 'T23:59:59') >= cutoff
+    }).length
+    var raw = (missed * 10) - (caught * 5) - (tasksDone * 8)
+    return Math.max(0, Math.min(999, raw))
+  }
+
+  function p7RenderDebtScore(container) {
+    var score = p7ComputeDebt()
+    var color = score === 0 ? 'var(--accent-green)' : score < 50 ? 'var(--accent-cool)' : score < 150 ? 'var(--accent-yellow)' : 'var(--danger)'
+    var label = score === 0 ? 'ALL CLEAR' : score < 50 ? 'NOMINAL' : score < 150 ? 'BEHIND' : 'CRITICAL'
+    var el = document.createElement('div')
+    el.className = 'card'
+    el.style.cssText = 'padding:var(--space-4);text-align:center;position:relative;overflow:hidden;'
+    el.innerHTML =
+      '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;">Procrastination Debt</div>' +
+      '<div id="p7-debt-number" style="font:900 56px var(--font-display);color:' + color + ';line-height:1;letter-spacing:0.06em;text-shadow:0 0 30px ' + color + '88;">' + score + '</div>' +
+      '<div style="font:600 10px var(--font-mono);color:' + color + ';letter-spacing:0.2em;margin-top:4px;">' + label + '</div>' +
+      '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:8px;line-height:1.5;">Missed schedules rise it.<br>Episodes watched lower it.</div>'
+    // Pulse animation on high debt
+    if (score > 150) {
+      var numEl = el.querySelector('#p7-debt-number')
+      if (numEl) {
+        numEl.style.animation = 'p7DebtPulse 2s ease-in-out infinite'
+      }
+    }
+    container.appendChild(el)
+  }
+
+  /* ── P7: CMD+K COMMAND PALETTE ─────────────────────────────
+     Fuzzy-searches library, tasks, and sections.
+     Opens on Cmd+X or Ctrl+X. Styled as terminal overlay.
+  ─────────────────────────────────────────────────────────── */
+  function p7InitCmdK() {
+    // Inject CSS
+    var style = document.createElement('style')
+    style.textContent = `
+      #p7-palette-overlay {
+        position: fixed; inset: 0; z-index: 20000;
+        background: rgba(3,3,15,0.85); backdrop-filter: blur(8px);
+        display: flex; align-items: flex-start; justify-content: center;
+        padding-top: 14vh; opacity: 0; pointer-events: none;
+        transition: opacity 200ms var(--ease-out);
+      }
+      #p7-palette-overlay.open { opacity: 1; pointer-events: all; }
+      #p7-palette-box {
+        width: min(580px, calc(100vw - 32px));
+        background: rgba(6,6,20,0.98);
+        border: 1px solid var(--border-bright);
+        border-radius: var(--radius-md);
+        box-shadow: 0 0 60px rgba(0,229,255,0.15), 0 30px 80px rgba(0,0,0,0.8);
+        overflow: hidden;
+        transform: translateY(-12px) scale(0.97);
+        transition: transform 200ms var(--ease-spring);
+      }
+      #p7-palette-overlay.open #p7-palette-box { transform: translateY(0) scale(1); }
+      #p7-palette-input {
+        width: 100%; background: transparent; border: none; outline: none;
+        font: 500 16px var(--font-mono); color: var(--text-1);
+        padding: 18px 20px; letter-spacing: 0.03em;
+        border-bottom: 1px solid var(--border);
+      }
+      #p7-palette-input::placeholder { color: var(--text-3); }
+      #p7-palette-results { max-height: 380px; overflow-y: auto; padding: 6px 0; }
+      #p7-palette-results::-webkit-scrollbar { width: 4px; }
+      #p7-palette-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+      .p7-pal-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 20px; cursor: none;
+        transition: background 120ms;
+      }
+      .p7-pal-item.selected, .p7-pal-item:hover { background: var(--surface-2); }
+      .p7-pal-item-icon {
+        width: 28px; height: 28px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-family: var(--font-mono); font-weight: 700;
+        flex-shrink: 0; letter-spacing: 0;
+      }
+      .p7-pal-item-title { font: 500 13px var(--font-mono); color: var(--text-1); }
+      .p7-pal-item-sub   { font: 400 11px var(--font-mono); color: var(--text-3); margin-top: 1px; }
+      .p7-pal-hint {
+        padding: 10px 20px 12px;
+        font: 400 10px var(--font-mono); color: var(--text-3);
+        letter-spacing: 0.08em; border-top: 1px solid var(--border);
+        display: flex; gap: 16px;
+      }
+      .p7-pal-hint kbd {
+        font-family: var(--font-mono); background: var(--surface-2);
+        border: 1px solid var(--border); border-radius: 4px;
+        padding: 1px 5px; font-size: 10px; color: var(--text-2);
+      }
+      @keyframes p7DebtPulse {
+        0%,100% { opacity: 1; } 50% { opacity: 0.55; }
+      }
+      @keyframes p7VeloBlink {
+        0%,100% { opacity: 1; } 50% { opacity: 0.7; }
+      }
+    `
+    document.head.appendChild(style)
+
+    // Build overlay
+    var overlay = document.createElement('div')
+    overlay.id = 'p7-palette-overlay'
+    overlay.innerHTML =
+      '<div id="p7-palette-box">' +
+        '<input id="p7-palette-input" type="text" placeholder="Search library, tasks, sections..." autocomplete="off" spellcheck="false"/>' +
+        '<div id="p7-palette-results"></div>' +
+        '<div class="p7-pal-hint">' +
+          '<span><kbd>↑↓</kbd> navigate</span>' +
+          '<span><kbd>Enter</kbd> open</span>' +
+          '<span><kbd>Esc</kbd> close</span>' +
+        '</div>' +
+      '</div>'
+    document.body.appendChild(overlay)
+
+    var input   = overlay.querySelector('#p7-palette-input')
+    var results = overlay.querySelector('#p7-palette-results')
+    var selIdx  = 0
+
+    var TYPE_COLORS = {
+      anime:'#c084fc', manga:'#34d399', manhwa:'#fb923c',
+      show:'#60a5fa',  movie:'#fbbf24', novel:'#f472b6', social:'#ff4d4d'
+    }
+    var SECTIONS = [
+      { label:'Dashboard',   sub:'Home',           section:'dashboard'  },
+      { label:'Library',     sub:'All content',    section:'library'    },
+      { label:'Mood Queue',  sub:'Recommendations',section:'moodqueue'  },
+      { label:'Tasks',       sub:'Process queue',  section:'tasks'      },
+      { label:'Overview',    sub:'Schedule + manifest', section:'overview' },
+      { label:'Graveyard',   sub:'Dropped content',section:'graveyard'  },
+      { label:'Session Log', sub:'Activity history',section:'sessionlog' },
+      { label:'Settings',    sub:'Preferences',    section:'settings'   },
+    ]
+
+    function buildItems(q) {
+      var lib   = loadData(KEYS.library, [])
+      var tasks = loadData(KEYS.tasks, [])
+      var items = []
+      q = q.toLowerCase().trim()
+
+      // Sections first (when query is short or matches)
+      SECTIONS.forEach(function(s) {
+        if (!q || s.label.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q)) {
+          items.push({ kind:'section', label:s.label, sub:s.sub, section:s.section })
+        }
+      })
+      // Library
+      lib.forEach(function(it) {
+        if (!q || it.title.toLowerCase().includes(q)) {
+          items.push({ kind:'library', label:it.title, sub:it.type + ' · ' + (it.watchedEpisodes||[]).length + ' / ' + (it.totalEpisodes||0) + ' · ' + it.status, id:it.id, type:it.type })
+        }
+      })
+      // Tasks
+      tasks.forEach(function(t) {
+        if (!q || t.name.toLowerCase().includes(q)) {
+          items.push({ kind:'task', label:t.name, sub:'task · ' + (t.completed ? 'done' : 'active'), id:t.id })
+        }
+      })
+      return items.slice(0, 14)
+    }
+
+    function render(q) {
+      var items = buildItems(q)
+      selIdx = 0
+      results.innerHTML = ''
+      if (items.length === 0) {
+        results.innerHTML = '<div style="padding:16px 20px;font:400 12px var(--font-mono);color:var(--text-3);">No results for "' + q + '"</div>'
+        return
+      }
+      items.forEach(function(item, i) {
+        var row = document.createElement('div')
+        row.className = 'p7-pal-item' + (i === 0 ? ' selected' : '')
+        row.dataset.idx = i
+
+        var iconEl = document.createElement('div')
+        iconEl.className = 'p7-pal-item-icon'
+        if (item.kind === 'section') {
+          iconEl.style.cssText = 'background:var(--surface-2);color:var(--text-2);'
+          iconEl.textContent = '⊞'
+        } else if (item.kind === 'task') {
+          iconEl.style.cssText = 'background:rgba(168,85,247,0.15);color:#a855f7;'
+          iconEl.textContent = 'TSK'
+        } else {
+          var tc = TYPE_COLORS[item.type] || '#00e5ff'
+          iconEl.style.cssText = 'background:' + tc + '22;color:' + tc + ';font-size:8px;'
+          iconEl.textContent = (item.type || 'LIB').toUpperCase().slice(0,3)
+        }
+
+        var textEl = document.createElement('div')
+        textEl.innerHTML =
+          '<div class="p7-pal-item-title">' + item.label + '</div>' +
+          '<div class="p7-pal-item-sub">' + item.sub + '</div>'
+
+        row.appendChild(iconEl)
+        row.appendChild(textEl)
+        row.addEventListener('click', function() { activateItem(item) })
+        row.addEventListener('mouseenter', function() {
+          results.querySelectorAll('.p7-pal-item').forEach(function(r,j){ r.classList.toggle('selected', j===i) })
+          selIdx = i
+        })
+        results.appendChild(row)
+      })
+      results._items = items
+    }
+
+    function activateItem(item) {
+      closeP7Palette()
+      if (item.kind === 'section') navigateTo(item.section)
+      else if (item.kind === 'library') navigateTo('detail', item.id)
+      else if (item.kind === 'task') navigateTo('tasks')
+    }
+
+    function move(dir) {
+      var rows = results.querySelectorAll('.p7-pal-item')
+      if (!rows.length) return
+      rows[selIdx] && rows[selIdx].classList.remove('selected')
+      selIdx = (selIdx + dir + rows.length) % rows.length
+      rows[selIdx] && rows[selIdx].classList.add('selected')
+      rows[selIdx] && rows[selIdx].scrollIntoView({ block: 'nearest' })
+    }
+
+    function openP7Palette() {
+      overlay.classList.add('open')
+      input.value = ''
+      render('')
+      setTimeout(function() { input.focus() }, 80)
+    }
+
+    function closeP7Palette() {
+      overlay.classList.remove('open')
+      input.blur()
+    }
+
+    input.addEventListener('input', function() { render(input.value) })
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
+      else if (e.key === 'Enter') {
+        var items = results._items
+        if (items && items[selIdx]) activateItem(items[selIdx])
+      }
+      else if (e.key === 'Escape') closeP7Palette()
+    })
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeP7Palette()
+    })
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'x') {
+        e.preventDefault()
+        if (overlay.classList.contains('open')) closeP7Palette()
+        else openP7Palette()
+      }
+    })
+
+    // Expose for boot sequence hint
+    window.p7OpenPalette = openP7Palette
+  }
+
+  /* ── P7: WEEK VIEW IN SESSION LOG ─────────────────────────
+     "What did I actually do" — planned vs done, side by side.
+     Tab inside Session Log.
+  ─────────────────────────────────────────────────────────── */
+  function p7RenderWeekView(container) {
+    var log      = loadData(KEYS.log, [])
+    var sched    = loadData(KEYS.schedule, {})
+    var today    = new Date()
+    var days     = []
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(today)
+      d.setDate(today.getDate() - i)
+      days.push(d)
+    }
+
+    var wrap = document.createElement('div')
+    wrap.style.cssText = 'margin-top:var(--space-4);'
+
+    var grid = document.createElement('div')
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:6px;'
+
+    days.forEach(function(day) {
+      var dk      = localDateStr(day)
+      var isToday = dk === localDateStr()
+      var dayShort = day.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()
+      var dateNum  = day.getDate()
+
+      // Log activity for this day
+      var dayLog = log.filter(function(e) { return e.timestamp.slice(0,10) === dk && (e.text.indexOf('Watched ep') !== -1 || e.text.indexOf('Read ch') !== -1) })
+      // Schedule for this day
+      var dayPlan = (sched[dk] || []).length
+
+      var col = document.createElement('div')
+      col.style.cssText = 'border-radius:var(--radius-sm);overflow:hidden;border:1px solid ' + (isToday ? 'var(--accent-cool)' : 'var(--border)') + ';background:var(--surface);'
+
+      // Header
+      var hdr = document.createElement('div')
+      hdr.style.cssText = 'padding:6px 4px;text-align:center;background:' + (isToday ? 'rgba(0,229,255,0.1)' : 'transparent') + ';border-bottom:1px solid var(--border);'
+      hdr.innerHTML = '<div style="font:700 9px var(--font-mono);color:' + (isToday ? 'var(--accent-cool)' : 'var(--text-3)') + ';letter-spacing:0.1em;">' + dayShort + '</div>' +
+        '<div style="font:600 14px var(--font-display);color:var(--text-1);">' + dateNum + '</div>'
+      col.appendChild(hdr)
+
+      // Body
+      var body = document.createElement('div')
+      body.style.cssText = 'padding:6px 4px;min-height:60px;'
+
+      if (dayLog.length > 0) {
+        // Had activity — group by series
+        var seriesMap = {}
+        dayLog.forEach(function(e) {
+          var m = e.text.match(/of (.+)$/)
+          var title = m ? m[1] : 'Unknown'
+          seriesMap[title] = (seriesMap[title] || 0) + 1
+        })
+        Object.keys(seriesMap).forEach(function(title) {
+          var dot = document.createElement('div')
+          dot.style.cssText = 'font:500 9px var(--font-mono);color:var(--accent-green);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+          dot.title = title
+          dot.textContent = '▸ ' + seriesMap[title] + 'x ' + title.slice(0,12) + (title.length > 12 ? '…' : '')
+          body.appendChild(dot)
+        })
+        // Was there a plan that wasn't fulfilled?
+        if (dayPlan > 0 && dayLog.length < dayPlan) {
+          var miss = document.createElement('div')
+          miss.style.cssText = 'font:500 9px var(--font-mono);color:rgba(255,59,107,0.6);margin-top:3px;'
+          miss.textContent = '✕ ' + (dayPlan - dayLog.length) + ' missed'
+          body.appendChild(miss)
+        }
+      } else if (dayPlan > 0 && dk < localDateStr()) {
+        // Had a plan, did nothing
+        body.innerHTML = '<div style="font:500 9px var(--font-mono);color:rgba(255,59,107,0.5);text-align:center;padding-top:8px;">✕ planned<br>' + dayPlan + ' missed</div>'
+      } else if (isToday) {
+        body.innerHTML = '<div style="font:400 9px var(--font-mono);color:var(--text-3);text-align:center;padding-top:8px;">today</div>'
+      } else {
+        body.innerHTML = '<div style="font:400 9px var(--font-mono);color:var(--text-3);text-align:center;padding-top:8px;">—</div>'
+      }
+
+      col.appendChild(body)
+      grid.appendChild(col)
+    })
+
+    wrap.appendChild(grid)
+
+    // Summary row
+    var totalDone    = log.filter(function(e) {
+      var dk = e.timestamp.slice(0,10)
+      var cutoff = localDateStr(new Date(Date.now() - 6*24*3600*1000))
+      return dk >= cutoff && (e.text.indexOf('Watched ep') !== -1 || e.text.indexOf('Read ch') !== -1)
+    }).length
+    var summary = document.createElement('div')
+    summary.style.cssText = 'margin-top:10px;font:500 10px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;text-align:center;'
+    summary.textContent = totalDone + ' episode' + (totalDone !== 1 ? 's' : '') + ' watched this week'
+    wrap.appendChild(summary)
+    container.appendChild(wrap)
+  }
+
+  /* ── P7: SETTINGS RENDERER ─────────────────────────────────
+     Exposes all 13 APP_SETTINGS_DEFAULTS keys as actual controls.
+     Plus JSON export/import for data safety.
+  ─────────────────────────────────────────────────────────── */
+  function renderSettings() {
+    var main = document.getElementById('app-main')
+
+    var hdrRow = document.createElement('div')
+    hdrRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:0;'
+    hdrRow.innerHTML = '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">SYSTEM SETTINGS</div>'
+    main.appendChild(hdrRow)
+
+    var sep = document.createElement('div')
+    sep.style.cssText = 'border-bottom:1px solid var(--border);margin-bottom:var(--space-5);'
+    main.appendChild(sep)
+
+    var s = getAppSettings()
+
+    function row(label, desc, control) {
+      var wrap = document.createElement('div')
+      wrap.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);'
+      var left = document.createElement('div')
+      left.innerHTML = '<div style="font:600 12px var(--font-mono);color:var(--text-1);letter-spacing:0.05em;">' + label + '</div>' +
+        (desc ? '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:2px;">' + desc + '</div>' : '')
+      wrap.appendChild(left)
+      wrap.appendChild(control)
+      return wrap
+    }
+
+    function toggle(key, val) {
+      var btn = document.createElement('button')
+      btn.className = 'btn-ghost'
+      btn.style.cssText = 'min-width:64px;text-align:center;font-size:10px;padding:6px 12px;flex-shrink:0;'
+      btn.textContent = val ? 'ON' : 'OFF'
+      btn.style.borderColor = val ? 'var(--accent-cool)' : ''
+      btn.style.color = val ? 'var(--accent-cool)' : ''
+      btn.addEventListener('click', function() {
+        val = !val
+        btn.textContent = val ? 'ON' : 'OFF'
+        btn.style.borderColor = val ? 'var(--accent-cool)' : ''
+        btn.style.color = val ? 'var(--accent-cool)' : ''
+        updateAppSetting(key, val)
+      })
+      return btn
+    }
+
+    function select(key, options, curVal) {
+      var sel = document.createElement('select')
+      sel.className = 'arc-nav-select'
+      sel.style.cssText = 'font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 10px;flex-shrink:0;min-width:130px;'
+      options.forEach(function(o) {
+        var opt = document.createElement('option')
+        opt.value = o.value; opt.textContent = o.label
+        if (o.value == curVal) opt.selected = true
+        sel.appendChild(opt)
+      })
+      sel.addEventListener('change', function() { updateAppSetting(key, sel.value) })
+      return sel
+    }
+
+    function numInput(key, val, min, max, suffix) {
+      var wrap = document.createElement('div')
+      wrap.style.cssText = 'display:flex;align-items:center;gap:6px;flex-shrink:0;'
+      var inp = document.createElement('input')
+      inp.type = 'number'; inp.min = min; inp.max = max; inp.value = val
+      inp.style.cssText = 'font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 8px;width:68px;text-align:center;'
+      inp.addEventListener('change', function() { updateAppSetting(key, parseFloat(inp.value) || val) })
+      if (suffix) {
+        var suf = document.createElement('span')
+        suf.style.cssText = 'font:600 9px var(--font-mono);color:var(--text-3);letter-spacing:0.1em;'
+        suf.textContent = suffix
+        wrap.appendChild(inp); wrap.appendChild(suf)
+      } else { wrap.appendChild(inp) }
+      return wrap
+    }
+
+    // ── Section: UI ──
+    var uiSec = document.createElement('div')
+    uiSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-4);">UI &amp; DISPLAY</div>'
+    main.appendChild(uiSec)
+
+    main.appendChild(row('Density', 'Comfortable has more padding; compact is tighter',
+      select('uiDensity', [{value:'comfortable',label:'Comfortable'},{value:'compact',label:'Compact'}], s.uiDensity)))
+    main.appendChild(row('Confirm Actions', 'Ask before marking graveyard / completing series',
+      toggle('detailConfirmActions', s.detailConfirmActions)))
+    main.appendChild(row('Auto-Focus Nav', 'Focus detail tab area for keyboard navigation',
+      toggle('autoFocusDetailNav', s.autoFocusDetailNav)))
+    main.appendChild(row('Quick Confirm Duration', 'How long the undo toast stays (ms)',
+      numInput('quickConfirmMs', s.quickConfirmMs, 1000, 8000, 'MS')))
+
+    // ── Section: Content ──
+    var contentSec = document.createElement('div')
+    contentSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">CONTENT DEFAULTS</div>'
+    main.appendChild(contentSec)
+
+    main.appendChild(row('Default New Status', 'Status for newly added content',
+      select('defaultNewContentStatus', [{value:'watching',label:'Watching'},{value:'upcoming',label:'Upcoming'},{value:'on-hold',label:'On Hold'}], s.defaultNewContentStatus)))
+    main.appendChild(row('Default Season Prefix', 'Used when auto-naming new seasons',
+      (function(){ var inp = document.createElement('input'); inp.type='text'; inp.value=s.defaultNewSeasonPrefix||'Season';
+        inp.style.cssText='font:500 11px var(--font-mono);background:var(--surface-2);border:1px solid var(--border);color:var(--text-1);border-radius:var(--radius-sm);padding:5px 10px;width:110px;flex-shrink:0;';
+        inp.addEventListener('change',function(){updateAppSetting('defaultNewSeasonPrefix',inp.value.trim()||'Season')}); return inp })()))
+    main.appendChild(row('Dashboard Suggestion', 'How "Next Mission" picks a fallback series',
+      select('dashboardSuggestionMode', [{value:'oldest',label:'Oldest added'},{value:'newest',label:'Newest added'},{value:'random',label:'Random'}], s.dashboardSuggestionMode)))
+    main.appendChild(row('Library Default Sort', 'Default sort order for the library grid',
+      select('librarySortMode', LIBRARY_SORT_OPTIONS.map(function(o){return{value:o.value,label:o.label}}), s.librarySortMode)))
+    main.appendChild(row('Overview Lookahead', 'Days ahead shown in the schedule calendar',
+      numInput('overviewDateLookaheadDays', s.overviewDateLookaheadDays||14, 7, 60, 'DAYS')))
+
+    // ── Section: Budget & Tasks ──
+    var budgetSec = document.createElement('div')
+    budgetSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">BUDGET &amp; TASKS</div>'
+    main.appendChild(budgetSec)
+
+    main.appendChild(row('Daily Budget Hours', 'Your daily content time allowance',
+      numInput('budgetDefaultDailyHours', s.budgetDefaultDailyHours||4, 1, 24, 'HRS')))
+    main.appendChild(row('Default Task Duration', 'Pre-filled minutes when spawning a new task',
+      numInput('tasksDefaultDurationMin', s.tasksDefaultDurationMin||45, 5, 480, 'MIN')))
+    main.appendChild(row('Sound Effects', 'Play UI sounds (click, nav, success)',
+      toggle('muted', !s.muted)))
+
+    // ── Section: Data Export / Import ──
+    var dataSec = document.createElement('div')
+    dataSec.innerHTML = '<div style="font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:var(--space-3);margin-top:var(--space-5);">DATA SAFETY</div>'
+    main.appendChild(dataSec)
+
+    var exportWrap = document.createElement('div')
+    exportWrap.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:var(--space-4);'
+
+    var exportBtn = document.createElement('button')
+    exportBtn.className = 'btn-primary'
+    exportBtn.style.fontSize = '11px'
+    exportBtn.textContent = '⬇ EXPORT BACKUP'
+    exportBtn.addEventListener('click', function() {
+      var data = {}
+      Object.keys(KEYS).forEach(function(k) { data[k] = loadData(KEYS[k], null) })
+      data._exportDate = new Date().toISOString()
+      var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'})
+      var url  = URL.createObjectURL(blob)
+      var a    = document.createElement('a')
+      a.href = url; a.download = 'procrastination-hub-backup-' + localDateStr() + '.json'; a.click()
+      URL.revokeObjectURL(url)
+      logEvent('Exported data backup')
+    })
+
+    var importBtn = document.createElement('button')
+    importBtn.className = 'btn-ghost'
+    importBtn.style.fontSize = '11px'
+    importBtn.textContent = '⬆ IMPORT BACKUP'
+    var importInput = document.createElement('input')
+    importInput.type = 'file'; importInput.accept = '.json'; importInput.style.display = 'none'
+    importInput.addEventListener('change', function() {
+      var file = importInput.files[0]
+      if (!file) return
+      var reader = new FileReader()
+      reader.onload = function(ev) {
+        try {
+          var imported = JSON.parse(ev.target.result)
+          var validKeys = Object.keys(KEYS)
+          var found = 0
+          validKeys.forEach(function(k) {
+            if (imported[k] !== undefined && imported[k] !== null) {
+              saveData(KEYS[k], imported[k]); found++
+            }
+          })
+          logEvent('Imported backup (' + found + ' data keys restored)')
+          var flash = document.createElement('div')
+          flash.style.cssText = 'font:600 11px var(--font-mono);color:var(--success);padding:8px 0;'
+          flash.textContent = '✓ Backup restored. ' + found + ' keys imported.'
+          exportWrap.appendChild(flash)
+          setTimeout(function() { flash.remove() }, 3000)
+        } catch(e) {
+          alert('Invalid backup file.')
+        }
+      }
+      reader.readAsText(file)
+    })
+    importBtn.addEventListener('click', function() { importInput.click() })
+
+    exportWrap.appendChild(exportBtn)
+    exportWrap.appendChild(importBtn)
+    exportWrap.appendChild(importInput)
+    main.appendChild(exportWrap)
+
+    var safetyNote = document.createElement('div')
+    safetyNote.style.cssText = 'font:400 10px var(--font-mono);color:var(--text-3);line-height:1.6;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);'
+    safetyNote.textContent = '⚠ All data lives in your browser localStorage. One clear = total wipe. Export a backup regularly. The import will overwrite current data with the backup.'
+    main.appendChild(safetyNote)
+
+    // ── Section: About ──
+    var aboutSec = document.createElement('div')
+    aboutSec.style.cssText = 'margin-top:var(--space-6);padding:var(--space-4);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);text-align:center;'
+    aboutSec.innerHTML =
+      '<div style="font:700 14px var(--font-display);color:var(--accent-cool);letter-spacing:0.15em;margin-bottom:4px;">PROC//HUB</div>' +
+      '<div style="font:400 10px var(--font-mono);color:var(--text-3);">Shame sensors: bypassed · Intelligence layer: online</div>' +
+      '<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:4px;">Press <kbd style="font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;">⌘X</kbd> anywhere to open command palette</div>'
+    main.appendChild(aboutSec)
+  }
+
+  /* ── P7: PATCH DASHBOARD — inject Debt Score + Week prompt ──── */
+  var _p7OrigRenderDashboard = renderDashboard
+  window.renderDashboard = function() {
+    _p7OrigRenderDashboard()
+    // Inject debt score after the stat cards block (first .dash-block after index 1)
+    setTimeout(function() {
+      var blocks = document.querySelectorAll('.dash-block')
+      if (blocks.length < 2) return
+      var debtBlock = document.createElement('div')
+      debtBlock.className = 'dash-block entered'
+      debtBlock.style.marginBottom = '32px'
+      p7RenderDebtScore(debtBlock)
+      // Insert after stat cards (block index 1)
+      var ref = blocks[2]
+      if (ref && ref.parentNode) ref.parentNode.insertBefore(debtBlock, ref)
+    }, 80)
+  }
+  // Replace dashboard renderer in routing
+  if (typeof navigateTo === 'function') {
+    var _origNav = navigateTo
+  }
+
+  /* ── P7: PATCH SESSION LOG — add THIS WEEK tab ── */
+  var _p7OrigRenderSessionLog = renderSessionLog
+  window.renderSessionLog = function() {
+    var main = document.getElementById('app-main')
+
+    // Tab bar
+    var tabBar = document.createElement('div')
+    tabBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:var(--space-4);'
+
+    function makeTab(label, active) {
+      var t = document.createElement('button')
+      t.style.cssText = 'flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid ' + (active ? 'var(--accent-cool)' : 'transparent') + ';color:' + (active ? 'var(--accent-cool)' : 'var(--text-3)') + ';font:700 10px var(--font-mono);letter-spacing:0.12em;text-transform:uppercase;cursor:none;transition:all 150ms;'
+      t.textContent = label
+      return t
+    }
+
+    var tabLog  = makeTab('SYSTEM LOG', true)
+    var tabWeek = makeTab('THIS WEEK', false)
+    tabBar.appendChild(tabLog)
+    tabBar.appendChild(tabWeek)
+    main.appendChild(tabBar)
+
+    var logArea  = document.createElement('div')
+    logArea.id   = 'p7-log-area'
+    var weekArea = document.createElement('div')
+    weekArea.id  = 'p7-week-area'
+    weekArea.style.display = 'none'
+
+    main.appendChild(logArea)
+    main.appendChild(weekArea)
+
+    // Render into logArea
+    var _savedMain = document.getElementById('app-main')
+    var _fakeMain  = logArea
+    ;(function() {
+      renderLogSection(logArea)
+      p7RenderWeekView(weekArea)
+    })()
+
+    // Tab switching
+    tabLog.addEventListener('click', function() {
+      logArea.style.display = ''; weekArea.style.display = 'none'
+      tabLog.style.borderBottomColor  = 'var(--accent-cool)'; tabLog.style.color  = 'var(--accent-cool)'
+      tabWeek.style.borderBottomColor = 'transparent';         tabWeek.style.color = 'var(--text-3)'
+    })
+    tabWeek.addEventListener('click', function() {
+      logArea.style.display = 'none'; weekArea.style.display = ''
+      tabWeek.style.borderBottomColor = 'var(--accent-cool)'; tabWeek.style.color = 'var(--accent-cool)'
+      tabLog.style.borderBottomColor  = 'transparent';         tabLog.style.color  = 'var(--text-3)'
+    })
+
+    window.__refreshLog = function() {
+      var feed = document.getElementById('log-feed-wrap')
+      if (feed) renderLogFeed(feed)
+    }
+  }
+
+  /* ── P7: PATCH DETAIL RENDER — inject velocity tracker ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      // Observe app-main changes to detect when detail view renders
+      var mainEl = document.getElementById('app-main')
+      if (!mainEl) return
+      var _p7DetailObserver = new MutationObserver(function() {
+        var progFill = document.getElementById('detail-prog-fill')
+        if (!progFill || progFill._p7VeloPatched) return
+        progFill._p7VeloPatched = true
+        // Find the item being viewed
+        if (!currentDetailId) return
+        var lib  = loadData(KEYS.library, [])
+        var item = lib.find(function(i) { return i.id === currentDetailId })
+        if (!item) return
+        // Find progress wrap - insert velocity after progress bar
+        var progWrap = progFill.closest('.detail-hero-right') || progFill.parentElement
+        if (progWrap) p7RenderVelocityBadge(item, progWrap)
+      })
+      _p7DetailObserver.observe(mainEl, { childList: true, subtree: true })
+    }, 200)
+  })
+
+  /* ── P7: BOOT SEQUENCE PATCH — add Cmd+X hint ── */
+  var _p7OrigBoot = window.runBootSequence
+  window.runBootSequence = async function() {
+    await _p7OrigBoot()
+  }
+
+  /* ── P7: INIT ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      p7InitCmdK()
+      // Override dashboard renderer in the routing table
+      var _rds = window.renderDashboard
+      // Patch boot script to mention Cmd+X
+    }, 150)
   })
 
   // ═══════════════════════════════════════════════════════════════════

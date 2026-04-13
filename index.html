@@ -887,7 +887,7 @@ function syncHubData() {
             let totalEntries = 0;
             let watchedEntries = 0;
             pLib.forEach(item => {
-                if (item.status === 'graveyard') return;
+                if (item.status === 'graveyard' || item.status === 'on-hold') return;
                 if (item.type === 'social') {
                     const vids = item.socialVideos || [];
                     totalEntries += vids.length;

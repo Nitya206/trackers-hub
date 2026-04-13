@@ -213,13 +213,13 @@
     .badge {
       display: inline-flex;
       align-items: center;
-      padding: 3px 10px;
+      padding: 3px 9px;
       border-radius: var(--radius-pill);
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
     }
     .badge[data-type="anime"]  { background: rgba(167,139,250,0.15); color: var(--type-anime);  border: 1px solid rgba(167,139,250,0.3); box-shadow: 0 0 12px rgba(167,139,250,0.15), inset 0 0 12px rgba(167,139,250,0.05); text-shadow: 0 0 8px rgba(167,139,250,0.4); }
     .badge[data-type="manga"]  { background: rgba(52,211,153,0.12);  color: var(--type-manga);  border: 1px solid rgba(52,211,153,0.3);  box-shadow: 0 0 12px rgba(52,211,153,0.15), inset 0 0 12px rgba(52,211,153,0.05); text-shadow: 0 0 8px rgba(52,211,153,0.4); }
@@ -234,25 +234,26 @@
       display: inline-flex;
       align-items: center;
       gap: var(--space-2);
-      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 50%, #ff2d95 100%);
-      background-size: 250% 250%;
+      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 55%, #ff2d95 100%);
+      background-size: 220% 220%;
+      background-position: 0% 0%;
       color: #000;
-      padding: 11px 24px;
+      padding: 11px 26px;
       border-radius: var(--radius-pill);
-      font: 700 13px var(--font-mono);
-      letter-spacing: 0.1em;
+      font: 800 12px var(--font-mono);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       border: none;
       cursor: none;
       text-decoration: none;
-      box-shadow: 0 0 24px rgba(0,229,255,0.4), 0 0 60px rgba(168,85,247,0.2), 0 4px 20px rgba(0,0,0,0.5);
-      transition: all 250ms var(--ease-snap);
+      box-shadow: 0 0 28px rgba(0,229,255,0.45), 0 0 70px rgba(168,85,247,0.22), 0 4px 24px rgba(0,0,0,0.55);
+      transition: all 250ms var(--ease-snap), background-position 400ms var(--ease-out);
       -webkit-user-select: none;
       user-select: none;
       position: relative;
       overflow: hidden;
-      
     }
+    .btn-primary:hover { background-position: 100% 100%; }
     .btn-primary::after {
       content: '';
       position: absolute;
@@ -330,11 +331,12 @@
 
     /* ── .progress-bar ── */
     .progress-bar {
-      height: 6px;
-      background: rgba(80,120,255,0.1);
+      height: 5px;
+      background: rgba(80,120,255,0.08);
       border-radius: 99px;
       overflow: hidden;
       position: relative;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
     }
     .progress-bar-fill {
       height: 100%;
@@ -378,10 +380,14 @@
       overflow-clip-margin: 4px;
       min-width: 0;
     }
-    /* Per-card accent bottom borders */
+    /* Per-card accent bottom borders + number tint */
     .stat-card:nth-child(1) { border-bottom: 2px solid rgba(168,85,247,0.5); }
+    .stat-card:nth-child(1) .stat-card-number { color: #a855f7; text-shadow: 0 0 24px rgba(168,85,247,0.3); }
+    .stat-card:nth-child(1) .stat-card-number::after { background: linear-gradient(90deg,transparent,#a855f7,transparent); }
     .stat-card:nth-child(2) { border-bottom: 2px solid rgba(0,229,255,0.5); }
     .stat-card:nth-child(3) { border-bottom: 2px solid rgba(0,255,170,0.5); }
+    .stat-card:nth-child(3) .stat-card-number { color: #00ffaa; text-shadow: 0 0 24px rgba(0,255,170,0.3); }
+    .stat-card:nth-child(3) .stat-card-number::after { background: linear-gradient(90deg,transparent,#00ffaa,transparent); }
     .stat-card:nth-child(4) { border-bottom: 2px solid rgba(255,96,64,0.5); }
     .stat-card::before {
       content: '';
@@ -527,14 +533,23 @@
 
     /* ── .section-header ── */
     .section-header {
-      font: 700 13px var(--font-mono);
-      color: rgba(100,200,255,0.6);
+      font: 700 11px var(--font-mono);
+      color: rgba(100,200,255,0.55);
       text-transform: uppercase;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.28em;
       padding-bottom: var(--space-3);
       border-bottom: 1px solid var(--border);
       margin-bottom: var(--space-5);
       position: relative;
+    }
+    .section-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0;
+      width: 48px; height: 1px;
+      background: var(--accent-cool);
+      opacity: 0.6;
+      box-shadow: 0 0 8px var(--accent-cool);
     }
 
     /* ════════════════════════════════════════════════════════════════
@@ -798,6 +813,7 @@
       align-items: center;
       gap: 2px;
       z-index: 200;
+      /* More elevated backdrop */
       background: rgba(6,6,18,0.75);
       border: 1px solid rgba(100,160,255,0.12);
       border-top-color: rgba(140,200,255,0.16);
@@ -929,7 +945,8 @@
 
     /* Active state — glowing icon + subtle bg + inner dot */
     .bn-item.active {
-      background: rgba(0,229,255,0.09);
+      background: rgba(0,229,255,0.13);
+      box-shadow: inset 0 1px 0 rgba(0,229,255,0.18);
     }
     .bn-item.active svg {
       stroke: #00e5ff;
@@ -976,20 +993,18 @@
       bottom: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 28px 36px 96px;
+      padding: 36px 48px 120px;
       z-index: 1;
     }
 
     /* Fade cards out at the very top edge when scrolling — purely decorative, doesn't affect modals */
-    #scroll-fade-top {
+        #scroll-fade-top {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+      top: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, var(--bg) 0%, rgba(6,6,15,0.6) 60%, transparent 100%);
       pointer-events: none;
-      z-index: 2;
+      z-index: 50;
     }
 
     /* ════════════════════════════════════════════════════════════════
@@ -1141,12 +1156,20 @@
     /* ── 09. GRAVEYARD CORRUPTION ── */
     .graveyard-section .progress-bar-fill,
     .graveyard-section .progress-bar {
-      filter: grayscale(0.6) contrast(0.8);
-      transition: filter 200ms var(--ease-out);
+      filter: grayscale(0.75) contrast(0.75) brightness(0.85);
+      transition: filter 300ms var(--ease-out);
     }
     .graveyard-card:hover .progress-bar-fill,
     .graveyard-card:hover .progress-bar {
-      filter: none;
+      filter: grayscale(0.1) contrast(0.95) brightness(1);
+    }
+    .graveyard-card {
+      transition: border-color 300ms var(--ease-snap), box-shadow 300ms var(--ease-snap), opacity 300ms var(--ease-out), filter 300ms var(--ease-out) !important;
+      filter: saturate(0.55) brightness(0.9);
+    }
+    .graveyard-card:hover {
+      filter: saturate(1) brightness(1) !important;
+      border-color: rgba(255,59,107,0.3) !important;
     }
     .corrupt-char {
       display: inline-block;
@@ -1217,18 +1240,23 @@
 
     /* Greeting block */
     .dash-greeting {
-      font: 700 clamp(28px, 3.5vw, 48px) var(--font-display);
+      font: 800 clamp(32px, 4vw, 56px) var(--font-display);
       color: var(--text-1);
-      line-height: 1.15;
-      letter-spacing: 0.08em;
-      text-shadow: 0 1px 6px rgba(0,200,255,0.08);
+      line-height: 1.1;
+      letter-spacing: 0.07em;
+      text-shadow: 0 2px 24px rgba(0,200,255,0.12), 0 0 60px rgba(168,85,247,0.07);
+      background: linear-gradient(135deg, var(--text-1) 0%, rgba(200,220,255,0.85) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .dash-date {
-      font: 400 13px var(--font-mono);
+      font: 500 11px var(--font-mono);
       color: var(--text-3);
-      margin-top: var(--space-3);
-      letter-spacing: 0.2em;
+      margin-top: var(--space-2);
+      letter-spacing: 0.28em;
       text-transform: uppercase;
+      opacity: 0.7;
     }
 
     /* Stat grid */
@@ -1286,11 +1314,12 @@
       text-shadow: 0 1px 6px rgba(255,87,34,0.25);
     }
     .next-mission-title {
-      font: 600 clamp(22px, 3vw, 32px) var(--font-display);
+      font: 800 clamp(24px, 3.2vw, 36px) var(--font-display);
       color: var(--text-1);
       margin-bottom: var(--space-2);
-      letter-spacing: 0.08em;
-      line-height: 1.15;
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+      text-shadow: 0 0 30px rgba(255,96,64,0.12);
     }
     .next-mission-meta {
       display: flex;
@@ -1342,18 +1371,19 @@
     .mood-pills-grid {
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: 6px;
     }
     .mood-pill {
       width: 100%;
-      padding: var(--space-2) var(--space-3);
-      background: transparent;
+      padding: 7px var(--space-3);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-pill);
       color: var(--text-2);
-      font: var(--text-sm) var(--font-mono);
+      font: 500 12px var(--font-mono);
       text-align: left;
       cursor: none;
+      letter-spacing: 0.06em;
       transition: all 150ms var(--ease-snap);
       opacity: 0;
       transform: translateX(-8px);
@@ -1364,8 +1394,18 @@
       transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out),
                   background 150ms var(--ease-snap), border-color 150ms var(--ease-snap), color 150ms var(--ease-snap);
     }
-    .mood-pill:hover { border-color: var(--accent-cool); color: var(--text-1); }
-    .mood-pill.selected { background: var(--accent-cool-dim); border-color: var(--accent-cool); color: var(--text-1); }
+    .mood-pill:hover {
+      border-color: var(--accent-cool);
+      color: var(--text-1);
+      background: rgba(0,229,255,0.06);
+      transform: translateX(4px);
+    }
+    .mood-pill.selected {
+      background: var(--accent-cool-dim);
+      border-color: var(--accent-cool);
+      color: var(--accent-cool);
+      box-shadow: 0 0 14px rgba(0,229,255,0.12);
+    }
     .mood-reset-btn {
       position: absolute;
       top: 0; right: 0;
@@ -1689,11 +1729,18 @@
     .lib-mood-chip[data-mood="aesthetic"]     { background: rgba(232,121,249,0.10); border-color: rgba(232,121,249,0.18); }
     .lib-mood-chip[data-mood="brain-off"]     { background: rgba(168,85,247,0.10); border-color: rgba(168,85,247,0.18); }
     .mq-mood-icon {
-      font-size: 28px;
+      font-size: 32px;
       line-height: 1;
-      transition: transform 200ms var(--ease-spring);
+      transition: transform 250ms var(--ease-spring), filter 250ms;
     }
-    .mq-mood-card:hover .mq-mood-icon { transform: scale(1.2); }
+    .mq-mood-card:hover .mq-mood-icon {
+      transform: scale(1.25) rotate(-3deg);
+      filter: drop-shadow(0 0 8px var(--mood-glow, rgba(0,229,255,0.5)));
+    }
+    .mq-mood-card.selected .mq-mood-icon {
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 12px var(--mood-glow, rgba(0,229,255,0.6)));
+    }
     .mq-mood-name {
       font: 600 var(--text-lg) var(--font-mono);
       color: var(--mood-clr, var(--text-1));
@@ -2028,7 +2075,7 @@
       padding: 5px 14px;
       cursor: none;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       transition: all 200ms var(--ease-snap);
       -webkit-user-select: none; user-select: none;
     }
@@ -2055,14 +2102,16 @@
     }
     .lib-search-input::placeholder { color: var(--text-3); }
     .lib-search-input:focus { border-color: rgba(0,200,255,0.3); box-shadow: 0 0 0 3px rgba(0,200,255,0.05); background: rgba(255,255,255,0.06); }
-    .lib-quickadd-wrap {
+        .lib-quickadd-wrap {
       flex: 4;
       display: flex;
       align-items: center;
       background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
+      border: 1px solid rgba(100,130,255,0.15);
+      border-radius: var(--radius-pill);
+      padding: 0 var(--space-3) 0 0;
       transition: border-color 200ms var(--ease-snap), box-shadow 200ms var(--ease-snap);
+      position: relative;
       overflow: hidden;
     }
     .lib-quickadd-wrap:focus-within {
@@ -2140,10 +2189,10 @@
       background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 40%, rgba(168,85,247,0.05) 100%);
       pointer-events: none;
     }
-    .library-card.lib-card-entered { opacity: 1; transform: translateY(0); }
+    .library-card.lib-card-entered { opacity: 1; transform: translateY(0); transition: opacity 350ms var(--ease-out), transform 400ms var(--ease-spring); }
     .library-card:hover {
-      box-shadow: var(--glow-card), 0 20px 70px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,255,0.06), 0 0 80px rgba(168,85,247,0.04);
-      transform: translateY(-5px) scale(1.01);
+      box-shadow: var(--glow-card), 0 24px 80px rgba(0,0,0,0.85), 0 0 40px rgba(0,229,255,0.07), 0 0 80px rgba(168,85,247,0.04);
+      transform: translateY(-6px) scale(1.015);
     }
     .lib-card-title {
       font: 400 17px var(--font-display);
@@ -2244,8 +2293,8 @@
     .lib-status-dot.not-started { background: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
     .lib-status-label.not-started { color: var(--accent-yellow); }
     .lib-status-dot.graveyard { background: var(--danger); }
-    .lib-status-dot.on-hold { background: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
-    .lib-status-label.on-hold { color: var(--accent-yellow); }
+    .lib-status-dot.on-hold { background: #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.7); }
+    .lib-status-label.on-hold { color: #f97316; }
     .lib-status-dot.upcoming {
       background: var(--accent-cool);
       box-shadow: 0 0 10px var(--accent-cool), 0 0 24px rgba(0,229,255,0.4);
@@ -2263,18 +2312,48 @@
     .lib-card-footer-left { display: flex; align-items: center; gap: var(--space-2); }
     .lib-card-day { font: 500 12px var(--font-mono); color: var(--accent-cool); }
     .lib-open-btn {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.04);
       border: 1px solid var(--border);
       border-radius: var(--radius-pill);
       color: var(--text-3);
-      font: 500 12px var(--font-mono);
-      padding: 6px 16px;
+      font: 600 11px var(--font-mono);
+      padding: 7px 18px;
       cursor: none;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       transition: all 200ms var(--ease-snap);
       white-space: nowrap;
+      text-transform: uppercase;
     }
-    .lib-open-btn:hover { border-color: rgba(0,200,255,0.3); color: var(--text-1); background: rgba(0,200,255,0.06); }
+    .lib-open-btn:hover {
+      border-color: rgba(0,200,255,0.4);
+      color: var(--accent-cool);
+      background: rgba(0,200,255,0.07);
+      box-shadow: 0 0 14px rgba(0,229,255,0.1);
+    }
+    /* Schedule-today pill on lib cards */
+    .lib-card-schedule-pill {
+      font: 700 9px var(--font-mono);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(0,229,255,0.12);
+      border: 1px solid rgba(0,229,255,0.3);
+      color: var(--accent-cool);
+      white-space: nowrap;
+      flex-shrink: 0;
+      animation: schedulePillPulse 2.5s ease-in-out infinite;
+    }
+    .lib-card-schedule-pill.tomorrow {
+      background: rgba(168,85,247,0.10);
+      border-color: rgba(168,85,247,0.28);
+      color: var(--accent-violet);
+      animation: none;
+    }
+    @keyframes schedulePillPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.3); }
+      50% { box-shadow: 0 0 0 3px rgba(0,229,255,0); }
+    }
     .lib-no-results {
       display: none; grid-column: 1/-1; text-align: center;
       padding: var(--space-12) 0;
@@ -2607,13 +2686,13 @@
 
     /* .detail-hero-left {} removed: empty ruleset */
 
-    .detail-title {
-      font: 700 clamp(22px, 3.5vw, 42px) var(--font-display);
-      color: var(--text-1);
-      line-height: 1.05;
-      margin: var(--space-2) 0;
-      letter-spacing: 0.08em;
-      text-shadow: 0 1px 6px rgba(0,200,255,0.08);
+        .detail-title {
+      font: 900 clamp(30px, 4.5vw, 58px) var(--font-display);
+      color: var(--accent-cool);
+      letter-spacing: 0.07em;
+      line-height: 1.03;
+      margin-bottom: var(--space-3);
+      text-shadow: 0 0 40px rgba(0,200,255,0.4), 0 0 90px rgba(0,200,255,0.15);
     }
     .detail-personal-rating-wrap {
       margin: var(--space-3) 0;
@@ -2657,7 +2736,7 @@
       border: 1px solid rgba(255,255,255,0.08);
       letter-spacing: 0.1em;
     }
-    .detail-progress-label { font: 400 11px var(--font-mono); color: var(--text-2); margin-bottom: var(--space-2); }
+    .detail-progress-label { font: 500 11px var(--font-mono); color: var(--text-3); margin-top: var(--space-1); letter-spacing: 0.05em; }
     .detail-progress-bar-wrap { margin-bottom: var(--space-5); }
     .detail-day-label { font: 700 12px var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: var(--space-2); }
     .detail-day-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
@@ -2885,16 +2964,18 @@
       border: none;
       border-bottom: 2px solid transparent;
       color: var(--text-3);
-      font: var(--text-sm) var(--font-mono);
-      padding: var(--space-2) var(--space-4);
+      font: 500 12px var(--font-mono);
+      padding: var(--space-2) var(--space-3);
       cursor: none;
       transition: all 150ms var(--ease-snap);
       margin-bottom: -1px;
+      letter-spacing: 0.04em;
     }
-    .detail-season-tab:hover { color: var(--text-2); }
+    .detail-season-tab:hover { color: var(--text-2); background: var(--surface); }
     .detail-season-tab.active {
-      color: var(--text-1);
+      color: var(--accent-cool);
       border-bottom-color: var(--accent-cool);
+      text-shadow: 0 0 12px rgba(0,229,255,0.3);
     }
 
     /* Arc accordion */
@@ -2968,11 +3049,13 @@
     .detail-filmstrip::after {
       content: '';
       display: block;
-      height: 16px;
-      background-image: radial-gradient(circle, var(--surface-3) 4px, transparent 4px);
-      background-size: 28px 16px;
+      height: 18px;
+      background-image: radial-gradient(circle, rgba(0,229,255,0.15) 4px, transparent 4px);
+      background-size: 26px 18px;
       background-repeat: repeat-x;
       border: 1px solid var(--border);
+      border-radius: 3px;
+      opacity: 0.7;
     }
     .detail-filmstrip::before { margin-bottom: var(--space-3); }
     .detail-filmstrip::after  { margin-top: var(--space-3); }
@@ -2980,8 +3063,8 @@
     /* Episode grid */
     .detail-ep-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
       overflow: visible;
     }
 
@@ -2996,28 +3079,41 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       cursor: none;
-      transition: border-color 150ms var(--ease-snap), background 150ms var(--ease-snap);
+      transition: border-color 180ms var(--ease-snap), background 180ms var(--ease-snap), transform 180ms var(--ease-spring), box-shadow 180ms var(--ease-snap);
       -webkit-user-select: none;
       user-select: none;
     }
-    .ep-tile:hover { border-color: var(--border-bright); }
+    .ep-tile:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 12px rgba(0,229,255,0.08);
+      z-index: 2;
+    }
     .ep-tile.watched {
-      background: var(--accent-cool-dim);
-      border-color: rgba(0,212,255,0.4);
+      background: linear-gradient(135deg, rgba(0,229,255,0.14) 0%, rgba(0,229,255,0.06) 100%);
+      border-color: rgba(0,212,255,0.42);
+      box-shadow: inset 0 1px 0 rgba(0,229,255,0.18);
+    }
+    .ep-tile.watched:hover {
+      background: linear-gradient(135deg, rgba(0,229,255,0.22) 0%, rgba(0,229,255,0.10) 100%);
+      border-color: rgba(0,212,255,0.65);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 20px rgba(0,229,255,0.18), inset 0 1px 0 rgba(0,229,255,0.25);
     }
     .ep-tile.watched .ep-num { color: var(--accent-cool); }
     .ep-num {
       font: 700 16px var(--font-mono);
       color: var(--text-3);
       pointer-events: none;
+      transition: transform 180ms var(--ease-spring), opacity 180ms;
     }
+    .ep-tile:hover .ep-num { transform: scale(0.85); opacity: 0.6; }
     .ep-check {
       position: absolute;
       bottom: 5px;
       right: 6px;
-      font-size: 15px;
+      font-size: 14px;
       color: var(--accent-cool);
       opacity: 0;
       transition: opacity 150ms;
@@ -3025,6 +3121,14 @@
       display: none;
     }
     .ep-tile.watched .ep-check { opacity: 1; }
+    /* Watched diagonal slash decoration */
+    .ep-tile.watched::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(0,229,255,0.06) 100%);
+      pointer-events: none;
+    }
     /* Timer icon – appears on hover */
     .ep-timer-btn {
       position: absolute;
@@ -3220,14 +3324,14 @@
       justify-content: space-between;
       margin-bottom: var(--space-4);
     }
-    .tasks-active-badge {
-      font: var(--text-xs) var(--font-mono);
-      color: var(--success);
-      background: rgba(0,255,136,0.1);
-      border: 1px solid rgba(0,255,136,0.25);
-      border-radius: var(--radius-sm);
-      padding: 2px var(--space-2);
-      letter-spacing: 0.08em;
+        .tasks-active-badge {
+      font: 700 10px var(--font-mono);
+      color: var(--accent-cool);
+      letter-spacing: 0.14em;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid rgba(0,229,255,0.2);
+      border-radius: var(--radius-pill);
+      padding: 2px 10px;
     }
     .tasks-add-bar {
       display: flex;
@@ -3282,6 +3386,7 @@
     .task-card {
       background: var(--surface);
       border: 1px solid var(--border);
+      border-left: 2px solid var(--accent-violet);
       border-radius: var(--radius-md);
       padding: var(--space-4) var(--space-5);
       display: flex;
@@ -3556,7 +3661,7 @@
       padding: var(--space-4) var(--space-5);
       margin-bottom: var(--space-4);
       opacity: 0.85;
-      transition: opacity 300ms, max-height 300ms var(--ease-out), margin 300ms;
+      transition: filter 300ms var(--ease-snap), opacity 300ms, max-height 300ms var(--ease-out), margin 300ms;
     }
     .graveyard-card:hover { opacity: 1; }
     .graveyard-card.removing {
@@ -3789,20 +3894,23 @@
       transition: max-height 300ms var(--ease-out);
     }
     .log-events.open { max-height: 9999px; }
-    .log-event-row {
+        .log-event-row {
       display: flex;
       align-items: baseline;
       gap: var(--space-3);
-      padding: var(--space-1) var(--space-2);
+      padding: 6px var(--space-3);
       border-radius: var(--radius-sm);
-      transition: background 100ms var(--ease-snap);
+      transition: background 100ms, transform 100ms;
+      border-left: 2px solid transparent;
     }
     .log-event-row:hover { background: var(--surface-2); }
-    .log-time {
-      font: var(--text-xs) var(--font-mono);
+        .log-time {
+      font: 500 10px var(--font-mono);
       color: var(--text-3);
+      min-width: 44px;
       flex-shrink: 0;
-      width: 40px;
+      opacity: 0.5;
+      letter-spacing: 0.03em;
     }
     .log-text {
       font: var(--text-sm) var(--font-mono);
@@ -5713,7 +5821,215 @@
     }
   }
 
-  </style>
+
+    /* ══════════════════════════════════════════════════════════════
+       PART 7 UI/UX DESIGN LAYER — micro-interactions & polish
+    ══════════════════════════════════════════════════════════════ */
+
+    /* Log event row hover slide */
+    .log-event-row:hover {
+      background: var(--surface-2);
+      border-left-color: rgba(0,229,255,0.2);
+      transform: translateX(3px);
+    }
+
+    /* Schedule entry hover slide-right */
+    .sched-entry:hover { transform: translateX(3px); background: var(--surface-3); }
+
+    /* Section header glowing accent line */
+    .section-header { position: relative; }
+    .section-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0;
+      width: 40px; height: 1px;
+      background: var(--accent-cool);
+      opacity: 0.55;
+      box-shadow: 0 0 8px var(--accent-cool), 0 0 16px rgba(0,229,255,0.3);
+      transition: width 400ms var(--ease-out);
+    }
+
+    /* Quickadd focus ring */
+    .lib-quickadd-wrap:focus-within {
+      border-color: rgba(0,229,255,0.4) !important;
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.07), 0 0 24px rgba(0,229,255,0.08) !important;
+      background: rgba(0,229,255,0.025) !important;
+    }
+
+    /* Scroll fade deeper */
+    #scroll-fade-top {
+      height: 80px !important;
+      background: linear-gradient(to bottom, var(--bg) 0%, rgba(6,6,15,0.55) 60%, transparent 100%) !important;
+    }
+
+    /* Tasks active badge pill shape */
+    .tasks-active-badge {
+      background: rgba(0,229,255,0.08) !important;
+      border: 1px solid rgba(0,229,255,0.2) !important;
+      border-radius: var(--radius-pill) !important;
+      padding: 2px 10px !important;
+      font-size: 10px !important;
+      letter-spacing: 0.14em !important;
+    }
+
+    /* Completion banner bigger */
+    .completion-banner {
+      padding: 36px 64px !important;
+      font-size: clamp(22px, 3.5vw, 34px) !important;
+      font-weight: 900 !important;
+      box-shadow: 0 0 80px rgba(0,212,255,0.35), 0 0 160px rgba(168,85,247,0.18), 0 30px 100px rgba(0,0,0,0.9) !important;
+    }
+
+    /* EP tile title tooltip on hover via CSS content trick */
+    .ep-tile[data-title]:hover::after {
+      content: attr(data-title);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6,6,20,0.95);
+      border: 1px solid var(--border-bright);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font: 500 10px var(--font-mono);
+      color: var(--text-2);
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 99;
+      pointer-events: none;
+      letter-spacing: 0.03em;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      animation: epTipIn 120ms var(--ease-out) both;
+    }
+    @keyframes epTipIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* Mood pill slide-in hover */
+    .mood-pill:hover { transform: translateX(4px) !important; }
+
+    /* Graveyard card hover re-saturate */
+    .graveyard-card {
+      filter: saturate(0.5) brightness(0.88) !important;
+      transition: filter 300ms var(--ease-out), border-color 300ms var(--ease-snap), box-shadow 300ms var(--ease-snap) !important;
+    }
+    .graveyard-card:hover {
+      filter: saturate(0.95) brightness(1) !important;
+      border-color: rgba(255,59,107,0.28) !important;
+    }
+
+    /* Library card type-accent left border glow */
+    .library-card {
+      border-left-width: 2px !important;
+      border-left-style: solid !important;
+      transition: border-color 300ms var(--ease-snap), box-shadow 400ms var(--ease-snap), transform 350ms var(--ease-out), filter 250ms var(--ease-snap) !important;
+    }
+
+    /* Dash nav card — bottom accent line on hover */
+    .dash-nav-card::before {
+      transition: opacity 300ms var(--ease-snap) !important;
+    }
+
+    /* Detail title bigger */
+    .detail-title {
+      font-size: clamp(30px, 4.5vw, 58px) !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.07em !important;
+      text-shadow: 0 0 40px rgba(0,200,255,0.4), 0 0 90px rgba(0,200,255,0.15) !important;
+    }
+
+    /* Active nav dot stronger glow */
+    .bn-item.active::after {
+      width: 4px !important;
+      height: 4px !important;
+      box-shadow: 0 0 8px var(--accent-cool), 0 0 18px rgba(0,229,255,0.6), 0 0 32px rgba(0,229,255,0.3) !important;
+    }
+
+    /* Stat card: 1st = violet, 3rd = green tint */
+    .dash-stats-grid .stat-card:nth-child(1) .stat-card-number { color: #a855f7 !important; text-shadow: 0 0 24px rgba(168,85,247,0.35) !important; }
+    .dash-stats-grid .stat-card:nth-child(3) .stat-card-number { color: #00ffaa !important; text-shadow: 0 0 24px rgba(0,255,170,0.35) !important; }
+
+    /* Dash greeting gradient text */
+    .dash-greeting {
+      background: linear-gradient(135deg, #eef0ff 0%, rgba(200,220,255,0.85) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      font-size: clamp(32px, 4vw, 54px) !important;
+      font-weight: 800 !important;
+    }
+
+    /* Mood queue icons bigger */
+    .mq-mood-icon { font-size: 32px !important; }
+    .mq-mood-card:hover .mq-mood-icon {
+      transform: scale(1.25) rotate(-3deg) !important;
+      filter: drop-shadow(0 0 8px var(--mood-glow, rgba(0,229,255,0.5))) !important;
+    }
+
+    /* Filmstrip sprocket holes cyan tint */
+    .detail-filmstrip::before, .detail-filmstrip::after {
+      background-image: radial-gradient(circle, rgba(0,229,255,0.18) 4px, transparent 4px) !important;
+      opacity: 0.65 !important;
+    }
+
+    /* Season tab active glow */
+    .detail-season-tab.active {
+      color: var(--accent-cool) !important;
+      text-shadow: 0 0 12px rgba(0,229,255,0.35) !important;
+    }
+
+    /* Library filter pill active stronger */
+    .lib-filter-pill.active {
+      background: rgba(0,229,255,0.1) !important;
+      border-color: rgba(0,229,255,0.42) !important;
+      box-shadow: 0 0 12px rgba(0,229,255,0.1) !important;
+    }
+
+    /* Next mission title bolder */
+    .next-mission-title {
+      font-weight: 800 !important;
+      font-size: clamp(24px, 3.2vw, 36px) !important;
+    }
+
+    /* BTN-PRIMARY gradient shift */
+    .btn-primary {
+      background-size: 220% 220% !important;
+      background-position: 0% 0% !important;
+      transition: all 250ms var(--ease-snap), background-position 400ms var(--ease-out) !important;
+      font-weight: 800 !important;
+    }
+    .btn-primary:hover { background-position: 100% 100% !important; }
+
+    /* App main more breathing room on desktop */
+    @media (min-width: 601px) {
+      #app-main { padding: 36px 48px 120px !important; }
+    }
+
+    /* Schedule TODAY pill pulse */
+    .lib-card-schedule-pill {
+      animation: schedulePillPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes schedulePillPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.35); }
+      50% { box-shadow: 0 0 0 3px rgba(0,229,255,0); }
+    }
+    .lib-card-schedule-pill.tomorrow { animation: none; }
+
+    /* P7 debt score pulse */
+    @keyframes p7DebtPulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.45; }
+    }
+
+    /* Graveyard ambient — body-level desaturation when in graveyard section */
+    body.in-graveyard #hex-grid polygon {
+      stroke-opacity: 0.04 !important;
+      fill-opacity: 0.01 !important;
+    }
+    body.in-graveyard body::before { opacity: 0.4 !important; }
+    </style>
 </head>
 <body>
 
@@ -5822,7 +6138,7 @@
     budgetDefaultDailyHours: 4,
     tasksDefaultDurationMin: 45,
     overviewDateLookaheadDays: 14,
-    quickAddPlaceholder: 'One Piece | anime | 1122 eps',
+    quickAddPlaceholder: 'Attack on Titan | anime | 75 eps',
     dashboardSuggestionMode: 'oldest', // oldest | newest | random
     librarySortMode: 'added-desc'
   }
@@ -7791,6 +8107,8 @@
   function navigateTo(section, detailId = null, skipPush = false) {
     // Cleanup theme overrides from detail view before any navigation
     if (window.__detailCleanup) { window.__detailCleanup(); window.__detailCleanup = null }
+    if (window.__libSearchCleanup) { window.__libSearchCleanup(); window.__libSearchCleanup = null }
+    document.body.classList.remove('in-graveyard')
     // Remove multi-select bar if present
     var _sb = document.getElementById('detail-select-bar'); if (_sb) _sb.remove()
     currentSection  = section
@@ -7954,15 +8272,31 @@
     const today   = getTodayName()
     const budget  = checkBudgetReset()
 
-    // ── Greeting ──
-    const hour          = new Date().getHours()
-    const timeGreeting  = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-    const todayLibrary  = library.filter(i => i.scheduledDay === today && i.status === 'watching').length
+    // ── Greeting — smart, context-aware ──
+    const hour = new Date().getHours()
+    const timeGreeting = hour < 6 ? 'Still up?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : hour < 23 ? 'Good evening' : 'Late night'
+    const todayDateKeyDash = localDateStr()
+    const todaySchedCountDash = (loadData(KEYS.schedule, {})[todayDateKeyDash] || []).length
     const todayTasks    = tasks.filter(t => t.scheduledDay === today && !t.completed).length
-    const totalScheduled = todayLibrary + todayTasks
+    const totalScheduled = todaySchedCountDash + todayTasks
+    // Compute 7-day streak from log
+    var _streak = 0
+    var _log = loadData(KEYS.log, [])
+    var _checkDate = new Date(); _checkDate.setHours(0,0,0,0)
+    for (var _si = 0; _si < 30; _si++) {
+      var _dk = localDateStr(_checkDate)
+      var _hasActivity = _log.some(function(e) {
+        return e.timestamp.slice(0,10) === _dk && (e.text.indexOf('Watched ep') !== -1 || e.text.indexOf('Read ch') !== -1 || e.text.indexOf('Timed') !== -1)
+      })
+      if (_hasActivity) { _streak++; _checkDate.setDate(_checkDate.getDate()-1) }
+      else if (_si === 0) { _checkDate.setDate(_checkDate.getDate()-1); continue } // today might not have activity yet
+      else break
+    }
     let greetText
     if (totalScheduled > 0) {
-      greetText = `${timeGreeting} — ${totalScheduled} thing${totalScheduled > 1 ? 's' : ''} on deck for today.`
+      greetText = `${timeGreeting} — ${totalScheduled} thing${totalScheduled > 1 ? 's' : ''} on deck today.`
+    } else if (_streak >= 3) {
+      greetText = `${timeGreeting} — ${_streak}-day streak. Don't break it.`
     } else if (hour < 12) {
       greetText = `Good morning — nothing scheduled. Productive day or tactical avoidance?`
     } else {
@@ -8074,7 +8408,10 @@
     b1.style.paddingTop = '28px'
     b1.innerHTML = `
       <div class="dash-greeting">${greetText}</div>
-      <div class="dash-date">${dateStr}</div>`
+      <div class="dash-date" style="display:flex;align-items:center;gap:12px;">
+        <span>${dateStr}</span>
+        ${_streak >= 2 ? `<span style="font:700 10px var(--font-mono);color:var(--accent-warm);background:rgba(255,96,64,0.1);border:1px solid rgba(255,96,64,0.25);border-radius:var(--radius-pill);padding:2px 10px;letter-spacing:0.1em;">🔥 ${_streak} DAY STREAK</span>` : ''}
+      </div>`
 
     // [BLOCK 2] Stat cards
     const b2 = makeBlock()
@@ -8120,22 +8457,29 @@
       })
       if (missed.length === 0) { container.style.display = 'none'; return }
       container.style.display = ''
-      var missedHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">' +
-        '<div style="font:700 11px var(--font-mono);color:var(--danger);letter-spacing:0.12em;">⚠ MISSED SCHEDULE · ' + missed.length + ' EPISODE' + (missed.length > 1 ? 'S' : '') + '</div>' +
-        '<button id="dash-clear-missed" style="background:transparent;border:1px solid var(--border);color:var(--text-3);font:600 10px var(--font-mono);padding:3px 10px;border-radius:var(--radius-pill);cursor:none;transition:color 150ms,border-color 150ms;" title="Clear all missed entries">CLEAR ALL</button>' +
-        '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:6px;">'
+      // Build missed block via DOM (no inline onclick)
+      var missedFrag = document.createDocumentFragment()
+      var missedHdr = document.createElement('div')
+      missedHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);'
+      missedHdr.innerHTML = '<div style="font:700 11px var(--font-mono);color:var(--danger);letter-spacing:0.12em;">⚠ MISSED SCHEDULE · ' + missed.length + ' EPISODE' + (missed.length > 1 ? 'S' : '') + '</div>' +
+        '<button id="dash-clear-missed" style="background:transparent;border:1px solid var(--border);color:var(--text-3);font:600 10px var(--font-mono);padding:3px 10px;border-radius:var(--radius-pill);cursor:none;transition:color 150ms,border-color 150ms;">CLEAR ALL</button>'
+      missedFrag.appendChild(missedHdr)
+      var missedList = document.createElement('div')
+      missedList.style.cssText = 'display:flex;flex-direction:column;gap:6px;'
       missed.forEach(function(m) {
-        var d = new Date(m.dateKey + 'T00:00:00')
-        var dateLabel = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })
-        missedHTML += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);border:1px solid rgba(255,59,107,0.2);border-radius:var(--radius-sm);cursor:none;" onclick="navigateTo(\'detail\',\'' + m.entry.id + '\')">' +
-          '<span style="font:600 10px var(--font-mono);color:var(--danger);min-width:70px;">' + dateLabel + '</span>' +
+        var _dago = Math.round((new Date(localDateStr()) - new Date(m.dateKey+'T00:00:00')) / 86400000)
+        var _dagoStr = _dago === 1 ? 'yesterday' : (_dago + 'd ago')
+        var row = document.createElement('div')
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);border:1px solid rgba(255,59,107,0.2);border-radius:var(--radius-sm);cursor:none;transition:background 150ms;'
+        row.innerHTML = '<span style="font:600 10px var(--font-mono);color:var(--danger);min-width:60px;">' + _dagoStr + '</span>' +
           '<span style="font:600 12px var(--font-mono);color:var(--text-1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.entry.title + '</span>' +
-          (m.entry.eps ? '<span style="font:500 10px var(--font-mono);color:var(--text-3);">' + m.entry.eps + '</span>' : '') +
-          '</div>'
+          (m.entry.eps ? '<span style="font:700 10px var(--font-mono);color:var(--accent-warm);background:rgba(255,96,64,0.1);padding:1px 6px;border-radius:4px;">' + m.entry.eps + '</span>' : '')
+        ;(function(eid){ row.addEventListener('click', function(){ navigateTo('detail', eid) }) })(m.entry.id)
+        missedList.appendChild(row)
       })
-      missedHTML += '</div>'
-      container.innerHTML = missedHTML
+      missedFrag.appendChild(missedList)
+      container.innerHTML = ''
+      container.appendChild(missedFrag)
       var clearBtn = document.getElementById('dash-clear-missed')
       if (clearBtn) {
         clearBtn.addEventListener('mouseenter', function() { clearBtn.style.color = 'var(--danger)'; clearBtn.style.borderColor = 'var(--danger)' })
@@ -8393,20 +8737,40 @@
       resetBtn.addEventListener('click', () => setMoodWidgetState(container, 'idle', null, []))
       wrap.appendChild(resetBtn)
 
+      // Show last used mood as quick-repeat
+      const _lastMoodKey = (function(){ try{ return Object.keys(loadData(KEYS.lastMood,{})).slice(-1)[0] }catch(e){return null} })()
+      if (_lastMoodKey) {
+        const _lastMoodDef = MOOD_DEFS.find(m => m.key === _lastMoodKey)
+        if (_lastMoodDef) {
+          const quickBtn = document.createElement('button')
+          quickBtn.style.cssText = 'width:100%;padding:6px 12px;background:var(--accent-cool-dim);border:1px solid rgba(0,229,255,0.3);border-radius:var(--radius-pill);color:var(--accent-cool);font:600 10px var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:none;margin-bottom:8px;transition:all 150ms;'
+          quickBtn.textContent = '↻ Again: ' + _lastMoodDef.label
+          quickBtn.addEventListener('click', () => setMoodWidgetState(container, 'result', _lastMoodKey, []))
+          wrap.appendChild(quickBtn)
+        }
+      }
+
       const grid = document.createElement('div')
       grid.className = 'mood-pills-grid'
+      // Get counts of available matches per mood for smarter display
+      const _lib = loadData(KEYS.library, []).filter(i => i.status==='watching' && i.type!=='social')
       MOOD_DEFS.forEach((m, i) => {
+        const count = _lib.filter(i2 => (i2.moodTags||[]).includes(m.key)).length
         const pill = document.createElement('button')
         pill.className   = 'mood-pill'
         pill.textContent = m.label
+        if (count > 0) {
+          pill.innerHTML = '<span style="flex:1;">' + m.label + '</span><span style="font:600 9px var(--font-mono);color:var(--text-3);margin-left:6px;opacity:0.7;">' + count + '</span>'
+          pill.style.display = 'flex'; pill.style.alignItems = 'center'
+        } else {
+          pill.style.opacity = '0.4'
+          pill.title = 'Nothing tagged with this mood'
+        }
         pill.addEventListener('click', () => {
           setMoodWidgetState(container, 'result', m.key, [])
         })
         grid.appendChild(pill)
-        // Stagger pill entrance
-        setTimeout(() => {
-          requestAnimationFrame(() => pill.classList.add('entered'))
-        }, i * 40)
+        setTimeout(() => { requestAnimationFrame(() => pill.classList.add('entered')) }, i * 35)
       })
       wrap.appendChild(grid)
       container.appendChild(wrap)
@@ -8439,17 +8803,20 @@
           setMoodWidgetState(container, 'idle', null, [])
         })
       } else {
-        // No results
+        // No results — show which items are missing this tag + offer to add
+        const _allLib = loadData(KEYS.library, []).filter(i => i.status==='watching' && i.type!=='social')
+        const _suggestions = _allLib.slice(0,3).map(i => i.title).join(', ')
         wrap.innerHTML = `
           <div style="padding:var(--space-3) 0;text-align:center;">
             <div style="font:var(--text-sm) var(--font-mono);color:var(--text-2);margin-bottom:var(--space-2);">
-              Nothing matches this mood.
+              Nothing tagged "${selectedMood}".
             </div>
-            <div style="font:var(--text-xs) var(--font-mono);color:var(--text-3);margin-bottom:var(--space-4);">
-              Your collection is lacking.
+            <div style="font:var(--text-xs) var(--font-mono);color:var(--text-3);margin-bottom:var(--space-2);line-height:1.6;">
+              Tag your watching items with this mood<br>to get recommendations here.
             </div>
+            ${_suggestions ? `<div style="font:400 10px var(--font-mono);color:var(--text-3);margin-bottom:var(--space-4);opacity:0.7;">e.g. ${_suggestions}</div>` : ''}
             <button class="btn-ghost" style="font-size:var(--text-xs);"
-              onclick="navigateTo('library')">Add something →</button>
+              onclick="navigateTo('library')">Go to Library →</button>
           </div>
           <button class="mood-back-link" id="mw-back2">← Back</button>`
         container.appendChild(wrap)
@@ -8475,15 +8842,18 @@
     const usedHrs = budget.usedMinutes / 60
     const totalHrs = budget.dailyHours
     const pct      = usedHrs / totalHrs
-    const color    = getBudgetColor(pct)
+    const _budgetOver = usedHrs > totalHrs
+    const color    = _budgetOver ? '#ff3b6b' : getBudgetColor(pct)
     const remaining = Math.max(totalHrs - usedHrs, 0)
     const library = loadData(KEYS.library, [])
     const tasks   = loadData(KEYS.tasks, [])
     const totalTimedMins = library.reduce((acc, i) => acc + (i.timerMinutes || 0), 0)
                         + tasks.reduce((acc, t) => acc + (t.timerMinutes || 0), 0)
     const usedLabel = fmtMins(budget.usedMinutes) || '0m'
-    const remLabel = remaining >= 1 ? (remaining.toFixed(1) + ' hours remaining today') : (Math.round(remaining * 60) + 'm remaining today')
-
+    const _overBudget = _budgetOver
+    const remLabel = _overBudget
+      ? '<span style="color:var(--danger);">⚠ ' + fmtMins(budget.usedMinutes - budget.dailyHours*60) + ' over budget</span>'
+      : (remaining >= 1 ? (remaining.toFixed(1) + ' hours remaining today' + (function(){ var _ec=Math.floor(Math.max(0,(budget.dailyHours*60)-budget.usedMinutes)/24); return _ec>1?' <span style="opacity:0.5;font-size:10px;">≈ '+_ec+' ep</span>':'' })()) : (Math.round(remaining * 60) + 'm remaining today' + (function(){ var _ec=Math.floor(Math.max(0,(budget.dailyHours*60)-budget.usedMinutes)/24); return _ec>1?' <span style="opacity:0.5;font-size:10px;">≈ '+_ec+' ep</span>':'' })()))
     container.innerHTML = `
       <div class="budget-arc-wrap">
         <svg class="budget-arc-svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
@@ -8924,11 +9294,17 @@
     const main    = document.getElementById('app-main')
     var library = sortLibraryItems(loadData(KEYS.library, []), normalizeLibrarySortMode(getAppSettings().librarySortMode))
 
-    // Filter state -- lives for this render cycle
-    let activeType  = 'all'
-    let searchQuery = ''
+    // Filter state — persisted across renders via sessionStorage
+    var _libState = (function() {
+      try { return JSON.parse(sessionStorage.getItem('phub_lib_filter') || '{}') } catch(e) { return {} }
+    })()
+    function _saveLibState() {
+      try { sessionStorage.setItem('phub_lib_filter', JSON.stringify(_libState)) } catch(e) {}
+    }
+    let activeType  = _libState.type  || 'all'
+    let searchQuery = _libState.q     || ''
     let searchTimer = null
-    let showOnHold  = false
+    let showOnHold  = _libState.hold  || false
 
     const MOOD_CHIP_COLORS = {
       'brain-off':       '#8888aa',
@@ -8972,40 +9348,78 @@
       '</div>'
     topbar.appendChild(row1)
 
-    // Filter pills
+    // Filter row — two rows: status segment + type pills
     const filterRow = document.createElement('div')
     filterRow.className = 'lib-filter-row'
+    filterRow.style.cssText = 'display:flex;flex-direction:column;gap:8px;'
+
+    // ── Row A: WATCHING | ON HOLD segmented control ──
+    var segWrap = document.createElement('div')
+    segWrap.style.cssText = 'display:flex;align-items:center;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-pill);padding:3px;width:fit-content;'
+
+    function makeSegBtn(label, isActive, color) {
+      var btn = document.createElement('button')
+      btn.style.cssText = 'font:700 9px var(--font-mono);letter-spacing:0.14em;text-transform:uppercase;padding:5px 14px;border-radius:var(--radius-pill);border:none;cursor:none;transition:all 150ms var(--ease-snap);white-space:nowrap;'
+      btn.textContent = label
+      function setActive(on) {
+        btn.style.background = on ? (color || 'rgba(0,229,255,0.15)') : 'transparent'
+        btn.style.color = on ? (color ? color.replace(/0\.\d+\)/, '1)').replace('rgba','rgb').replace(',1)','') : 'var(--accent-cool)') : 'var(--text-3)'
+        btn.style.boxShadow = on ? ('0 0 10px ' + (color || 'rgba(0,229,255,0.15)')) : 'none'
+      }
+      btn._setActive = setActive
+      setActive(isActive)
+      return btn
+    }
+
+    var btnWatching = makeSegBtn('▶ WATCHING', !showOnHold, 'rgba(0,229,255,0.15)')
+    var btnOnHold   = makeSegBtn('⏸ ON HOLD', showOnHold,  'rgba(249,115,22,0.15)')
+
+    btnWatching.addEventListener('click', function() {
+      showOnHold = false
+      _libState.hold = false; _saveLibState()
+      btnWatching._setActive(true)
+      btnOnHold._setActive(false)
+      // Also restore type pills to non-graveyard state
+      filterRow.querySelectorAll('.lib-filter-pill').forEach(function(p) {
+        p.classList.toggle('active', p.dataset.filterType === activeType)
+      })
+      filterCards()
+    })
+    btnOnHold.addEventListener('click', function() {
+      showOnHold = true
+      _libState.hold = true; _saveLibState()
+      btnOnHold._setActive(true)
+      btnWatching._setActive(false)
+      filterRow.querySelectorAll('.lib-filter-pill').forEach(function(p) {
+        p.classList.toggle('active', p.dataset.filterType === activeType)
+      })
+      filterCards()
+    })
+
+    segWrap.appendChild(btnWatching)
+    segWrap.appendChild(btnOnHold)
+    filterRow.appendChild(segWrap)
+
+    // ── Row B: Type pills ──
+    var typePillRow = document.createElement('div')
+    typePillRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;'
     const TYPES = ['all','anime','manga','manhwa','show','movie','novel','social']
     TYPES.forEach(function(t) {
       const pill = document.createElement('button')
-      pill.className = 'lib-filter-pill' + (t === 'all' ? ' active' : '')
+      pill.className = 'lib-filter-pill' + (t === activeType ? ' active' : '')
       pill.textContent = t === 'all' ? 'ALL' : t.toUpperCase()
       pill.dataset.filterType = t
       pill.addEventListener('click', function() {
         activeType = t
-        filterRow.querySelectorAll('.lib-filter-pill').forEach(function(p) {
+        _libState.type = t; _saveLibState()
+        typePillRow.querySelectorAll('.lib-filter-pill').forEach(function(p) {
           p.classList.toggle('active', p.dataset.filterType === t)
         })
         filterCards()
       })
-      filterRow.appendChild(pill)
+      typePillRow.appendChild(pill)
     })
-
-    // On Hold filter pill — separate, after type pills
-    var holdPill = document.createElement('button')
-    holdPill.className = 'lib-filter-pill'
-    holdPill.textContent = '⏸ ON HOLD'
-    holdPill.dataset.filterType = 'on-hold'
-    holdPill.style.cssText = 'border-color:rgba(255,225,77,0.3);color:var(--accent-yellow);'
-    holdPill.addEventListener('click', function() {
-      var isActive = holdPill.classList.contains('hold-active')
-      holdPill.classList.toggle('hold-active', !isActive)
-      holdPill.style.background = !isActive ? 'rgba(255,225,77,0.12)' : ''
-      holdPill.style.borderColor = !isActive ? 'rgba(255,225,77,0.5)' : 'rgba(255,225,77,0.3)'
-      showOnHold = !isActive
-      filterCards()
-    })
-    filterRow.appendChild(holdPill)
+    filterRow.appendChild(typePillRow)
     topbar.appendChild(filterRow)
 
     // Search + quick-add row
@@ -9101,11 +9515,11 @@
           setTimeout(function() {
             requestAnimationFrame(function() {
               card.style.transition =
-                'opacity 300ms ' + delay + 'ms var(--ease-out), ' +
-                'transform 300ms ' + delay + 'ms var(--ease-out)'
+                'opacity 360ms ' + delay + 'ms var(--ease-out), ' +
+                'transform 400ms ' + delay + 'ms var(--ease-spring)'
               card.classList.add('lib-card-entered')
               cardObserver.unobserve(card)
-              setTimeout(function() { card.style.willChange = '' }, 300 + delay + 50)
+              setTimeout(function() { card.style.willChange = '' }, 450 + delay)
             })
           }, 0)
         })
@@ -9160,23 +9574,59 @@
       var visible = 0
       var q       = searchQuery.toLowerCase()
       cards.forEach(function(card) {
-        var typeOk    = activeType === 'all' || card.dataset.type === activeType
-        var titleOk   = !q || card.dataset.title.includes(q)
-        var notGrave  = card.dataset.status !== 'graveyard'
-        var isOnHold  = card.dataset.status === 'on-hold'
-        var holdOk    = showOnHold ? isOnHold : !isOnHold
-        var show      = typeOk && titleOk && notGrave && (showOnHold ? isOnHold : !isOnHold)
+        var typeOk   = activeType === 'all' || card.dataset.type === activeType
+        var titleOk  = !q || (card.dataset.title || '').toLowerCase().includes(q)
+        var notGrave = card.dataset.status !== 'graveyard'
+        var isOnHold = card.dataset.status === 'on-hold'
+        var show     = typeOk && titleOk && notGrave && (showOnHold ? isOnHold : !isOnHold)
         card.style.display = show ? '' : 'none'
         if (show) visible++
       })
       noResults.style.display = (library.length > 0 && visible === 0) ? 'block' : 'none'
+      if (library.length > 0 && visible === 0) {
+        noResults.innerHTML = '<div style="color:var(--text-3);font:400 12px var(--font-mono);">No results for <span style="color:var(--text-2);">&ldquo;' + searchQuery + '&rdquo;</span>' + (activeType!=='all'?' in '+activeType:'') + '</div>'
+        var _clrBtn = document.createElement('button')
+        _clrBtn.textContent = 'Clear search'
+        _clrBtn.style.cssText = 'margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text-3);font:600 10px var(--font-mono);padding:4px 12px;border-radius:var(--radius-pill);cursor:none;letter-spacing:0.1em;text-transform:uppercase;'
+        _clrBtn.addEventListener('click', function() {
+          var si = document.getElementById('lib-search')
+          if (si) si.value = ''
+          searchQuery = ''
+          filterCards()
+        })
+        noResults.appendChild(_clrBtn)
+      }
     }
+
+    // Restore search query if persisted
+    if (searchQuery) { searchInput.value = searchQuery }
+
+    // Keyboard shortcut: press / to focus search
+    var _libKeyHandler = function(e) {
+      if (e.key === '/' && document.activeElement !== searchInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault()
+        searchInput.focus()
+        searchInput.select()
+      }
+      if (e.key === 'Escape' && document.activeElement === searchInput) {
+        searchInput.blur()
+        searchInput.value = ''
+        searchQuery = ''
+        _libState.q = ''; _saveLibState()
+        filterCards()
+      }
+    }
+    document.addEventListener('keydown', _libKeyHandler)
+    // Cleanup on nav away
+    var _origDetailCleanup = window.__detailCleanup
+    window.__libSearchCleanup = function() { document.removeEventListener('keydown', _libKeyHandler) }
 
     // Search -- debounced 60ms
     searchInput.addEventListener('input', function(e) {
       if (searchTimer) clearTimeout(searchTimer)
       searchTimer = setTimeout(function() {
         searchQuery = e.target.value
+        _libState.q = searchQuery; _saveLibState()
         filterCards()
       }, 60)
     })
@@ -9434,8 +9884,18 @@
     if (personalRating) {
       ratingHTML += '<span class="lib-card-rating-chip chip-personal"><span class="lib-card-rating-label">MY</span><span class="lib-card-rating-value">' + personalRating + '</span></span>'
     }
-    const dayHTML     = item.scheduledDay
-      ? '<span class="lib-card-day">\u25b8 ' + item.scheduledDay + '</span>' : ''
+    // Schedule-aware pill: check if item is on today or tomorrow's schedule
+    var _todayKey2 = localDateStr()
+    var _tomorrowDate = new Date(); _tomorrowDate.setDate(_tomorrowDate.getDate()+1)
+    var _tomorrowKey = localDateStr(_tomorrowDate)
+    var _sched2 = loadData(KEYS.schedule, {})
+    var _isToday = (_sched2[_todayKey2]||[]).some(function(e){return e.id===item.id})
+    var _isTomorrow = !_isToday && (_sched2[_tomorrowKey]||[]).some(function(e){return e.id===item.id})
+    var dayHTML = _isToday
+      ? '<span class="lib-card-schedule-pill">TODAY</span>'
+      : _isTomorrow
+        ? '<span class="lib-card-schedule-pill tomorrow">TOMORROW</span>'
+        : (item.scheduledDay ? '<span class="lib-card-day">\u25b8 ' + item.scheduledDay + '</span>' : '')
 
     card.innerHTML =
       '<div class="lib-card-header">' +
@@ -9447,7 +9907,21 @@
         '<div class="progress-bar">' +
           '<div class="progress-bar-fill" style="width:' + (item.type==='social'?socialPct:pct) + '%;background:' + accentColor + ';"></div>' +
         '</div>' +
-        '<div class="lib-card-progress-text">' + (item.type==='social' ? (socialWatched+' of '+socialTotal+' videos · \u23f1 '+fmtMins(item.timerMinutes || 0)) : (watched + ' of ' + total + ' ' + unit + ' · ⏱ ' + fmtMins(item.timerMinutes || 0))) + '</div>' +
+        '<div class="lib-card-progress-text">' + (function() {
+          var _base = item.type==='social'
+            ? (socialWatched+'/'+socialTotal+' videos · '+Math.round(socialPct)+'%')
+            : (watched+'/'+total+' '+unit+(total>0?' — '+Math.round(pct)+'%':''))
+          var _time = item.timerMinutes>=1 ? ' · \u23f1 '+fmtMins(item.timerMinutes) : ''
+          var _ago = ''
+          if (item.lastActivityAt) {
+            var _diffMs = Date.now() - new Date(item.lastActivityAt).getTime()
+            var _diffDays = Math.floor(_diffMs/(1000*3600*24))
+            if (_diffDays === 0) _ago = ' · today'
+            else if (_diffDays === 1) _ago = ' · yesterday'
+            else if (_diffDays <= 14) _ago = ' · ' + _diffDays + 'd ago'
+          }
+          return _base + _time + _ago
+        })() + '</div>' +
       '</div>' +
       (moodChipsHTML ? '<div class="lib-card-moods">' + moodChipsHTML + '</div>' : '') +
       '<div class="lib-card-footer">' +
@@ -9460,6 +9934,14 @@
       '</div>'
 
     // Entire card is clickable
+    // Type-colored left border accent
+    var _typeColors = {
+      anime:'#c084fc', manga:'#34d399', manhwa:'#fb923c',
+      show:'#60a5fa', movie:'#fbbf24', novel:'#f472b6', social:'#ff4d4d'
+    }
+    var _tc = (item.themeStyles && item.themeStyles['--accent-cool']) || _typeColors[item.type] || 'rgba(100,160,255,0.4)'
+    card.style.borderLeftColor = _tc
+    card.style.boxShadow = 'var(--glow-card), inset 0 1px 0 rgba(100,180,255,0.12), -3px 0 20px ' + _tc + '22'
     card.style.cursor = 'none'
     card.addEventListener('click', function(e) {
       // Don't navigate if clicking a button inside the card
@@ -11200,7 +11682,7 @@
     // Put on hold button
     var holdBtn = document.createElement('button')
     holdBtn.className = 'btn-ghost'
-    holdBtn.style.cssText = 'width:100%;margin-bottom:8px;border-color:rgba(255,225,77,0.3);color:var(--accent-yellow);'
+    holdBtn.style.cssText = 'width:100%;margin-bottom:8px;border-color:rgba(249,115,22,0.3);color:#f97316;'
     var isOnHold = item.status === 'on-hold'
     holdBtn.textContent = isOnHold ? '▶ Resume Series' : '⏸ Put on Hold'
     holdBtn.addEventListener('click', function() {
@@ -11210,7 +11692,7 @@
         if (it6.status === 'on-hold') {
           it6.status = 'watching'
           holdBtn.textContent = '⏸ Put on Hold'
-          holdBtn.style.borderColor = 'rgba(255,225,77,0.3)'
+          holdBtn.style.borderColor = 'rgba(249,115,22,0.3)'
           logEvent('Resumed ' + item.title)
         } else {
           it6.status = 'on-hold'
@@ -12122,6 +12604,10 @@
       ratingsHTML += '</div>'
     }
 
+    // Set episode title as data attribute for CSS tooltip
+    if (ep.title && ep.title !== 'Episode ' + ep.number && ep.title !== 'Ch. ' + ep.number) {
+      tile.dataset.title = ep.title
+    }
     tile.innerHTML =
       ratingsHTML +
       '<span class="ep-num">' + ep.number + '</span>' +
@@ -12398,8 +12884,11 @@
       var newPct     = it.totalEpisodes > 0
         ? Math.min((newWatched / it.totalEpisodes) * 100, 100) : 0
       if (fill)      fill.style.width = newPct + '%'
-      if (progLabel) progLabel.textContent = newWatched + ' of ' + it.totalEpisodes + ' ' +
-        ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'chapters' : 'eps') + ' ' + ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'read' : 'watched')
+      if (progLabel) {
+        var _isRead = (it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel')
+        var _pctStr = it.totalEpisodes > 0 ? ' — ' + Math.round(newPct) + '%' : ''
+        progLabel.textContent = newWatched + '/' + it.totalEpisodes + ' ' + (_isRead ? 'chapters read' : 'eps watched') + _pctStr
+      }
       // Update library card progress bar live if it exists in the grid
       var libCard = document.querySelector('.library-card[data-title="' + it.title.toLowerCase() + '"]')
       if (libCard) {
@@ -12494,8 +12983,10 @@
       var newPct    = it.totalEpisodes > 0
         ? Math.min((it.watchedEpisodes.length / it.totalEpisodes) * 100, 100) : 0
       if (fill) fill.style.width = newPct + '%'
-      if (progLabel) progLabel.textContent = it.watchedEpisodes.length + ' of ' + it.totalEpisodes +
-        ' ' + ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'chapters' : 'eps') + ' ' + ((it.type === 'manga' || it.type === 'manhwa' || it.type === 'novel') ? 'read' : 'watched')
+      if (progLabel) {
+        var _isReadMA = (it.type==='manga'||it.type==='manhwa'||it.type==='novel')
+        progLabel.textContent = it.watchedEpisodes.length + '/' + it.totalEpisodes + ' ' + (_isReadMA?'chapters read':'eps watched') + (it.totalEpisodes>0?' — '+Math.round(newPct)+'%':'')
+      }
 
       checkSeasonCompletion(it, beforeCount, markAllBtn)
       refreshStats(it.watchedEpisodes)
@@ -12610,8 +13101,8 @@
       var ratingHTML = ''
       if (true) { // show rating cards for ALL types including reading
         // Card 1: clean Avg Rating (no chips inside)
-        ratingHTML = '<div class="stat-card">' +
-          '<div class="stat-card-number" style="font-size:' + statFontSize(overallAvg || '-') + ';white-space:nowrap;">' + (overallAvg || '\u2014') + '</div>' +
+        ratingHTML = '<div class="stat-card" style="border-bottom:2px solid rgba(168,85,247,0.5);">' +
+          '<div class="stat-card-number" style="font-size:' + statFontSize(overallAvg || '-') + ';white-space:nowrap;color:#a855f7;text-shadow:0 0 24px rgba(168,85,247,0.35);">' + (overallAvg || '\u2014') + '</div>' +
           '<div class="stat-card-label">Avg Rating</div>' +
           '</div>'
 
@@ -12657,7 +13148,7 @@
         }
 
         var ratingsCard = ratingsCardInner
-          ? '<div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:8px;border-bottom:none;">' +
+          ? '<div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:8px;border-bottom:2px solid rgba(255,138,76,0.45);">' +
               ratingsCardInner +
               '<div class="stat-card-label" style="margin-top:4px;text-align:center;">Ratings</div>' +
             '</div>'
@@ -12680,8 +13171,8 @@
         stats.classList.add('detail-stat-grid-4col')
         stats.innerHTML =
           ratingHTML +
-          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newWatched + ' / ' + eps.length) + ';white-space:nowrap;">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + unitLabel + '</div></div>' +
-          '<div class="stat-card"><div class="stat-card-number" style="font-size:' + statFontSize(newPct + '%') + ';white-space:nowrap;">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
+          '<div class="stat-card" style="border-bottom:2px solid rgba(0,229,255,0.5);"><div class="stat-card-number" style="font-size:' + statFontSize(newWatched + ' / ' + eps.length) + ';white-space:nowrap;">' + newWatched + ' / ' + eps.length + '</div><div class="stat-card-label">' + unitLabel + '</div></div>' +
+          '<div class="stat-card" style="border-bottom:2px solid rgba(0,255,170,0.5);"><div class="stat-card-number" style="font-size:' + statFontSize(newPct + '%') + ';white-space:nowrap;color:#00ffaa;text-shadow:0 0 20px rgba(0,255,170,0.3);">' + newPct + '%</div><div class="stat-card-label">Complete</div></div>'
         
         // Add click handler for season rating
         var ratingBtn = stats.querySelector('.season-personal-rating-btn')
@@ -13613,11 +14104,15 @@
     // Header
     var today     = getTodayName()
     var activeCnt = tasks.filter(function(t) { return !t.completed }).length
+    var _totalTaskTime = tasks.reduce(function(s,t){return s+(t.timerMinutes||0)},0)
     var headerRow = document.createElement('div')
     headerRow.className = 'tasks-header-row'
     headerRow.innerHTML =
       '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">PROCESS QUEUE</div>' +
-      '<span class="tasks-active-badge">[' + activeCnt + ' ACTIVE]</span>'
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span class="tasks-active-badge">[' + activeCnt + ' ACTIVE]</span>' +
+        (_totalTaskTime >= 1 ? '<span style="font:500 10px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;">⏱ ' + fmtMins(_totalTaskTime) + ' total</span>' : '') +
+      '</div>'
     main.appendChild(headerRow)
 
     // Separator
@@ -13655,6 +14150,13 @@
       opt.textContent = d
       daySelect.appendChild(opt)
     })
+    var prioritySelect = document.createElement('select')
+    prioritySelect.className = 'tasks-day-select'
+    prioritySelect.title = 'Priority level'
+    ;[['','NORM'],['high','HIGH'],['critical','CRIT']].forEach(function(p) {
+      var opt = document.createElement('option')
+      opt.value = p[0]; opt.textContent = p[1]; prioritySelect.appendChild(opt)
+    })
     var spawnBtn = document.createElement('button')
     spawnBtn.className   = 'btn-primary btn-spawn'
     spawnBtn.textContent = '+ SPAWN'
@@ -13662,6 +14164,7 @@
     durWrap.appendChild(minLabel)
     addBar.appendChild(nameIn)
     addBar.appendChild(durWrap)
+    addBar.appendChild(prioritySelect)
     addBar.appendChild(daySelect)
     addBar.appendChild(spawnBtn)
     main.appendChild(addBar)
@@ -13671,8 +14174,10 @@
       if (!name) { nameIn.classList.add('flash-error'); setTimeout(function() { nameIn.classList.remove('flash-error') }, 450); return }
       var dur = parseInt(durIn.value, 10) || null
       var day = daySelect.value || null
+      var pri = prioritySelect.value || ''
       var newTask = {
         id: generateId(name), name: name, duration: dur,
+        priority: pri,
         scheduledDay: day, completed: false, completedDate: null,
         timerMinutes: 0, addedDate: new Date().toISOString().split('T')[0]
       }
@@ -13680,7 +14185,7 @@
       ts.unshift(newTask)
       saveData(KEYS.tasks, ts)
       logEvent('Spawned process: ' + name)
-      nameIn.value = ''; durIn.value = String(getAppSettings().tasksDefaultDurationMin || 45); daySelect.value = ''
+      nameIn.value = ''; durIn.value = String(getAppSettings().tasksDefaultDurationMin || 45); daySelect.value = ''; prioritySelect.value = ''
       tasks = loadData(KEYS.tasks, [])
       refreshActiveList()
     }
@@ -13709,8 +14214,12 @@
     function renderActiveList() {
       var wrap   = document.getElementById('tasks-active-wrap')
       wrap.innerHTML = ''
+      var _priOrder = { critical: 0, high: 1, '': 2 }
       var active = tasks.filter(function(t) { return !t.completed })
         .sort(function(a,b) {
+          var pa = _priOrder[a.priority||''] ?? 2
+          var pb = _priOrder[b.priority||''] ?? 2
+          if (pa !== pb) return pa - pb
           var aToday = (a.scheduledDay === today) ? 0 : 1
           var bToday = (b.scheduledDay === today) ? 0 : 1
           if (aToday !== bToday) return aToday - bToday
@@ -13772,6 +14281,9 @@
     var card = document.createElement('div')
     card.className = 'task-card'
     if (isCompleted) { card.style.opacity = '0.45'; card.style.pointerEvents = 'none' }
+    // Priority left border + badge
+    var _priColor = task.priority === 'critical' ? '#ff3b6b' : task.priority === 'high' ? '#f97316' : 'rgba(100,130,255,0.3)'
+    card.style.borderLeftColor = _priColor
 
     // Status col
     var statusCol = document.createElement('div')
@@ -13798,10 +14310,22 @@
       durSpan.textContent = '~' + task.duration + ' min'
       metaEl.appendChild(durSpan)
     }
+    if (task.priority === 'critical' || task.priority === 'high') {
+      var priPill = document.createElement('span')
+      priPill.className = 'task-day-pill'
+      priPill.textContent = task.priority === 'critical' ? '⚡ CRIT' : '↑ HIGH'
+      priPill.style.cssText = 'background:' + (task.priority==='critical'?'rgba(255,59,107,0.12)':'rgba(249,115,22,0.12)') + ';border-color:' + (task.priority==='critical'?'rgba(255,59,107,0.3)':'rgba(249,115,22,0.3)') + ';color:' + (task.priority==='critical'?'#ff3b6b':'#f97316') + ';'
+      metaEl.appendChild(priPill)
+    }
     if (task.scheduledDay) {
+      var DAYS_ORD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+      var todayIdx  = new Date().getDay()
+      var taskIdx   = DAYS_ORD.indexOf(task.scheduledDay)
+      var isOverdue = taskIdx >= 0 && taskIdx < todayIdx
       var dayPill = document.createElement('span')
       dayPill.className = 'task-day-pill'
-      dayPill.textContent = task.scheduledDay
+      dayPill.textContent = isOverdue ? '⚠ ' + task.scheduledDay : task.scheduledDay
+      if (isOverdue) dayPill.style.cssText = 'background:rgba(255,59,107,0.1);border-color:rgba(255,59,107,0.3);color:#ff3b6b;'
       metaEl.appendChild(dayPill)
     }
     if (isCompleted && task.completedDate) {
@@ -15123,6 +15647,8 @@
 
       var col = document.createElement('div')
       col.className = 'sched-day-col'
+      var isPastDay = dateKey < todayKey && !isToday
+      if (isPastDay) col.style.cssText = 'opacity:0.45;filter:saturate(0.4);'
 
       var hdr = document.createElement('div')
       hdr.className = 'sched-day-header' + (isToday ? ' today' : '')
@@ -15155,6 +15681,54 @@
             (entry.eps ? '<div class="sched-entry-eps">▸ ' + entry.eps + '</div>' : '') +
             (libItem && libItem.timerMinutes && libItem.timerMinutes >= 1 ? '<div class="sched-entry-meta">⏱ ' + fmtMins(libItem.timerMinutes) + ' timed</div>' : '') +
             (remaining !== null && remaining > 0 ? '<div class="sched-entry-meta">' + remaining + ' ' + unit + ' left</div>' : '')
+          // Quick-done tick (marks next episode watched without leaving overview)
+          ;(function(litem, ent, cdk2) {
+            if (litem && litem.status === 'watching') {
+              var doneBtn = document.createElement('button')
+              doneBtn.title = 'Mark as watched'
+              doneBtn.textContent = '✓'
+              doneBtn.style.cssText = 'position:absolute;bottom:4px;right:22px;background:transparent;border:none;color:var(--text-3);font-size:12px;cursor:none;padding:0 3px;transition:color 150ms;font-weight:700;'
+              doneBtn.addEventListener('mouseenter', function() { doneBtn.style.color='var(--accent-green)' })
+              doneBtn.addEventListener('mouseleave', function() { doneBtn.style.color='var(--text-3)' })
+              doneBtn.addEventListener('click', function(ev) {
+                ev.stopPropagation()
+                var lib9 = loadData(KEYS.library,[])
+                var it9  = lib9.find(function(x){return x.id===litem.id})
+                if (!it9) return
+                // Find next unwatched episode number
+                var watched9 = it9.watchedEpisodes || []
+                var nextEp = 1
+                for (var ni=1; ni<=it9.totalEpisodes; ni++) {
+                  var key9 = String(ni)
+                  if (!watched9.includes(ni) && !watched9.includes(key9) && !watched9.includes('s0_'+ni)) { nextEp=ni; break }
+                }
+                it9.watchedEpisodes = watched9.concat([nextEp])
+                touchLibraryItemActivity(it9)
+                saveData(KEYS.library, lib9)
+                logEvent('Watched ep ' + nextEp + ' of ' + litem.title + ' (from overview)')
+                // Visual feedback — flash card green then remove entry if fully done
+                card.style.transition='background 200ms'
+                card.style.background='rgba(0,255,170,0.12)'
+                doneBtn.style.color='var(--accent-green)'
+                setTimeout(function(){
+                  card.style.background=''
+                  // Remove past schedule entry
+                  if (cdk2 < localDateStr()) {
+                    var sched9=loadData(KEYS.schedule,{})
+                    if(sched9[cdk2]) {
+                      sched9[cdk2]=sched9[cdk2].filter(function(x){return x.id!==ent.id})
+                      if(!sched9[cdk2].length) delete sched9[cdk2]
+                      saveData(KEYS.schedule,sched9)
+                    }
+                    card.style.opacity='0.4'
+                  }
+                  if(window.__refreshMissed) window.__refreshMissed()
+                  if(window.__refreshDashboard) window.__refreshDashboard()
+                },600)
+              })
+              card.appendChild(doneBtn)
+            }
+          })(libItem, entry, dateKey)
           card.addEventListener('click', function() {
             if (libItem) navigateTo('detail', libItem.id)
           })
@@ -15385,7 +15959,7 @@
       // Styled ON HOLD pill
       statusWrap.innerHTML =
         '<span class="manifest-status-watch-chip" style="background:rgba(255,225,77,0.1);border:1px solid rgba(255,225,77,0.3);color:var(--accent-yellow);">' +
-          '<span class="chip-dot" style="background:var(--accent-yellow);box-shadow:0 0 8px var(--accent-yellow);"></span>ON HOLD' +
+          '<span class="chip-dot" style="background:#f97316;box-shadow:0 0 8px #f97316;"></span>ON HOLD' +
         '</span>'
     } else if (item.status === 'upcoming') {
       // Styled UPCOMING pill
@@ -15476,7 +16050,7 @@
   function renderGraveyard() {
     var main    = document.getElementById('app-main')
     var library = loadData(KEYS.library, [])
-    var dead    = library.filter(function(i) { return i.status === 'graveyard' })
+    var dead    = library.filter(function(i) { return i.status === 'graveyard' }).sort(function(a,b){ return (b.graveyardDate||b.addedDate||'') > (a.graveyardDate||a.addedDate||'') ? 1 : -1 })
 
     // Scoped section wrapper — CSS vars shift the feel
     var section = document.createElement('div')
@@ -15487,7 +16061,7 @@
     var headerRow = document.createElement('div')
     headerRow.className = 'graveyard-header-row'
     headerRow.innerHTML =
-      '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">THE GRAVEYARD</div>' +
+      '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">THE GRAVEYARD <span style="font:400 9px var(--font-mono);color:var(--text-3);letter-spacing:0.1em;opacity:0.7;">[' + dead.length + ' ENTRIES]</span></div>' +
       '<span class="graveyard-count">[' + dead.length + ' BODIES]</span>'
     section.appendChild(headerRow)
 
@@ -15617,8 +16191,9 @@
       reviveBtn.addEventListener('click', function() {
         var lib = loadData(KEYS.library, [])
         var it  = lib.find(function(x) { return x.id === item.id })
-        if (it) { it.status = 'watching'; it.graveyardDate = null; saveData(KEYS.library, lib) }
-        logEvent('Revived ' + item.title + ' from the graveyard')
+        // Revive to on-hold (not watching) — user decides when to resume
+        if (it) { it.status = 'on-hold'; it.graveyardDate = null; saveData(KEYS.library, lib) }
+        logEvent('Revived ' + item.title + ' from the graveyard → on hold')
         navigateTo('library')
       })
 
@@ -15746,8 +16321,33 @@
 
     var sub = document.createElement('div')
     sub.className = 'log-sub'
-    sub.textContent = 'EVERY ACTION. AUTOMATICALLY RECORDED.'
+    var _logLocal = loadData(KEYS.log, [])
+    var _logToday = _logLocal.filter(function(e){ return e.timestamp.slice(0,10)===localDateStr() }).length
+    var _logTotal = _logLocal.length
+    var _logWatchedTotal = _logLocal.filter(function(e){ return e.text.indexOf('Watched ep')!==-1||e.text.indexOf('Read ch')!==-1 }).length
+    sub.innerHTML = 'EVERY ACTION. AUTOMATICALLY RECORDED. &nbsp;<span style="color:var(--text-3);opacity:0.7;">' + _logTotal + ' events · ' + _logToday + ' today · ' + _logWatchedTotal + ' episodes watched</span>'
     main.appendChild(sub)
+
+    // Log search bar
+    var logSrchWrap = document.createElement('div')
+    logSrchWrap.style.cssText = 'margin-bottom:var(--space-3);'
+    var logSrchIn = document.createElement('input')
+    logSrchIn.type = 'text'; logSrchIn.placeholder = 'Filter log...'; logSrchIn.autocomplete = 'off'
+    logSrchIn.style.cssText = 'width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-pill);color:var(--text-1);font:400 12px var(--font-mono);padding:7px 16px;outline:none;transition:border-color 200ms;'
+    logSrchIn.addEventListener('focus', function(){logSrchIn.style.borderColor='rgba(0,229,255,0.35)'})
+    logSrchIn.addEventListener('blur',  function(){logSrchIn.style.borderColor=''})
+    logSrchIn.addEventListener('input', function() {
+      var q = logSrchIn.value.trim().toLowerCase()
+      var fd = document.getElementById('log-feed-wrap'); if (!fd) return
+      fd.querySelectorAll('.log-event-row').forEach(function(row) {
+        row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none'
+      })
+      fd.querySelectorAll('.log-group').forEach(function(grp) {
+        grp.style.display = (grp.querySelectorAll('.log-event-row:not([style*="none"])').length===0 && q) ? 'none' : ''
+      })
+    })
+    logSrchWrap.appendChild(logSrchIn)
+    main.appendChild(logSrchWrap)
 
     var feedWrap = document.createElement('div')
     feedWrap.id = 'log-feed-wrap'
@@ -17448,13 +18048,15 @@
     debtCard.appendChild(debtBody)
     debtBlock.appendChild(debtCard)
 
-    // Insert after stat cards parent block
+    // Insert after stat cards parent block — safely
     var statParent = statsGrid.parentElement
-    if (statParent && statParent.nextSibling) {
-      main.insertBefore(debtBlock, statParent.nextSibling)
-    } else {
-      main.appendChild(debtBlock)
-    }
+    try {
+      if (statParent && statParent.nextSibling && statParent.parentNode === main) {
+        main.insertBefore(debtBlock, statParent.nextSibling)
+      } else {
+        main.appendChild(debtBlock)
+      }
+    } catch(e) { try { main.appendChild(debtBlock) } catch(e2) {} }
 
     renderDebtScore(debtBody)
     setTimeout(function() { requestAnimationFrame(function() { debtBlock.classList.add('entered') }) }, 120)
@@ -17674,7 +18276,7 @@
       if (!progBar || !progBar.parentElement) return
 
       var velocityContainer = document.createElement('div')
-      progBar.parentElement.insertBefore(velocityContainer, progBar.nextSibling)
+      try { progBar.parentElement.insertBefore(velocityContainer, progBar.nextSibling) } catch(e) { progBar.parentElement.appendChild(velocityContainer) }
       renderVelocityWidget(item, velocityContainer)
     }, 80)
   }
@@ -17683,180 +18285,6 @@
      FEATURE 5: "WHAT DID I ACTUALLY DO" WEEK VIEW
      A tab in Session Log showing plan vs. reality for last 7 days.
   ───────────────────────────────────────────────────────────────── */
-  var _origRenderSessionLog = renderSessionLog
-  window.renderSessionLog = renderSessionLog = function() {
-    _origRenderSessionLog()
-
-    var main = document.getElementById('app-main')
-    if (!main) return
-
-    // Find the header row and inject tabs
-    var headerRow = main.querySelector('.log-header-row')
-    if (!headerRow) return
-
-    // Build tab switcher
-    var tabBar = document.createElement('div')
-    tabBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin:var(--space-2) 0 0;'
-
-    function makeTab(label, isActive) {
-      var btn = document.createElement('button')
-      btn.style.cssText = 'flex:1;padding:8px 12px;background:none;border:none;border-bottom:2px solid ' + (isActive ? 'var(--accent-cool)' : 'transparent') + ';color:' + (isActive ? 'var(--accent-cool)' : 'var(--text-3)') + ';font:700 10px var(--font-mono);letter-spacing:0.12em;text-transform:uppercase;cursor:none;transition:all 150ms;'
-      btn.textContent = label
-      return btn
-    }
-
-    var tabLog = makeTab('SYSTEM LOG', true)
-    var tabWeek = makeTab('THIS WEEK — PLAN VS REALITY', false)
-    tabBar.appendChild(tabLog)
-    tabBar.appendChild(tabWeek)
-
-    var sep = main.querySelector('.log-header-row + div')
-    if (sep) main.insertBefore(tabBar, sep)
-
-    var feedWrap = document.getElementById('log-feed-wrap')
-    var weekView = document.createElement('div')
-    weekView.id = 'week-reality-view'
-    weekView.style.display = 'none'
-    if (feedWrap) feedWrap.parentElement.insertBefore(weekView, feedWrap.nextSibling)
-
-    tabLog.addEventListener('click', function() {
-      tabLog.style.borderBottomColor = 'var(--accent-cool)'; tabLog.style.color = 'var(--accent-cool)'
-      tabWeek.style.borderBottomColor = 'transparent'; tabWeek.style.color = 'var(--text-3)'
-      if (feedWrap) feedWrap.style.display = ''
-      weekView.style.display = 'none'
-    })
-
-    tabWeek.addEventListener('click', function() {
-      tabWeek.style.borderBottomColor = 'var(--accent-cool)'; tabWeek.style.color = 'var(--accent-cool)'
-      tabLog.style.borderBottomColor = 'transparent'; tabLog.style.color = 'var(--text-3)'
-      if (feedWrap) feedWrap.style.display = 'none'
-      weekView.style.display = ''
-      renderWeekReality(weekView)
-    })
-  }
-
-  function renderWeekReality(container) {
-    container.innerHTML = ''
-    var log = loadData(KEYS.log, [])
-    var schedule = loadData(KEYS.schedule, {})
-    var library = loadData(KEYS.library, [])
-
-    // Build 7-day range (today + last 6 days)
-    var days = []
-    for (var i = 6; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate() - i)
-      days.push(localDateStr(d))
-    }
-
-    var DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-
-    // Index log by date and item
-    var logByDate = {}
-    var titleLower = {}
-    library.forEach(function(item) { titleLower[item.id] = (item.title || '').toLowerCase() })
-
-    log.forEach(function(evt) {
-      var dk = evt.timestamp.slice(0, 10)
-      if (!logByDate[dk]) logByDate[dk] = []
-      logByDate[dk].push(evt.text || '')
-    })
-
-    var grid = document.createElement('div')
-    grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--space-4);'
-
-    var legend = document.createElement('div')
-    legend.style.cssText = 'display:flex;gap:16px;margin-top:var(--space-4);flex-wrap:wrap;'
-    ;[
-      { color: 'rgba(255,59,107,0.15)', border: 'rgba(255,59,107,0.4)', label: 'Planned, not done' },
-      { color: 'rgba(0,255,170,0.1)',   border: 'rgba(0,255,170,0.35)', label: 'Unplanned — spontaneous' },
-      { color: 'rgba(0,229,255,0.1)',   border: 'rgba(0,229,255,0.25)', label: 'Planned and done' },
-    ].forEach(function(l) {
-      var row = document.createElement('div')
-      row.style.cssText = 'display:flex;align-items:center;gap:6px;font:400 10px var(--font-mono);color:var(--text-3);'
-      var dot = document.createElement('div')
-      dot.style.cssText = 'width:10px;height:10px;border-radius:2px;background:' + l.color + ';border:1px solid ' + l.border + ';flex-shrink:0;'
-      row.appendChild(dot)
-      row.appendChild(document.createTextNode(l.label))
-      legend.appendChild(row)
-    })
-
-    days.forEach(function(dk) {
-      var d = new Date(dk + 'T00:00:00')
-      var dayName = DAY_NAMES[d.getDay()]
-      var dayNum = d.getDate()
-      var isToday = dk === localDateStr()
-
-      var col = document.createElement('div')
-      col.style.cssText = 'display:flex;flex-direction:column;gap:4px;'
-
-      var hdr = document.createElement('div')
-      hdr.style.cssText = 'text-align:center;padding:4px 2px 6px;border-bottom:1px solid var(--border);'
-      hdr.innerHTML = '<div style="font:700 9px var(--font-mono);color:' + (isToday ? 'var(--accent-cool)' : 'var(--text-3)') + ';letter-spacing:0.1em;">' + dayName + '</div>' +
-        '<div style="font:600 16px var(--font-display);color:' + (isToday ? 'var(--text-1)' : 'var(--text-2)') + ';">' + dayNum + '</div>'
-      col.appendChild(hdr)
-
-      // What was planned for this day
-      var planned = schedule[dk] || []
-      var actualLog = logByDate[dk] || []
-
-      // Find what was actually watched/read this day
-      var actualItems = {}
-      actualLog.forEach(function(text) {
-        var t = text.toLowerCase()
-        library.forEach(function(item) {
-          var tl = (item.title || '').toLowerCase()
-          if (tl.length > 3 && (t.includes('watched ep') || t.includes('read ch')) && t.includes(tl)) {
-            if (!actualItems[item.id]) actualItems[item.id] = { item: item, count: 0 }
-            actualItems[item.id].count++
-          }
-        })
-      })
-
-      var plannedIds = planned.map(function(p) { return p.id })
-      var actualIds = Object.keys(actualItems)
-
-      // Planned but not done (missed)
-      planned.forEach(function(entry) {
-        var done = actualIds.includes(entry.id)
-        var cell = document.createElement('div')
-        cell.style.cssText = 'padding:5px 6px;border-radius:4px;font:500 9px var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
-          (done ? 'background:rgba(0,229,255,0.10);border:1px solid rgba(0,229,255,0.25);color:var(--accent-cool);' :
-                  'background:rgba(255,59,107,0.12);border:1px solid rgba(255,59,107,0.35);color:rgba(255,80,100,0.9);')
-        cell.title = entry.title + (done ? ' ✓' : ' (missed)')
-        cell.textContent = (done ? '✓ ' : '✗ ') + (entry.title || 'Unknown')
-        col.appendChild(cell)
-      })
-
-      // Actually done but not planned (spontaneous)
-      actualIds.forEach(function(id) {
-        if (!plannedIds.includes(id)) {
-          var info = actualItems[id]
-          var cell = document.createElement('div')
-          cell.style.cssText = 'padding:5px 6px;border-radius:4px;font:500 9px var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.3);color:rgba(0,220,140,0.9);'
-          cell.title = info.item.title + ' — spontaneous'
-          cell.textContent = '★ ' + info.item.title
-          col.appendChild(cell)
-        }
-      })
-
-      if (planned.length === 0 && actualIds.length === 0) {
-        var empty = document.createElement('div')
-        empty.style.cssText = 'text-align:center;font:400 10px var(--font-mono);color:var(--text-3);padding:8px 0;opacity:0.5;'
-        empty.textContent = '—'
-        col.appendChild(empty)
-      }
-
-      grid.appendChild(col)
-    })
-
-    var titleEl = document.createElement('div')
-    titleEl.style.cssText = 'font:700 11px var(--font-mono);color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:var(--space-2);'
-    titleEl.textContent = 'LAST 7 DAYS — WHAT YOU PLANNED VS. WHAT YOU DID'
-    container.appendChild(titleEl)
-    container.appendChild(grid)
-    container.appendChild(legend)
-  }
-
   /* ─────────────────────────────────────────────────────────────────
      FEATURE 6: GRAVEYARD ENHANCEMENT
      A) Cause of death tag (preset reasons) on drop flow
@@ -18294,6 +18722,7 @@
   }
 
   function p7RenderVelocityBadge(item, container) {
+    if (!container || !(container instanceof Node)) return
     var v = p7ComputeVelocity(item)
     if (!v) return
     var badge = document.createElement('div')
@@ -18385,6 +18814,7 @@
   }
 
   function p7RenderDebtScore(container) {
+    if (!container || !(container instanceof Node)) return
     var score = p7ComputeDebt()
     var color = score === 0 ? 'var(--accent-green)' : score < 50 ? 'var(--accent-cool)' : score < 150 ? 'var(--accent-yellow)' : 'var(--danger)'
     var label = score === 0 ? 'ALL CLEAR' : score < 50 ? 'NOMINAL' : score < 150 ? 'BEHIND' : 'CRITICAL'
@@ -18640,6 +19070,7 @@
      Tab inside Session Log.
   ─────────────────────────────────────────────────────────── */
   function p7RenderWeekView(container) {
+    if (!container || !(container instanceof Node)) return
     var log      = loadData(KEYS.log, [])
     var sched    = loadData(KEYS.schedule, {})
     var today    = new Date()
@@ -18929,27 +19360,7 @@
     main.appendChild(aboutSec)
   }
 
-  /* ── P7: PATCH DASHBOARD — inject Debt Score + Week prompt ──── */
-  var _p7OrigRenderDashboard = renderDashboard
-  window.renderDashboard = function() {
-    _p7OrigRenderDashboard()
-    // Inject debt score after the stat cards block (first .dash-block after index 1)
-    setTimeout(function() {
-      var blocks = document.querySelectorAll('.dash-block')
-      if (blocks.length < 2) return
-      var debtBlock = document.createElement('div')
-      debtBlock.className = 'dash-block entered'
-      debtBlock.style.marginBottom = '32px'
-      p7RenderDebtScore(debtBlock)
-      // Insert after stat cards (block index 1)
-      var ref = blocks[2]
-      if (ref && ref.parentNode) ref.parentNode.insertBefore(debtBlock, ref)
-    }, 80)
-  }
-  // Replace dashboard renderer in routing
-  if (typeof navigateTo === 'function') {
-    var _origNav = navigateTo
-  }
+  // P7 dashboard patch consolidated into main renderDashboard at line ~18024
 
   /* ── P7: PATCH SESSION LOG — add THIS WEEK tab ── */
   var _p7OrigRenderSessionLog = renderSessionLog

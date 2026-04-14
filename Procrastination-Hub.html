@@ -2328,7 +2328,7 @@
       0%,100% { box-shadow: 0 0 4px var(--success); }
       50% { box-shadow: 0 0 12px var(--success), 0 0 24px rgba(0,255,170,0.3); }
     }
-    .lib-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .lib-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; gap: 6px; flex-wrap: wrap; }
     .lib-card-footer-left { display: flex; align-items: center; gap: var(--space-2); }
     .lib-card-day { font: 500 12px var(--font-mono); color: var(--accent-cool); }
     .lib-open-btn {
@@ -2349,6 +2349,24 @@
       color: var(--accent-cool);
       background: rgba(0,200,255,0.07);
       box-shadow: 0 0 14px rgba(0,229,255,0.1);
+    }
+    .lib-watch-next-btn {
+      background: rgba(0,229,255,0.1);
+      border: 1px solid rgba(0,229,255,0.3);
+      border-radius: var(--radius-pill);
+      color: var(--accent-cool);
+      font: 700 10px var(--font-mono);
+      padding: 7px 14px;
+      cursor: none;
+      letter-spacing: 0.12em;
+      transition: all 200ms var(--ease-snap);
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .lib-watch-next-btn:hover {
+      background: rgba(0,229,255,0.18);
+      border-color: var(--accent-cool);
+      box-shadow: 0 0 18px rgba(0,229,255,0.2);
     }
     /* Schedule-today pill on lib cards */
     .lib-card-schedule-pill {
@@ -3141,6 +3159,27 @@
       display: none;
     }
     .ep-tile.watched .ep-check { opacity: 1; }
+    /* Queued episode — up next, not yet watched */
+    .ep-tile.queued {
+      border-color: rgba(0,229,255,0.5);
+      box-shadow: 0 0 14px rgba(0,229,255,0.18), inset 0 1px 0 rgba(0,229,255,0.15);
+      animation: queuedPulse 2.5s ease-in-out infinite;
+    }
+    .ep-tile.queued .ep-num { color: var(--accent-cool); }
+    @keyframes queuedPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(0,229,255,0.15), inset 0 1px 0 rgba(0,229,255,0.12); }
+      50%       { box-shadow: 0 0 22px rgba(0,229,255,0.3),  inset 0 1px 0 rgba(0,229,255,0.2); }
+    }
+    .ep-tile.queued::after {
+      content: '▶';
+      position: absolute;
+      bottom: 5px;
+      right: 6px;
+      font-size: 10px;
+      color: var(--accent-cool);
+      opacity: 0.8;
+      pointer-events: none;
+    }
     /* Watched diagonal slash decoration */
     .ep-tile.watched:not([data-title])::before {
       content: '';
@@ -5465,6 +5504,180 @@
   }
   /* Detail view — episode plan input */
   /* Schedule modal */
+  /* Watch Next modal */
+  /* What Now feature */
+  .what-now-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(0,229,255,0.08) 0%, rgba(168,85,247,0.06) 100%);
+    border: 1px solid rgba(0,229,255,0.25);
+    border-radius: 14px;
+    color: var(--accent-cool);
+    font: 700 13px var(--font-mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 200ms var(--ease-snap);
+  }
+  .what-now-btn:hover {
+    background: linear-gradient(135deg, rgba(0,229,255,0.14) 0%, rgba(168,85,247,0.1) 100%);
+    border-color: rgba(0,229,255,0.5);
+    box-shadow: 0 0 30px rgba(0,229,255,0.1);
+  }
+  .what-now-time-row {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .what-now-time-btn {
+    flex: 1;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-2);
+    font: 700 12px var(--font-mono);
+    cursor: none;
+    transition: all 160ms var(--ease-snap);
+    text-align: center;
+  }
+  .what-now-time-btn:hover {
+    background: rgba(0,229,255,0.1);
+    border-color: var(--accent-cool);
+    color: var(--accent-cool);
+    box-shadow: 0 0 18px rgba(0,229,255,0.15);
+  }
+  .what-now-result {
+    padding: 14px;
+    background: rgba(0,229,255,0.06);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 10px;
+    margin-top: 8px;
+    cursor: none;
+    transition: all 160ms var(--ease-snap);
+  }
+  .what-now-result:hover {
+    background: rgba(0,229,255,0.1);
+    border-color: rgba(0,229,255,0.4);
+  }
+  .what-now-result-title { font: 700 13px var(--font-ui); color: var(--text-1); margin-bottom: 4px; }
+  .what-now-result-meta  { font: 500 10px var(--font-mono); color: var(--text-3); letter-spacing: 0.06em; }
+  .what-now-result-eps   { font: 700 11px var(--font-mono); color: var(--accent-cool); margin-top: 6px; }
+
+  .wn-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,4,12,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 220ms var(--ease-out);
+  }
+  .wn-overlay.visible { opacity: 1; }
+  .wn-box {
+    background: linear-gradient(160deg, rgba(18,16,40,0.99) 0%, rgba(10,9,26,1) 100%);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    width: min(380px, calc(100vw - 40px));
+    box-shadow: 0 0 60px rgba(0,229,255,0.08), 0 24px 48px rgba(0,0,0,0.6);
+    transform: translateY(12px) scale(0.97);
+    transition: transform 220ms var(--ease-snap);
+  }
+  .wn-overlay.visible .wn-box { transform: translateY(0) scale(1); }
+  .wn-title {
+    font: 700 11px var(--font-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-cool);
+    margin-bottom: 4px;
+  }
+  .wn-show-name {
+    font: 700 17px var(--font-ui);
+    color: var(--text-1);
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .wn-next-ep {
+    font: 500 11px var(--font-mono);
+    color: var(--text-3);
+    margin-bottom: 22px;
+  }
+  .wn-question {
+    font: 600 11px var(--font-mono);
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .wn-count-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .wn-count-btn {
+    flex: 1;
+    min-width: 52px;
+    padding: 12px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-2);
+    font: 700 18px var(--font-mono);
+    cursor: none;
+    transition: all 160ms var(--ease-snap);
+    text-align: center;
+    position: relative;
+  }
+  .wn-count-btn:hover {
+    background: rgba(0,229,255,0.1);
+    border-color: var(--accent-cool);
+    color: var(--accent-cool);
+    box-shadow: 0 0 20px rgba(0,229,255,0.15);
+    transform: translateY(-2px);
+  }
+  .wn-count-btn.wn-suggested {
+    border-color: rgba(0,229,255,0.5);
+    background: rgba(0,229,255,0.08);
+    color: var(--accent-cool);
+  }
+  .wn-count-btn.wn-suggested::after {
+    content: 'last time';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font: 500 9px var(--font-mono);
+    color: var(--accent-cool);
+    opacity: 0.7;
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+  }
+  .wn-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 18px 0 16px;
+  }
+  .wn-cancel {
+    background: none;
+    border: none;
+    color: var(--text-3);
+    font: 600 10px var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: none;
+    padding: 6px 0;
+    transition: color 150ms;
+  }
+  .wn-cancel:hover { color: var(--text-2); }
+
   .sched-modal-overlay {
     position: fixed;
     inset: 0;
@@ -6121,6 +6334,7 @@
         <div class="session-ring-time" id="session-overlay-time">00:00</div>
         <div class="session-ring-label">elapsed</div>
         <div class="session-ep-label" id="session-overlay-ep"></div>
+        <div id="session-overlay-budget" style="margin-top:10px;font:600 10px var(--font-mono);letter-spacing:0.1em;color:var(--text-3);"></div>
       </div>
     </div>
     <button class="btn-danger session-overlay-stop-btn" id="session-overlay-stop-btn">■ END SESSION</button>
@@ -6179,7 +6393,9 @@
     lastMood:   'phub_lastmood',
     mqHistory:  'phub_mq_history',
     schedule:   'phub_schedule',
-    suggestIdx: 'phub_suggest_idx'  // round-robin pointer for dashboard suggestion
+    suggestIdx: 'phub_suggest_idx',  // round-robin pointer for dashboard suggestion
+    sessionEps: 'phub_session_eps',   // per-item last session episode count { [itemId]: number }
+    queuedEps:  'phub_queued_eps'     // per-item queued episode keys { [itemId]: [keys] }
   }
 
   const APP_SETTINGS_DEFAULTS = {
@@ -8195,7 +8411,6 @@
       dashboard:  () => (window.renderDashboard || renderDashboard)(),
       library:    renderLibrary,
       moodqueue:  renderMoodQueue,
-      tasks:      renderTasks,
       overview:   renderOverview,
       graveyard:  renderGraveyard,
       sessionlog: () => (window.renderSessionLog || renderSessionLog)(),
@@ -8341,7 +8556,6 @@
   function renderDashboard() {
     const main    = document.getElementById('app-main')
     const library = loadData(KEYS.library, [])
-    const tasks   = loadData(KEYS.tasks, [])
     const today   = getTodayName()
     const budget  = checkBudgetReset()
 
@@ -8350,8 +8564,7 @@
     const timeGreeting = hour < 6 ? 'Still up?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : hour < 23 ? 'Good evening' : 'Late night'
     const todayDateKeyDash = localDateStr()
     const todaySchedCountDash = (loadData(KEYS.schedule, {})[todayDateKeyDash] || []).length
-    const todayTasks    = tasks.filter(t => t.scheduledDay === today && !t.completed).length
-    const totalScheduled = todaySchedCountDash + todayTasks
+    const totalScheduled = todaySchedCountDash
     // Compute 7-day streak from log
     var _streak = 0
     var _log = loadData(KEYS.log, [])
@@ -8396,7 +8609,6 @@
       if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
       return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
     }, 0)
-    const pendingTasks    = tasks.filter(t => !t.completed).length
     // Smart progress label based on what types are in the library
     const _libTypes = new Set(library.map(i => i.type))
     const _hasEpType  = ['anime','show','movie'].some(t => _libTypes.has(t))
@@ -8431,13 +8643,7 @@
       }
     }
 
-    // 3. Today's task
-    if (!mission) {
-      const todayTask = tasks.find(t => t.scheduledDay === today && !t.completed)
-      if (todayTask) mission = { _isTask: true, ...todayTask }
-    }
-
-    // 4. Tomorrow
+    // 3. Tomorrow
     if (!mission) {
       mission = library.find(i => i.scheduledDay === tomorrowName && i.status === 'watching') || null
     }
@@ -8502,9 +8708,9 @@
           <div class="stat-card-label">Completed</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-number" id="stat-3" data-target="${pendingTasks}">0</div>
-          <div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${tasks.filter(t=>t.completed).length} done</div>
-          <div class="stat-card-label">Pending Tasks</div>
+          <div class="stat-card-number" id="stat-3">${library.filter(i=>i.status==='watching').length}</div>
+          <div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${totalComplete} finished</div>
+          <div class="stat-card-label">Watching</div>
         </div>
       </div>`
 
@@ -8580,7 +8786,7 @@
 
     // [BLOCK 3] Next mission
     const b3 = makeBlock()
-    if (mission && !mission._isTask) {
+    if (mission) {
       const remaining = mission.totalEpisodes - (mission.watchedEpisodes ? mission.watchedEpisodes.length : 0)
       const unit      = (mission.type === 'manga' || mission.type === 'manhwa' || mission.type === 'novel') ? 'chapters' : 'episodes'
       const watched   = mission.watchedEpisodes ? mission.watchedEpisodes.length : 0
@@ -8630,19 +8836,6 @@
           </div>
           <button class="btn-primary" onclick="navigateTo('detail','${mission.id}')">OPEN FILE →</button>
         </div>`
-    } else if (mission && mission._isTask) {
-      b3.innerHTML = `
-        <div class="next-mission-card">
-          <div style="flex:1;min-width:0;">
-            <div class="next-mission-label">Next Mission</div>
-            <div class="next-mission-title">${mission.name}</div>
-            <div class="next-mission-meta">
-              <span class="badge" data-type="show">TASK</span>
-              ${mission.scheduledDay ? `<span class="next-mission-day">▸ ${mission.scheduledDay}</span>` : ''}
-            </div>
-          </div>
-          <button class="btn-primary" onclick="navigateTo('tasks')">GO TO TASKS →</button>
-        </div>`
     } else {
       b3.innerHTML = `
         <div class="next-mission-card" style="justify-content:center;">
@@ -8678,8 +8871,6 @@
         icon:`<svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><ellipse cx="8" cy="3.5" rx="5" ry="1.5"/><path d="M3 3.5v2.5c0 .83 2.24 1.5 5 1.5s5-.67 5-1.5V3.5"/><path d="M3 6v2.5c0 .83 2.24 1.5 5 1.5s5-.67 5-1.5V6"/><path d="M3 8.5V11c0 .83 2.24 1.5 5 1.5s5-.67 5-1.5V8.5"/></svg>` },
       { section:'moodqueue',  name:'Mood Queue',  desc:'Algorithmic watching recommendations',
         icon:`<svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8.5h1.5l2-5 2.5 9 2-7 2 5 1.5-3.5H15"/></svg>` },
-      { section:'tasks',      name:'Tasks',       desc:'Active process queue',
-        icon:`<svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M2 8h8M2 12h5"/><polyline points="11,10 12.5,11.5 15,9"/></svg>` },
       { section:'overview',   name:'Overview',    desc:'Full operations manifest',
         icon:`<svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="3"/><line x1="8" y1="8" x2="11.8" y2="4.2"/></svg>` },
       { section:'graveyard',  name:'Graveyard',   desc:'What you started and stopped',
@@ -8687,6 +8878,14 @@
       { section:'sessionlog', name:'Session Log',  desc:'Your actual procrastination history',
         icon:`<svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><polyline points="8,4.5 8,8 10.5,10.5"/></svg>` }
     ]
+    // [BLOCK 4.5] What Now?
+    const b45 = makeBlock()
+    const wnBtn = document.createElement('button')
+    wnBtn.className = 'what-now-btn'
+    wnBtn.innerHTML = '<span style="font-size:16px;">⚡</span> WHAT DO I WATCH NOW?'
+    wnBtn.addEventListener('click', function() { openWhatNowModal(library) })
+    b45.appendChild(wnBtn)
+
     const b5 = makeBlock()
     const navGrid = document.createElement('div')
     navGrid.className = 'dash-nav-grid'
@@ -8920,9 +9119,7 @@
     const color    = _budgetOver ? '#ff3b6b' : getBudgetColor(pct)
     const remaining = Math.max(totalHrs - usedHrs, 0)
     const library = loadData(KEYS.library, [])
-    const tasks   = loadData(KEYS.tasks, [])
     const totalTimedMins = library.reduce((acc, i) => acc + (i.timerMinutes || 0), 0)
-                        + tasks.reduce((acc, t) => acc + (t.timerMinutes || 0), 0)
     const usedLabel = fmtMins(budget.usedMinutes) || '0m'
     const _overBudget = _budgetOver
     const remLabel = _overBudget
@@ -9036,7 +9233,6 @@
   window.__refreshDashboard = function() {
     try {
       const library = loadData(KEYS.library, [])
-      const tasks   = loadData(KEYS.tasks, [])
       const totalItems      = library.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length
       const totalEpsInLib   = library.reduce((acc, i) => {
         if (i.status === 'graveyard' || i.status === 'on-hold') return acc
@@ -9052,7 +9248,7 @@
         if (i.type === 'social') return acc + (i.socialVideos ? i.socialVideos.filter(v => v.watched).length : 0)
         return acc + (i.watchedEpisodes ? i.watchedEpisodes.length : 0)
       }, 0)
-      const pendingTasks    = tasks.filter(t => !t.completed).length
+      const nowWatching = library.filter(i => i.status === 'watching').length
 
       var el0 = document.getElementById('stat-0')
       if (el0 && el0.closest('.stat-card')) {
@@ -9073,9 +9269,9 @@
       var el3 = document.getElementById('stat-3')
       if (el3 && el3.closest('.stat-card')) {
         var card3 = el3.closest('.stat-card')
-        card3.innerHTML = `<div class="stat-card-number" data-target="${pendingTasks}" id="stat-3">${pendingTasks === 0 ? '<span style="color:var(--text-3)">0</span>' : pendingTasks}</div>` +
-                          `<div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${tasks.filter(t=>t.completed).length} done</div>` +
-                          `<div class="stat-card-label">Pending Tasks</div>`
+        card3.innerHTML = `<div class="stat-card-number" id="stat-3">${nowWatching}</div>` +
+                          `<div style="font:500 11px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;margin-top:-4px;margin-bottom:2px;">${totalComplete} finished</div>` +
+                          `<div class="stat-card-label">Watching</div>`
       }
 
       // Update time-spent leaderboard block
@@ -9446,7 +9642,7 @@
       return btn
     }
 
-    var btnWatching = makeSegBtn('▶ WATCHING', !showOnHold, 'rgba(0,229,255,0.15)')
+    var btnWatching = makeSegBtn('▶ ACTIVE', !showOnHold, 'rgba(0,229,255,0.15)')
     var btnOnHold   = makeSegBtn('⏸ ON HOLD', showOnHold,  'rgba(249,115,22,0.15)')
 
     btnWatching.addEventListener('click', function() {
@@ -9968,11 +10164,29 @@
     var _sched2 = loadData(KEYS.schedule, {})
     var _isToday = (_sched2[_todayKey2]||[]).some(function(e){return e.id===item.id})
     var _isTomorrow = !_isToday && (_sched2[_tomorrowKey]||[]).some(function(e){return e.id===item.id})
-    var dayHTML = _isToday
-      ? '<span class="lib-card-schedule-pill">TODAY</span>'
-      : _isTomorrow
-        ? '<span class="lib-card-schedule-pill tomorrow">TOMORROW</span>'
-        : (item.scheduledDay ? '<span class="lib-card-day">\u25b8 ' + item.scheduledDay + '</span>' : '')
+
+    // Release date countdown for upcoming items
+    var _releasePill = ''
+    if (item.releaseDate && item.status === 'upcoming') {
+      var _relDate = new Date(item.releaseDate + 'T00:00:00')
+      var _today0  = new Date(); _today0.setHours(0,0,0,0)
+      var _diffDays = Math.round((_relDate - _today0) / (1000*3600*24))
+      if (_diffDays > 0) {
+        _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#c084fc;">in ' + _diffDays + 'd</span>'
+      } else if (_diffDays === 0) {
+        _releasePill = '<span class="lib-card-schedule-pill" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);color:#c084fc;">RELEASES TODAY</span>'
+      } else {
+        _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(0,255,170,0.1);border-color:rgba(0,255,170,0.3);color:var(--accent-green);">OUT NOW</span>'
+      }
+    }
+
+    var dayHTML = _releasePill
+      ? _releasePill
+      : _isToday
+        ? '<span class="lib-card-schedule-pill">TODAY</span>'
+        : _isTomorrow
+          ? '<span class="lib-card-schedule-pill tomorrow">TOMORROW</span>'
+          : (item.scheduledDay ? '<span class="lib-card-day">\u25b8 ' + item.scheduledDay + '</span>' : '')
 
     card.innerHTML =
       '<div class="lib-card-header">' +
@@ -10001,6 +10215,11 @@
         })() + '</div>' +
       '</div>' +
       (moodChipsHTML ? '<div class="lib-card-moods">' + moodChipsHTML + '</div>' : '') +
+      (function() {
+        var _qd = loadData(KEYS.queuedEps, {})
+        var _qCount = (_qd[item.id] || []).length
+        return _qCount > 0 ? '<div class="lib-queued-badge" style="font:700 9px var(--font-mono);letter-spacing:0.12em;color:var(--accent-cool);background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);border-radius:var(--radius-pill);padding:2px 8px;margin-bottom:4px;display:inline-block;">▶ ' + _qCount + ' QUEUED</div>' : ''
+      })() +
       '<div class="lib-card-footer">' +
         '<div class="lib-card-footer-left">' +
           '<span class="lib-status-dot ' + (statusClass === 'watching' && watched === 0 ? 'not-started' : statusClass) + '"></span>' +
@@ -10008,6 +10227,9 @@
           dayHTML +
         '</div>' +
         '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File \u2192</button>' +
+        (item.status === 'watching' && item.type !== 'social'
+          ? '<button class="lib-watch-next-btn" data-item-id="' + item.id + '">▶ QUEUE</button>'
+          : '') +
       '</div>'
 
     // Entire card is clickable
@@ -10030,6 +10252,14 @@
       e.stopPropagation()
       navigateTo('detail', item.id)
     })
+
+    var watchNextBtn = card.querySelector('.lib-watch-next-btn')
+    if (watchNextBtn) {
+      watchNextBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        openWatchNextModal(item)
+      })
+    }
 
     return card
   }
@@ -10433,6 +10663,8 @@
         '<option value="upcoming">Upcoming</option>' +
         '<option value="completed">Completed</option>' +
       '</select>' +
+      '<label class="modal-field-label" style="margin-top:10px;">Download Site URL <span style="color:var(--text-3);font-weight:400;">(optional — where you download episodes)</span></label>' +
+      '<input class="modal-input" id="modal-download-url" type="url" placeholder="https://..." autocomplete="off"/>' +
       '</div>' +
       '<div class="modal-section-card" id="modal-schedule-card">' +
       '<div class="modal-section-title">Schedule</div>' +
@@ -10638,6 +10870,8 @@
         themeClass = 'theme-custom'
       }
 
+      var downloadUrl = (box.querySelector('#modal-download-url').value || '').trim()
+
       var newItem = buildNewItem(title, type, finalTotal, {
         moodTags:    selectedMoods.slice(),
         rating:      0,
@@ -10650,6 +10884,8 @@
         themeStyles: themeStyles
       })
       newItem.status = status || 'watching'
+      if (downloadUrl) newItem.downloadUrl = downloadUrl
+      if (releaseDate) newItem.releaseDate = releaseDate
       const lib = loadData(KEYS.library, [])
       lib.unshift(newItem)
       saveData(KEYS.library, lib)
@@ -10988,6 +11224,57 @@
     notesCard.innerHTML = '<div class="detail-notes-label">Notes</div><textarea class="detail-notes-textarea" id="social-notes" placeholder="Notes / thoughts...">' + (item.notes||'') + '</textarea>'
     heroRight.appendChild(notesCard)
 
+    // Download site card
+    var dlCardS = document.createElement('div')
+    dlCardS.className = 'detail-notes-card'
+    dlCardS.style.cssText = 'padding:12px 14px;'
+    function renderDlCardS() {
+      var fi = loadData(KEYS.library, []).find(function(i) { return i.id === id }) || item
+      var url = fi.downloadUrl || ''
+      if (url) {
+        dlCardS.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+            '<div class="detail-notes-label" style="margin:0;">Download Site</div>' +
+            '<button id="dl-s-edit-btn" style="background:none;border:none;color:var(--text-3);font:500 10px var(--font-mono);letter-spacing:0.06em;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color 150ms;" title="Edit URL">EDIT</button>' +
+          '</div>' +
+          '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;text-decoration:none;color:var(--text-1);font:500 11px var(--font-mono);letter-spacing:0.04em;transition:all 150ms;overflow:hidden;" onmouseover="this.style.borderColor=\'var(--accent-cool)\';this.style.color=\'var(--accent-cool)\';" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-1)\';">' +
+            '<span style="font-size:14px;">⬇</span>' +
+            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (url.replace(/^https?:\/\//, '').split('/')[0]) + '</span>' +
+            '<span style="margin-left:auto;font-size:10px;opacity:0.45;flex-shrink:0;">↗</span>' +
+          '</a>'
+      } else {
+        dlCardS.innerHTML =
+          '<div class="detail-notes-label" style="margin-bottom:6px;">Download Site</div>' +
+          '<button id="dl-s-add-btn" style="width:100%;background:none;border:1px dashed rgba(100,160,255,0.2);border-radius:8px;padding:8px;color:var(--text-3);font:500 10px var(--font-mono);letter-spacing:0.06em;cursor:pointer;transition:all 150ms;" onmouseover="this.style.borderColor=\'rgba(0,229,255,0.35)\';this.style.color=\'var(--text-2)\';" onmouseout="this.style.borderColor=\'rgba(100,160,255,0.2)\';this.style.color=\'var(--text-3)\';">+ ADD DOWNLOAD LINK</button>'
+      }
+      var editBtn = dlCardS.querySelector('#dl-s-edit-btn')
+      var addBtn  = dlCardS.querySelector('#dl-s-add-btn')
+      function openDlEditS() {
+        dlCardS.innerHTML =
+          '<div class="detail-notes-label" style="margin-bottom:6px;">Download Site</div>' +
+          '<input id="dl-s-url-input" type="url" class="detail-notes-textarea" placeholder="https://..." style="resize:none;height:auto;padding:7px 10px;font:400 12px var(--font-mono);" value="' + (url || '') + '"/>' +
+          '<div style="display:flex;gap:6px;margin-top:6px;">' +
+            '<button id="dl-s-save-btn" style="flex:1;background:var(--surface-2);border:1px solid var(--border-bright);border-radius:6px;color:var(--text-1);font:600 10px var(--font-mono);letter-spacing:0.08em;padding:6px;cursor:pointer;transition:all 150ms;">SAVE</button>' +
+            '<button id="dl-s-cancel-btn" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-3);font:600 10px var(--font-mono);letter-spacing:0.08em;padding:6px 10px;cursor:pointer;">✕</button>' +
+          '</div>'
+        var inp = dlCardS.querySelector('#dl-s-url-input')
+        if (inp) { inp.focus(); inp.select() }
+        dlCardS.querySelector('#dl-s-cancel-btn').addEventListener('click', renderDlCardS)
+        dlCardS.querySelector('#dl-s-save-btn').addEventListener('click', function() {
+          var newUrl = (dlCardS.querySelector('#dl-s-url-input').value || '').trim()
+          var lib = loadData(KEYS.library, [])
+          var it = lib.find(function(i) { return i.id === id })
+          if (it) { it.downloadUrl = newUrl || undefined; saveData(KEYS.library, lib) }
+          item.downloadUrl = newUrl || undefined
+          renderDlCardS()
+        })
+      }
+      if (editBtn) editBtn.addEventListener('click', openDlEditS)
+      if (addBtn)  addBtn.addEventListener('click', openDlEditS)
+    }
+    renderDlCardS()
+    heroRight.appendChild(dlCardS)
+
     // Graveyard / delete — grouped in sidebar-actions
     var gravWrap = document.createElement('div')
     gravWrap.className = 'social-sidebar-actions'
@@ -11240,11 +11527,8 @@
         card.classList.remove('is-empty')
       }
       var target = btns || wrap
-      var addBtn = document.createElement('button'); addBtn.className = 'sched-add-btn'; addBtn.textContent = '+ ADD TO SCHEDULE'
-      addBtn.addEventListener('click', function() { openSchedModal(null,null,null,function(){renderSchedEntries()}) })
-      target.appendChild(addBtn)
       var recBtn = document.createElement('button'); recBtn.className = 'sched-add-btn'
-      recBtn.style.cssText = 'margin-top:4px;color:var(--text-2);opacity:0.9;'
+      recBtn.style.cssText = 'color:var(--accent-cool);'
       recBtn.textContent = '\u26a1 AUTO-SCHEDULE WEEKLY SESSIONS'
       recBtn.addEventListener('click', function() { openRecurringSchedForItem(id, item, function(){renderSchedEntries()}) })
       target.appendChild(recBtn)
@@ -11482,6 +11766,14 @@
         var ringArc = document.getElementById('session-ring-arc')
         if (ringArc) { ringArc.style.stroke = accentCol; ringArc.style.filter = 'drop-shadow(0 0 10px ' + accentCol + ')'; }
         overlay.classList.add('active')
+        // Show budget remaining immediately
+        var _budgetEl = document.getElementById('session-overlay-budget')
+        if (_budgetEl) {
+          var _b = checkBudgetReset()
+          var _rem = Math.max(0, _b.dailyHours * 60 - _b.usedMinutes)
+          _budgetEl.textContent = _rem === 0 ? 'BUDGET EXCEEDED' : (fmtMins(_rem) + ' budget left')
+          _budgetEl.style.color = _rem === 0 ? 'var(--danger)' : _rem < 30 ? 'var(--accent-warm)' : 'var(--text-3)'
+        }
         // Wire stop btn in overlay
         var stopBtn = document.getElementById('session-overlay-stop-btn')
         if (stopBtn) {
@@ -11500,8 +11792,20 @@
       timerInterval = setInterval(function() {
         var elapsed = getElapsedStr(timerStart)
         if (dispEl) dispEl.textContent = elapsed
-        // Update overlay time if still open
         if (overlayTime) overlayTime.textContent = elapsed
+        // Update budget remaining in overlay
+        var budgetEl = document.getElementById('session-overlay-budget')
+        if (budgetEl) {
+          var b = checkBudgetReset()
+          var remainMins = Math.max(0, b.dailyHours * 60 - b.usedMinutes)
+          if (remainMins === 0) {
+            budgetEl.textContent = 'BUDGET EXCEEDED'
+            budgetEl.style.color = 'var(--danger)'
+          } else {
+            budgetEl.textContent = fmtMins(remainMins) + ' budget left'
+            budgetEl.style.color = remainMins < 30 ? 'var(--accent-warm)' : 'var(--text-3)'
+          }
+        }
       }, 1000)
     }
 
@@ -11785,17 +12089,9 @@
         })
 
         var target = btns || wrap
-        var addBtn = document.createElement('button')
-        addBtn.className = 'sched-add-btn'
-        addBtn.textContent = '+ ADD TO SCHEDULE'
-        addBtn.addEventListener('click', function() {
-          openSchedModal(null, null, null, function() { renderEntries() })
-        })
-        target.appendChild(addBtn)
-
         var recurBtn = document.createElement('button')
         recurBtn.className = 'sched-add-btn'
-        recurBtn.style.cssText = 'margin-top:4px;border-color:rgba(0,229,255,0.2);color:var(--accent-cool);opacity:0.7;'
+        recurBtn.style.cssText = 'border-color:rgba(0,229,255,0.3);color:var(--accent-cool);'
         var isReading = item.arcs && item.arcs.length > 0
         recurBtn.textContent = isReading ? '⚡ AUTO-SCHEDULE WEEKLY CHAPTERS' : '⚡ AUTO-SCHEDULE WEEKLY EPISODES'
         recurBtn.addEventListener('click', function() {
@@ -11846,6 +12142,57 @@
         (item.notes || '') +
       '</textarea>'
     heroRight.appendChild(notesCard)
+
+    // Download site card
+    var dlCard = document.createElement('div')
+    dlCard.className = 'detail-notes-card'
+    dlCard.style.cssText = 'padding:12px 14px;'
+    function renderDlCard() {
+      var fi = loadData(KEYS.library, []).find(function(i) { return i.id === id }) || item
+      var url = fi.downloadUrl || ''
+      if (url) {
+        dlCard.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+            '<div class="detail-notes-label" style="margin:0;">Download Site</div>' +
+            '<button id="dl-edit-btn" style="background:none;border:none;color:var(--text-3);font:500 10px var(--font-mono);letter-spacing:0.06em;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color 150ms;" title="Edit URL">EDIT</button>' +
+          '</div>' +
+          '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;text-decoration:none;color:var(--text-1);font:500 11px var(--font-mono);letter-spacing:0.04em;transition:all 150ms;overflow:hidden;" onmouseover="this.style.borderColor=\'var(--accent-cool)\';this.style.color=\'var(--accent-cool)\';" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-1)\';">' +
+            '<span style="font-size:14px;">⬇</span>' +
+            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (url.replace(/^https?:\/\//, '').split('/')[0]) + '</span>' +
+            '<span style="margin-left:auto;font-size:10px;opacity:0.45;flex-shrink:0;">↗</span>' +
+          '</a>'
+      } else {
+        dlCard.innerHTML =
+          '<div class="detail-notes-label" style="margin-bottom:6px;">Download Site</div>' +
+          '<button id="dl-add-btn" style="width:100%;background:none;border:1px dashed rgba(100,160,255,0.2);border-radius:8px;padding:8px;color:var(--text-3);font:500 10px var(--font-mono);letter-spacing:0.06em;cursor:pointer;transition:all 150ms;" onmouseover="this.style.borderColor=\'rgba(0,229,255,0.35)\';this.style.color=\'var(--text-2)\';" onmouseout="this.style.borderColor=\'rgba(100,160,255,0.2)\';this.style.color=\'var(--text-3)\';">+ ADD DOWNLOAD LINK</button>'
+      }
+      var editBtn = dlCard.querySelector('#dl-edit-btn')
+      var addBtn  = dlCard.querySelector('#dl-add-btn')
+      function openDlEdit() {
+        dlCard.innerHTML =
+          '<div class="detail-notes-label" style="margin-bottom:6px;">Download Site</div>' +
+          '<input id="dl-url-input" type="url" class="detail-notes-textarea" placeholder="https://..." style="resize:none;height:auto;padding:7px 10px;font:400 12px var(--font-mono);" value="' + (url || '') + '"/>' +
+          '<div style="display:flex;gap:6px;margin-top:6px;">' +
+            '<button id="dl-save-btn" style="flex:1;background:var(--surface-2);border:1px solid var(--border-bright);border-radius:6px;color:var(--text-1);font:600 10px var(--font-mono);letter-spacing:0.08em;padding:6px;cursor:pointer;transition:all 150ms;">SAVE</button>' +
+            '<button id="dl-cancel-btn" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-3);font:600 10px var(--font-mono);letter-spacing:0.08em;padding:6px 10px;cursor:pointer;">✕</button>' +
+          '</div>'
+        var inp = dlCard.querySelector('#dl-url-input')
+        if (inp) { inp.focus(); inp.select() }
+        dlCard.querySelector('#dl-cancel-btn').addEventListener('click', renderDlCard)
+        dlCard.querySelector('#dl-save-btn').addEventListener('click', function() {
+          var newUrl = (dlCard.querySelector('#dl-url-input').value || '').trim()
+          var lib = loadData(KEYS.library, [])
+          var it = lib.find(function(i) { return i.id === id })
+          if (it) { it.downloadUrl = newUrl || undefined; saveData(KEYS.library, lib) }
+          item.downloadUrl = newUrl || undefined
+          renderDlCard()
+        })
+      }
+      if (editBtn) editBtn.addEventListener('click', openDlEdit)
+      if (addBtn)  addBtn.addEventListener('click', openDlEdit)
+    }
+    renderDlCard()
+    heroRight.appendChild(dlCard)
 
     // Drop to graveyard
     var gravWrap = document.createElement('div')
@@ -12692,7 +13039,7 @@
     container.appendChild(gridWrap)
 
     // Reuse exact season panel: mark all watched + stats cards
-    var arcAsSeason = { episodes: chapters, name: arc.name }
+    var arcAsSeason = { episodes: chapters, name: arc.name, downloadUrl: arc.downloadUrl, _isArc: true, _arcIdx: activeIdx }
     var panel = buildSeasonPanel(item, arcAsSeason, activeIdx, container, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
     container.appendChild(panel)
   }
@@ -12780,6 +13127,12 @@
     var epKey = makeEpKey(seasonIdx, ep.number)
     var isWatched = item.watchedEpisodes && item.watchedEpisodes.includes(epKey)
     if (isWatched) tile.classList.add('watched')
+
+    // Mark as queued if in the queue for this item
+    var _qd = loadData(KEYS.queuedEps, {})
+    var _queued = (_qd[item.id] || [])
+    var _isQueued = !isWatched && _queued.some(function(k) { return k == epKey })
+    if (_isQueued) tile.classList.add('queued')
     
     // Add class if no platform ratings exist
     var hasPlatformRatings = ep.ratingIMDb || ep.ratingMAL
@@ -12825,7 +13178,26 @@
       var beforeCount = it.watchedEpisodes.length
       it.watchedEpisodes.push(epKey)
       tile.classList.add('watched', 'tile-flash')
+      tile.classList.remove('queued')
       setTimeout(function() { tile.classList.remove('tile-flash') }, 420)
+      // Remove from queue
+      ;(function() {
+        var _qd = loadData(KEYS.queuedEps, {})
+        if (_qd[it.id]) {
+          _qd[it.id] = _qd[it.id].filter(function(k) { return k != epKey })
+          if (_qd[it.id].length === 0) {
+            delete _qd[it.id]
+            // Remove queued badge from library card
+            var _lc = document.querySelector('.library-card[data-item-id="' + it.id + '"]')
+            if (_lc) { var _qb = _lc.querySelector('.lib-queued-badge'); if (_qb) _qb.remove() }
+          } else {
+            // Update badge count
+            var _lc2 = document.querySelector('.library-card[data-item-id="' + it.id + '"]')
+            if (_lc2) { var _qb2 = _lc2.querySelector('.lib-queued-badge'); if (_qb2) _qb2.textContent = '▶ ' + _qd[it.id].length + ' QUEUED' }
+          }
+          saveData(KEYS.queuedEps, _qd)
+        }
+      })()
 
       if (it.status === 'upcoming') {
         it.status = 'watching'
@@ -13125,6 +13497,23 @@
       } else {
         it.watchedEpisodes.push(epKey)
         tile.classList.add('watched')
+        tile.classList.remove('queued')
+        // Remove from queue
+        ;(function() {
+          var _qd = loadData(KEYS.queuedEps, {})
+          if (_qd[it.id]) {
+            _qd[it.id] = _qd[it.id].filter(function(k) { return k != epKey })
+            if (_qd[it.id].length === 0) {
+              delete _qd[it.id]
+              var _lc = document.querySelector('.library-card[data-item-id="' + it.id + '"]')
+              if (_lc) { var _qb = _lc.querySelector('.lib-queued-badge'); if (_qb) _qb.remove() }
+            } else {
+              var _lc2 = document.querySelector('.library-card[data-item-id="' + it.id + '"]')
+              if (_lc2) { var _qb2 = _lc2.querySelector('.lib-queued-badge'); if (_qb2) _qb2.textContent = '▶ ' + _qd[it.id].length + ' QUEUED' }
+            }
+            saveData(KEYS.queuedEps, _qd)
+          }
+        })()
         // Auto-promote upcoming → watching when first episode is marked watched
         if (it.status === 'upcoming') {
           it.status = 'watching'
@@ -13322,6 +13711,77 @@
       logEvent((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel' ? 'Unread all of ' : 'Unwatched all of ') + item.title)
       refreshStats(it.watchedEpisodes)
     })
+
+    // Per-season / per-arc download link strip (only shown when there are multiple seasons/arcs)
+    var _multiSeason = season._isArc ? (item.arcs && item.arcs.length > 1) : (item.seasons && item.seasons.length > 1)
+    var dlStrip = document.createElement('div')
+    dlStrip.id = 'season-dl-strip-' + seasonIdx
+    dlStrip.style.cssText = 'margin-bottom:10px;'
+    if (_multiSeason) (function() {
+      var isArc    = !!season._isArc
+      var srcLabel = isArc ? 'Arc' : 'Season'
+      function freshSeasonUrl() {
+        var lib = loadData(KEYS.library, [])
+        var fi  = lib.find(function(i) { return i.id === item.id }) || item
+        if (isArc && fi.arcs && fi.arcs[seasonIdx]) return fi.arcs[seasonIdx].downloadUrl || ''
+        if (!isArc && fi.seasons && fi.seasons[seasonIdx]) return fi.seasons[seasonIdx].downloadUrl || ''
+        return ''
+      }
+      function saveSeasonUrl(newUrl) {
+        var lib = loadData(KEYS.library, [])
+        var fi  = lib.find(function(i) { return i.id === item.id })
+        if (fi) {
+          if (isArc && fi.arcs && fi.arcs[seasonIdx])       { fi.arcs[seasonIdx].downloadUrl    = newUrl || undefined }
+          if (!isArc && fi.seasons && fi.seasons[seasonIdx]) { fi.seasons[seasonIdx].downloadUrl = newUrl || undefined }
+          saveData(KEYS.library, lib)
+        }
+        // Also patch in-memory
+        if (isArc && item.arcs && item.arcs[seasonIdx])       item.arcs[seasonIdx].downloadUrl    = newUrl || undefined
+        if (!isArc && item.seasons && item.seasons[seasonIdx]) item.seasons[seasonIdx].downloadUrl = newUrl || undefined
+        season.downloadUrl = newUrl || undefined
+      }
+      function renderStrip() {
+        var url = freshSeasonUrl()
+        dlStrip.innerHTML = ''
+        if (url) {
+          dlStrip.innerHTML =
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+              '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;text-decoration:none;color:var(--text-2);font:500 10px var(--font-mono);letter-spacing:0.05em;overflow:hidden;transition:all 150ms;" onmouseover="this.style.borderColor=\'var(--accent-cool)\';this.style.color=\'var(--accent-cool)\';" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-2)\';">' +
+                '<span style="font-size:13px;flex-shrink:0;">⬇</span>' +
+                '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + srcLabel + ': ' + url.replace(/^https?:\/\//, '').split('/')[0] + '</span>' +
+                '<span style="margin-left:auto;font-size:9px;opacity:0.4;flex-shrink:0;">↗</span>' +
+              '</a>' +
+              '<button id="dl-season-edit-' + seasonIdx + '" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font:500 9px var(--font-mono);letter-spacing:0.06em;cursor:pointer;padding:6px 9px;white-space:nowrap;flex-shrink:0;transition:all 150ms;" onmouseover="this.style.borderColor=\'rgba(0,229,255,0.3)\';this.style.color=\'var(--text-1)\';" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-3)\';">EDIT</button>' +
+            '</div>'
+        } else {
+          dlStrip.innerHTML =
+            '<button id="dl-season-add-' + seasonIdx + '" style="width:100%;background:none;border:1px dashed rgba(100,160,255,0.18);border-radius:8px;padding:7px;color:var(--text-3);font:500 10px var(--font-mono);letter-spacing:0.06em;cursor:pointer;transition:all 150ms;text-align:center;" onmouseover="this.style.borderColor=\'rgba(0,229,255,0.3)\';this.style.color=\'var(--text-2)\';" onmouseout="this.style.borderColor=\'rgba(100,160,255,0.18)\';this.style.color=\'var(--text-3)\';">+ ADD ' + srcLabel.toUpperCase() + ' DOWNLOAD LINK</button>'
+        }
+        var editBtn = dlStrip.querySelector('#dl-season-edit-' + seasonIdx)
+        var addBtn  = dlStrip.querySelector('#dl-season-add-' + seasonIdx)
+        function openEdit() {
+          var cur = freshSeasonUrl()
+          dlStrip.innerHTML =
+            '<div style="display:flex;gap:6px;align-items:center;">' +
+              '<input id="dl-season-inp-' + seasonIdx + '" type="url" class="detail-notes-textarea" placeholder="https://..." style="resize:none;height:auto;padding:6px 9px;font:400 11px var(--font-mono);flex:1;" value="' + (cur || '') + '"/>' +
+              '<button id="dl-season-save-' + seasonIdx + '" style="background:var(--surface-2);border:1px solid var(--border-bright);border-radius:7px;color:var(--text-1);font:600 9px var(--font-mono);letter-spacing:0.08em;padding:7px 11px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 150ms;">SAVE</button>' +
+              '<button id="dl-season-cancel-' + seasonIdx + '" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font:600 9px var(--font-mono);letter-spacing:0.06em;padding:7px 9px;cursor:pointer;flex-shrink:0;">✕</button>' +
+            '</div>'
+          var inp = dlStrip.querySelector('#dl-season-inp-' + seasonIdx)
+          if (inp) { inp.focus(); inp.select() }
+          dlStrip.querySelector('#dl-season-cancel-' + seasonIdx).addEventListener('click', renderStrip)
+          dlStrip.querySelector('#dl-season-save-' + seasonIdx).addEventListener('click', function() {
+            var v = (dlStrip.querySelector('#dl-season-inp-' + seasonIdx).value || '').trim()
+            saveSeasonUrl(v)
+            renderStrip()
+          })
+        }
+        if (editBtn) editBtn.addEventListener('click', openEdit)
+        if (addBtn)  addBtn.addEventListener('click', openEdit)
+      }
+      renderStrip()
+      panel.appendChild(dlStrip)
+    })()
 
     // Wrap both buttons in a flex row
     var btnRow = document.createElement('div')
@@ -14146,23 +14606,6 @@
     }
 
     if (n > 0) {
-      var schedBtn = document.createElement('button')
-      schedBtn.className = 'btn-primary'
-      schedBtn.style.cssText = 'font-size:11px;padding:7px 16px;'
-      schedBtn.textContent = '+ Schedule'
-      schedBtn.addEventListener('click', function() {
-        var sorted   = selectedEps.slice().sort(function(a,b){return a-b})
-        var epLabel  = 'ep ' + sorted.join(', ')
-        // Open schedule modal but lock it to current item (no content dropdown)
-        openSchedModalForSelectedEps(itemId, title, epLabel, function(dateVal) {
-          bar.innerHTML = '<div style="font:600 13px var(--font-mono);color:var(--success);flex:1;text-align:center;">✓ SCHEDULED FOR ' + dateVal + '</div>'
-          setTimeout(function() { bar.classList.remove('visible'); setTimeout(function() { bar.remove() }, 350) }, 1500)
-          if (selectBtn) { selectBtn.textContent = 'SELECT'; selectBtn.className = 'btn-ghost' }
-          if (selectCountBadge) selectCountBadge.style.display = 'none'
-          document.querySelectorAll('.ep-tile.tile-selected').forEach(function(t) { t.classList.remove('tile-selected') })
-        })
-      })
-      bar.appendChild(schedBtn)
 
       var recurBtn = document.createElement('button')
       recurBtn.className = 'btn-ghost'
@@ -14363,413 +14806,6 @@
       document.querySelectorAll('.ep-tile.tile-selected').forEach(function(t) { t.classList.remove('tile-selected') })
     })
     bar.appendChild(clearBtn)
-  }
-  /* =================================================================
-     PART 5: TASKS — renderTasks()
-     System process queue. Active jobs. Each task is a PID.
-  ================================================================= */
-  function renderTasks() {
-    var main  = document.getElementById('app-main')
-    var tasks = loadData(KEYS.tasks, [])
-
-    // Module-level timer state for tasks section
-    var taskTimerInterval = null
-    var taskTimerStart    = null
-    var taskTimerItemId   = null
-
-    function stopTaskTimer() {
-      if (!taskTimerInterval) return
-      clearInterval(taskTimerInterval)
-      taskTimerInterval = null
-      var elapsed = (Date.now() - taskTimerStart) / 60000
-      taskTimerStart  = null
-      var tid = taskTimerItemId
-      taskTimerItemId = null
-      var ts = loadData(KEYS.tasks, [])
-      var t  = ts.find(function(x) { return x.id === tid })
-      if (t) { t.timerMinutes = (t.timerMinutes || 0) + elapsed; saveData(KEYS.tasks, ts) }
-      addTimerMinutes(elapsed)
-      logEvent('Timed ' + Math.round(elapsed) + ' min on task: ' + (t ? t.name : 'unknown'))
-      // Update the task card's time display live
-      var dispEl = document.getElementById('task-timer-' + tid)
-      if (dispEl && t && t.timerMinutes >= 1) {
-        dispEl.textContent = '\u23f1 ' + fmtMins(t.timerMinutes)
-        dispEl.style.color = 'var(--accent-cool)'
-      } else if (dispEl) {
-        dispEl.textContent = ''
-      }
-    }
-
-    function startTaskTimer(taskId) {
-      if (taskTimerInterval) stopTaskTimer()
-      taskTimerStart  = Date.now()
-      taskTimerItemId = taskId
-      var dispEl = document.getElementById('task-timer-' + taskId)
-      taskTimerInterval = setInterval(function() {
-        var el = document.getElementById('task-timer-' + taskId)
-        if (!el) { clearInterval(taskTimerInterval); taskTimerInterval = null; return }
-        var s = Math.floor((Date.now() - taskTimerStart) / 1000)
-        var h = Math.floor(s / 3600)
-        var m = Math.floor((s % 3600) / 60)
-        var sec = s % 60
-        el.textContent = '\u25b6 ' + (h > 0 ? String(h).padStart(2,'0') + ':' : '') +
-          String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0')
-      }, 1000)
-    }
-
-    // Header
-    var today     = getTodayName()
-    var activeCnt = tasks.filter(function(t) { return !t.completed }).length
-    var _totalTaskTime = tasks.reduce(function(s,t){return s+(t.timerMinutes||0)},0)
-    var headerRow = document.createElement('div')
-    headerRow.className = 'tasks-header-row'
-    headerRow.innerHTML =
-      '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">PROCESS QUEUE</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<span class="tasks-active-badge">[' + activeCnt + ' ACTIVE]</span>' +
-        (_totalTaskTime >= 1 ? '<span style="font:500 10px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;">⏱ ' + fmtMins(_totalTaskTime) + ' total</span>' : '') +
-      '</div>'
-    main.appendChild(headerRow)
-
-    // Separator
-    var sep = document.createElement('div')
-    sep.style.cssText = 'border-bottom:1px solid var(--border);margin-bottom:var(--space-4);'
-    main.appendChild(sep)
-
-    // Add bar
-    var addBar = document.createElement('div')
-    addBar.className = 'tasks-add-bar'
-    var nameIn  = document.createElement('input')
-    nameIn.className   = 'tasks-name-input'
-    nameIn.placeholder = 'New process name...'
-    nameIn.type        = 'text'
-    nameIn.autocomplete = 'off'
-    var durIn = document.createElement('input')
-    durIn.className   = 'tasks-dur-input'
-    durIn.placeholder = 'e.g. ' + (getAppSettings().tasksDefaultDurationMin || 45)
-    durIn.type        = 'number'
-    durIn.min         = '1'
-    durIn.title       = 'Duration in minutes'
-    durIn.value       = String(getAppSettings().tasksDefaultDurationMin || 45)
-    // Wrap the dur input to add MIN suffix
-    var durWrap = document.createElement('div')
-    durWrap.style.cssText = 'position:relative;display:inline-flex;align-items:center;'
-    var minLabel = document.createElement('span')
-    minLabel.textContent = 'MIN'
-    minLabel.style.cssText = 'position:absolute;right:8px;top:50%;transform:translateY(-50%);font:700 10px var(--font-mono);color:var(--text-3);pointer-events:none;letter-spacing:0.1em;'
-    var daySelect = document.createElement('select')
-    daySelect.className = 'tasks-day-select'
-    var DAYS_OPT = ['Any day','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-    DAYS_OPT.forEach(function(d) {
-      var opt = document.createElement('option')
-      opt.value = d === 'Any day' ? '' : d
-      opt.textContent = d
-      daySelect.appendChild(opt)
-    })
-    var prioritySelect = document.createElement('select')
-    prioritySelect.className = 'tasks-day-select'
-    prioritySelect.title = 'Priority level'
-    ;[['','NORM'],['high','HIGH'],['critical','CRIT']].forEach(function(p) {
-      var opt = document.createElement('option')
-      opt.value = p[0]; opt.textContent = p[1]; prioritySelect.appendChild(opt)
-    })
-    var spawnBtn = document.createElement('button')
-    spawnBtn.className   = 'btn-primary btn-spawn'
-    spawnBtn.textContent = '+ SPAWN'
-    durWrap.appendChild(durIn)
-    durWrap.appendChild(minLabel)
-    addBar.appendChild(nameIn)
-    addBar.appendChild(durWrap)
-    addBar.appendChild(prioritySelect)
-    addBar.appendChild(daySelect)
-    addBar.appendChild(spawnBtn)
-    main.appendChild(addBar)
-
-    function spawnTask() {
-      var name = nameIn.value.trim()
-      if (!name) { nameIn.classList.add('flash-error'); setTimeout(function() { nameIn.classList.remove('flash-error') }, 450); return }
-      var dur = parseInt(durIn.value, 10) || null
-      var day = daySelect.value || null
-      var pri = prioritySelect.value || ''
-      var newTask = {
-        id: generateId(name), name: name, duration: dur,
-        priority: pri,
-        scheduledDay: day, completed: false, completedDate: null,
-        timerMinutes: 0, addedDate: new Date().toISOString().split('T')[0]
-      }
-      var ts = loadData(KEYS.tasks, [])
-      ts.unshift(newTask)
-      saveData(KEYS.tasks, ts)
-      logEvent('Spawned process: ' + name)
-      nameIn.value = ''; durIn.value = String(getAppSettings().tasksDefaultDurationMin || 45); daySelect.value = ''; prioritySelect.value = ''
-      tasks = loadData(KEYS.tasks, [])
-      refreshActiveList()
-    }
-    spawnBtn.addEventListener('click', spawnTask)
-    nameIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') spawnTask() })
-
-    // Active list container
-    var activeWrap = document.createElement('div')
-    activeWrap.id = 'tasks-active-wrap'
-    main.appendChild(activeWrap)
-
-    // Completed section
-    var completedWrap = document.createElement('div')
-    completedWrap.id = 'tasks-completed-wrap'
-    main.appendChild(completedWrap)
-
-    function refreshActiveList() {
-      tasks = loadData(KEYS.tasks, [])
-      activeCnt = tasks.filter(function(t) { return !t.completed }).length
-      var badge = main.querySelector('.tasks-active-badge')
-      if (badge) badge.textContent = '[' + activeCnt + ' ACTIVE]'
-      renderActiveList()
-      renderCompletedSection()
-    }
-
-    function renderActiveList() {
-      var wrap   = document.getElementById('tasks-active-wrap')
-      wrap.innerHTML = ''
-      var _priOrder = { critical: 0, high: 1, '': 2 }
-      var active = tasks.filter(function(t) { return !t.completed })
-        .sort(function(a,b) {
-          var pa = _priOrder[a.priority||''] ?? 2
-          var pb = _priOrder[b.priority||''] ?? 2
-          if (pa !== pb) return pa - pb
-          var aToday = (a.scheduledDay === today) ? 0 : 1
-          var bToday = (b.scheduledDay === today) ? 0 : 1
-          if (aToday !== bToday) return aToday - bToday
-          return new Date(b.addedDate) - new Date(a.addedDate)
-        })
-      if (active.length === 0) {
-        wrap.innerHTML =
-          '<div class="tasks-empty">' +
-            '<div class="tasks-empty-title">NO ACTIVE PROCESSES</div>' +
-            '<div class="tasks-idle-line">SYSTEM IDLE&nbsp;<span class="idle-cursor"></span></div>' +
-            '<span class="tasks-terminal-prompt">&gt;_</span>' +
-          '</div>'
-        return
-      }
-      var frag = document.createDocumentFragment()
-      active.forEach(function(task) {
-        frag.appendChild(buildTaskCard(task, false, today, startTaskTimer, stopTaskTimer, refreshActiveList))
-      })
-      wrap.appendChild(frag)
-    }
-
-    function renderCompletedSection() {
-      var wrap = document.getElementById('tasks-completed-wrap')
-      wrap.innerHTML = ''
-      var done = tasks.filter(function(t) { return t.completed })
-        .sort(function(a,b) { return new Date(b.completedDate||b.addedDate) - new Date(a.completedDate||a.addedDate) })
-      if (done.length === 0) return
-      var isExpanded = done.length <= 5
-      var header = document.createElement('div')
-      header.className = 'tasks-completed-header'
-      var chevron = document.createElement('span')
-      chevron.className = 'tasks-completed-chevron' + (isExpanded ? ' open' : '')
-      chevron.textContent = '\u25be'
-      header.innerHTML =
-        '<span class="tasks-completed-title">COMPLETED PROCESSES</span>' +
-        '<span class="tasks-completed-count">[' + done.length + ']</span>'
-      header.appendChild(chevron)
-      var list = document.createElement('div')
-      list.className = 'tasks-completed-list' + (isExpanded ? ' open' : '')
-      var frag = document.createDocumentFragment()
-      done.forEach(function(task) {
-        frag.appendChild(buildTaskCard(task, true, today, null, null, refreshActiveList))
-      })
-      list.appendChild(frag)
-      header.addEventListener('click', function() {
-        var open = list.classList.toggle('open')
-        chevron.classList.toggle('open', open)
-      })
-      wrap.appendChild(header)
-      wrap.appendChild(list)
-    }
-
-    renderActiveList()
-    renderCompletedSection()
-  }
-
-  /* Build a single task card */
-  function buildTaskCard(task, isCompleted, today, startTaskTimer, stopTaskTimer, onRefresh) {
-    var card = document.createElement('div')
-    card.className = 'task-card'
-    if (isCompleted) { card.style.opacity = '0.45'; card.style.pointerEvents = 'none' }
-    // Priority left border + badge
-    var _priColor = task.priority === 'critical' ? '#ff3b6b' : task.priority === 'high' ? '#f97316' : 'rgba(100,130,255,0.3)'
-    card.style.borderLeftColor = _priColor
-
-    // Status col
-    var statusCol = document.createElement('div')
-    statusCol.className = 'task-status-col'
-    var dotCls = isCompleted ? 'lib-status-dot completed' : 'lib-status-dot watching'
-    var labelText = isCompleted ? 'TERMINATED' : 'ACTIVE'
-    statusCol.innerHTML =
-      '<span class="' + dotCls + '"></span>' +
-      '<span class="task-status-label' + (isCompleted ? ' terminated' : '') + '">' + labelText + '</span>'
-    card.appendChild(statusCol)
-
-    // Center
-    var center = document.createElement('div')
-    center.className = 'task-center'
-    var nameEl = document.createElement('div')
-    nameEl.className = 'task-name' + (isCompleted ? ' done' : '')
-    nameEl.textContent = task.name
-    center.appendChild(nameEl)
-    var metaEl = document.createElement('div')
-    metaEl.className = 'task-meta'
-    if (task.duration) {
-      var durSpan = document.createElement('span')
-      durSpan.className = 'task-duration'
-      durSpan.textContent = '~' + task.duration + ' min'
-      metaEl.appendChild(durSpan)
-    }
-    if (task.priority === 'critical' || task.priority === 'high') {
-      var priPill = document.createElement('span')
-      priPill.className = 'task-day-pill'
-      priPill.textContent = task.priority === 'critical' ? '⚡ CRIT' : '↑ HIGH'
-      priPill.style.cssText = 'background:' + (task.priority==='critical'?'rgba(255,59,107,0.12)':'rgba(249,115,22,0.12)') + ';border-color:' + (task.priority==='critical'?'rgba(255,59,107,0.3)':'rgba(249,115,22,0.3)') + ';color:' + (task.priority==='critical'?'#ff3b6b':'#f97316') + ';'
-      metaEl.appendChild(priPill)
-    }
-    if (task.scheduledDay) {
-      var DAYS_ORD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-      var todayIdx  = new Date().getDay()
-      var taskIdx   = DAYS_ORD.indexOf(task.scheduledDay)
-      var isOverdue = taskIdx >= 0 && taskIdx < todayIdx
-      var dayPill = document.createElement('span')
-      dayPill.className = 'task-day-pill'
-      dayPill.textContent = isOverdue ? '⚠ ' + task.scheduledDay : task.scheduledDay
-      if (isOverdue) dayPill.style.cssText = 'background:rgba(255,59,107,0.1);border-color:rgba(255,59,107,0.3);color:#ff3b6b;'
-      metaEl.appendChild(dayPill)
-    }
-    if (isCompleted && task.completedDate) {
-      var doneDate = document.createElement('span')
-      doneDate.className = 'task-done-date'
-      var d = new Date(task.completedDate)
-      doneDate.textContent = 'Done ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
-      metaEl.appendChild(doneDate)
-    }
-    if (task.timerMinutes && task.timerMinutes >= 1) {
-      var timeSpan = document.createElement('span')
-      timeSpan.className = 'task-duration'
-      timeSpan.style.color = 'var(--accent-cool)'
-      timeSpan.textContent = '⏱ ' + fmtMins(task.timerMinutes)
-      metaEl.appendChild(timeSpan)
-    }
-    center.appendChild(metaEl)
-    // Timer display
-    var timerDisp = document.createElement('div')
-    timerDisp.className = 'task-timer-display'
-    timerDisp.id = 'task-timer-' + task.id
-    center.appendChild(timerDisp)
-    card.appendChild(center)
-
-    // Actions
-    if (!isCompleted) {
-      var actions = document.createElement('div')
-      actions.className = 'task-actions'
-      actions.style.pointerEvents = 'all'
-
-      // Timer btn
-      var timerBtn = document.createElement('button')
-      timerBtn.className = 'task-btn'
-      timerBtn.textContent = '\u23f1'
-      timerBtn.title = 'Start timer'
-      timerBtn.addEventListener('click', function() {
-        var running = timerBtn.classList.contains('timer-running')
-        if (running) {
-          stopTaskTimer && stopTaskTimer()
-          timerBtn.classList.remove('timer-running')
-          timerBtn.textContent = '\u23f1'
-          timerDisp.textContent = ''
-        } else {
-          startTaskTimer && startTaskTimer(task.id)
-          timerBtn.classList.add('timer-running')
-          timerBtn.textContent = '\u25a0'
-        }
-      })
-
-      // Complete btn
-      var completeBtn = document.createElement('button')
-      completeBtn.className = 'task-btn complete-btn'
-      completeBtn.textContent = '\u2713 Done'
-      completeBtn.addEventListener('click', function() {
-        if (timerBtn.classList.contains('timer-running')) {
-          stopTaskTimer && stopTaskTimer()
-        }
-        var ts = loadData(KEYS.tasks, [])
-        var t  = ts.find(function(x) { return x.id === task.id })
-        if (t) {
-          t.completed    = true
-          t.completedDate = localDateStr()
-          saveData(KEYS.tasks, ts)
-          var mins = t.timerMinutes ? ' (' + Math.round(t.timerMinutes) + ' min)' : ''
-          logEvent('Completed task: ' + t.name + mins)
-          if (typeof window.__refreshDashboard === 'function') window.__refreshDashboard()
-        }
-        card.classList.add('completing')
-        setTimeout(function() { if (onRefresh) onRefresh() }, 320)
-      })
-
-      // Delete btn (with inline confirm)
-      var deleteBtn = document.createElement('button')
-      deleteBtn.className = 'task-btn delete-btn'
-      deleteBtn.textContent = '\u2715'
-      deleteBtn.title = 'Delete'
-      deleteBtn.addEventListener('click', function() {
-        actions.innerHTML = ''
-        var conf = document.createElement('div')
-        conf.className = 'task-delete-confirm'
-        conf.innerHTML = 'Delete?&nbsp;'
-        var yesBtn = document.createElement('button')
-        yesBtn.className = 'task-btn delete-btn'
-        yesBtn.textContent = 'Yes'
-        var noBtn = document.createElement('button')
-        noBtn.className = 'task-btn'
-        noBtn.textContent = 'No'
-        yesBtn.addEventListener('click', function() {
-          var ts = loadData(KEYS.tasks, [])
-          saveData(KEYS.tasks, ts.filter(function(x) { return x.id !== task.id }))
-          logEvent('Deleted task: ' + task.name)
-          card.classList.add('removing')
-          setTimeout(function() { card.remove(); if (onRefresh) onRefresh() }, 320)
-        })
-        noBtn.addEventListener('click', function() {
-          actions.innerHTML = ''
-          actions.appendChild(timerBtn)
-          actions.appendChild(completeBtn)
-          actions.appendChild(deleteBtn)
-        })
-        conf.appendChild(yesBtn)
-        conf.appendChild(noBtn)
-        actions.appendChild(conf)
-      })
-
-      actions.appendChild(timerBtn)
-      actions.appendChild(completeBtn)
-      actions.appendChild(deleteBtn)
-      card.appendChild(actions)
-    } else {
-      // Completed — only delete
-      var actions2 = document.createElement('div')
-      actions2.className = 'task-actions'
-      actions2.style.pointerEvents = 'all'
-      var delBtn2 = document.createElement('button')
-      delBtn2.className = 'task-btn delete-btn'
-      delBtn2.textContent = '\u2715'
-      delBtn2.addEventListener('click', function() {
-        var ts = loadData(KEYS.tasks, [])
-        saveData(KEYS.tasks, ts.filter(function(x) { return x.id !== task.id }))
-        logEvent('Deleted task: ' + task.name)
-        card.classList.add('removing')
-        setTimeout(function() { card.remove(); if (onRefresh) onRefresh() }, 320)
-      })
-      actions2.appendChild(delBtn2)
-      card.appendChild(actions2)
-    }
-    return card
   }
 
   /* =================================================================
@@ -15035,6 +15071,7 @@
       it6.seasons.push(newSeason)
       it6.totalEpisodes = (it6.totalEpisodes || 0) + epCount
       if (newStatus === 'upcoming') it6.status = 'upcoming'
+      if (relDate) it6.releaseDate = relDate
       saveData(KEYS.library, lib6)
       logEvent('Added season "' + name + '" to ' + item.title)
 
@@ -15620,6 +15657,304 @@
   }
 
   /* =================================================================
+     WHAT NOW MODAL — openWhatNowModal(library)
+     Ask how much time you have, suggest best fitting content.
+  ================================================================= */
+  function openWhatNowModal(library) {
+    if (!library) library = loadData(KEYS.library, [])
+
+    // Type → average minutes per episode/chapter
+    var AVG_MINS = {
+      anime:   24,
+      show:    45,
+      movie:   110,
+      manga:   10,
+      manhwa:  10,
+      novel:   15
+    }
+
+    var TIME_OPTIONS = [
+      { label: '20 MIN', mins: 20 },
+      { label: '45 MIN', mins: 45 },
+      { label: '1 HOUR', mins: 60 },
+      { label: '2 HRS',  mins: 120 }
+    ]
+
+    var today0 = new Date(); today0.setHours(0,0,0,0)
+    var watching = library.filter(function(i) {
+      if (i.type === 'social') return false
+      if (i.status === 'watching' || i.status === 'on-hold') return true
+      // not-started: watching status but 0 episodes watched
+      // upcoming: only include if release date has passed or not set
+      if (i.status === 'upcoming') {
+        if (!i.releaseDate) return false
+        var rel = new Date(i.releaseDate + 'T00:00:00')
+        return rel <= today0
+      }
+      return false
+    })
+
+    var overlay = document.createElement('div')
+    overlay.className = 'wn-overlay'
+
+    var box = document.createElement('div')
+    box.className = 'wn-box'
+    box.style.cssText = 'width:min(400px,calc(100vw - 40px));'
+
+    function buildPicker() {
+      box.innerHTML =
+        '<div class="wn-title">⚡ What Now?</div>' +
+        '<div class="wn-show-name" style="font-size:14px;margin-bottom:16px;">How much time do you have?</div>' +
+        '<div class="what-now-time-row" id="wn-time-row"></div>' +
+        '<div class="wn-divider"></div>' +
+        '<button class="wn-cancel" id="wn-cancel">CANCEL</button>'
+
+      var timeRow = box.querySelector('#wn-time-row')
+      TIME_OPTIONS.forEach(function(opt) {
+        var btn = document.createElement('button')
+        btn.className = 'what-now-time-btn'
+        btn.innerHTML = '<div style="font-size:15px;margin-bottom:4px;">' + opt.label + '</div>'
+        btn.addEventListener('click', function() { buildResults(opt.mins) })
+        timeRow.appendChild(btn)
+      })
+
+      box.querySelector('#wn-cancel').addEventListener('click', closeModal)
+    }
+
+    function buildResults(availMins) {
+      // Score each watching item
+      var suggestions = []
+      watching.forEach(function(item) {
+        var avgMins = AVG_MINS[item.type] || 24
+        var epsFit  = Math.max(1, Math.floor(availMins / avgMins))
+
+        // How many unwatched left
+        var watched = item.watchedEpisodes || []
+        var remaining = 0
+        if (item.seasons && item.seasons.some(function(s){ return s.episodes && s.episodes.length > 0 })) {
+          item.seasons.forEach(function(s, si) {
+            (s.episodes || []).forEach(function(ep) {
+              var key = 's' + si + '_' + ep.number
+              if (!watched.includes(key)) remaining++
+            })
+          })
+        } else if (item.totalEpisodes > 0) {
+          remaining = item.totalEpisodes - watched.length
+        } else {
+          remaining = 99 // unknown length — assume plenty
+        }
+
+        if (remaining === 0) return // fully watched
+
+        var actualEps = Math.min(epsFit, remaining)
+        var totalMins = actualEps * avgMins
+
+        // Score: prioritise items not watched recently + good fit
+        var daysSince = 999
+        if (item.lastActivityAt) {
+          daysSince = Math.floor((Date.now() - new Date(item.lastActivityAt).getTime()) / (1000*3600*24))
+        }
+        var score = daysSince + (actualEps / Math.max(epsFit, 1)) * 10
+
+        var unit = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'ch' : 'ep'
+        suggestions.push({ item: item, epsFit: actualEps, totalMins: totalMins, score: score, unit: unit, remaining: remaining })
+      })
+
+      // Sort by score descending
+      suggestions.sort(function(a, b) { return b.score - a.score })
+      var top = suggestions.slice(0, 3)
+
+      box.innerHTML =
+        '<div class="wn-title">⚡ What Now?</div>' +
+        '<div class="wn-show-name" style="font-size:13px;color:var(--text-3);font-weight:500;margin-bottom:14px;">' + availMins + ' minutes · best fits</div>' +
+        '<div id="wn-results"></div>' +
+        '<div class="wn-divider"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button class="wn-cancel" id="wn-back" style="flex:1;">← BACK</button>' +
+          '<button class="wn-cancel" id="wn-cancel2" style="flex:1;">CLOSE</button>' +
+        '</div>'
+
+      var resultsWrap = box.querySelector('#wn-results')
+
+      if (top.length === 0) {
+        resultsWrap.innerHTML = '<div style="text-align:center;padding:20px 0;font:500 11px var(--font-mono);color:var(--text-3);">Nothing in your watching list.<br>Add something to the library first.</div>'
+      } else {
+        top.forEach(function(s) {
+          var card = document.createElement('div')
+          card.className = 'what-now-result'
+          var accentColor = (s.item.themeStyles && s.item.themeStyles['--accent-cool']) ? s.item.themeStyles['--accent-cool'] : 'var(--accent-cool)'
+          card.innerHTML =
+            '<div class="what-now-result-title">' + s.item.title + '</div>' +
+            '<div class="what-now-result-meta">' + s.item.type.toUpperCase() +
+              (s.item.status === 'on-hold' ? ' · <span style="color:var(--accent-warm);">ON HOLD</span>' : '') +
+              (s.item.status === 'upcoming' ? ' · <span style="color:#c084fc;">JUST RELEASED</span>' : '') +
+              (s.remaining < 99 ? ' · ' + s.remaining + ' ' + s.unit + ' left' : '') +
+            '</div>' +
+            '<div class="what-now-result-eps" style="color:' + accentColor + ';">▶ ' + s.epsFit + ' ' + s.unit + ' · ~' + s.totalMins + ' min</div>'
+          card.addEventListener('click', function() {
+            closeModal()
+            navigateTo('detail', s.item.id)
+          })
+          resultsWrap.appendChild(card)
+        })
+      }
+
+      box.querySelector('#wn-back').addEventListener('click', buildPicker)
+      box.querySelector('#wn-cancel2').addEventListener('click', closeModal)
+    }
+
+    function closeModal() {
+      overlay.classList.remove('visible')
+      document.body.style.overflow = ''
+      setTimeout(function() { if (overlay.parentNode) overlay.remove() }, 240)
+    }
+
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal() })
+    document.addEventListener('keydown', function escH(e) {
+      if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escH) }
+    })
+
+    buildPicker()
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { overlay.classList.add('visible') })
+    })
+  }
+
+  /* =================================================================
+     WATCH NEXT MODAL — openWatchNextModal(item)
+     Shows the next unwatched episode and lets the user pick how many
+     to watch this session. Remembers last session size per item.
+  ================================================================= */
+  function openWatchNextModal(item) {
+    var isReading = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
+    var unitWord  = isReading ? 'chapters' : 'episodes'
+    var unitShort = isReading ? 'Ch.' : 'Ep.'
+
+    var watched = item.watchedEpisodes || []
+
+    // Always prefer seasons array if it exists and has episodes
+    var hasSeasonsData = item.seasons && item.seasons.length > 0 &&
+      item.seasons.some(function(s) { return s.episodes && s.episodes.length > 0 })
+
+    var allEps = []
+    if (hasSeasonsData) {
+      item.seasons.forEach(function(s, si) {
+        (s.episodes || []).forEach(function(ep) {
+          var key = makeEpKey(si, ep.number)
+          if (!watched.includes(key)) allEps.push({ key: key, num: ep.number, seasonIdx: si })
+        })
+      })
+    } else {
+      // No seasons — use plain number keys, same as the ep tile click handler
+      for (var i = 1; i <= (item.totalEpisodes || 0); i++) {
+        if (!watched.includes(i) && !watched.includes(String(i))) {
+          allEps.push({ key: i, num: i })
+        }
+      }
+    }
+
+    var nextEp    = allEps.length > 0 ? allEps[0].num : null
+    var remaining = allEps.length
+
+    // Load last session size for this item
+    var sessionData = loadData(KEYS.sessionEps, {})
+    var lastCount   = sessionData[item.id] || null
+
+    // Options 1–5, capped at remaining
+    var maxOpt = Math.min(5, remaining)
+    var options = []
+    for (var n = 1; n <= maxOpt; n++) options.push(n)
+    if (options.length === 0) return
+
+    var overlay = document.createElement('div')
+    overlay.className = 'wn-overlay'
+
+    var box = document.createElement('div')
+    box.className = 'wn-box'
+    box.innerHTML =
+      '<div class="wn-title">▶ Queue Next</div>' +
+      '<div class="wn-show-name">' + item.title + '</div>' +
+      '<div class="wn-next-ep">' + unitShort + ' ' + (nextEp || '?') + ' up next · ' + remaining + ' left</div>' +
+      '<div class="wn-question">Queue how many ' + unitWord + '?</div>' +
+      '<div class="wn-count-row" id="wn-count-row"></div>' +
+      '<div class="wn-divider"></div>' +
+      '<button class="wn-cancel" id="wn-cancel">CANCEL</button>'
+
+    var countRow = box.querySelector('#wn-count-row')
+    options.forEach(function(n) {
+      var btn = document.createElement('button')
+      btn.className = 'wn-count-btn' + (n === lastCount ? ' wn-suggested' : '')
+      btn.textContent = n
+      btn.addEventListener('click', function() {
+        // Save session size preference
+        var sd = loadData(KEYS.sessionEps, {})
+        sd[item.id] = n
+        saveData(KEYS.sessionEps, sd)
+
+        // Queue the next n episodes — don't mark watched
+        var toQueue = allEps.slice(0, n)
+        var qd = loadData(KEYS.queuedEps, {})
+        qd[item.id] = toQueue.map(function(ep) { return ep.key })
+        saveData(KEYS.queuedEps, qd)
+
+        var labels = toQueue.map(function(ep) { return unitShort + ' ' + ep.num })
+
+        // Live-update library card: show queued badge
+        var libCard = document.querySelector('.library-card[data-item-id="' + item.id + '"]')
+        if (libCard) {
+          var existing = libCard.querySelector('.lib-queued-badge')
+          if (!existing) {
+            var badge = document.createElement('div')
+            badge.className = 'lib-queued-badge'
+            badge.style.cssText = 'font:700 9px var(--font-mono);letter-spacing:0.12em;color:var(--accent-cool);background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);border-radius:var(--radius-pill);padding:2px 8px;margin-top:4px;display:inline-block;'
+            badge.textContent = '▶ ' + n + ' QUEUED'
+            var moods = libCard.querySelector('.lib-card-moods')
+            var footer = libCard.querySelector('.lib-card-footer')
+            if (moods) moods.insertAdjacentElement('afterend', badge)
+            else if (footer) footer.insertAdjacentElement('beforebegin', badge)
+          } else {
+            existing.textContent = '▶ ' + n + ' QUEUED'
+          }
+        }
+
+        // Confirmation
+        box.innerHTML =
+          '<div style="text-align:center;padding:20px 0;">' +
+          '<div style="font:700 30px var(--font-mono);color:var(--accent-cool);margin-bottom:12px;">▶</div>' +
+          '<div style="font:700 13px var(--font-mono);color:var(--text-1);margin-bottom:6px;">' + n + ' ' + unitWord + ' queued</div>' +
+          '<div style="font:500 11px var(--font-mono);color:var(--text-3);margin-bottom:12px;">' + labels.join(' · ') + '</div>' +
+          '<div style="font:400 10px var(--font-mono);color:var(--text-3);line-height:1.6;">Tap the episode tiles<br>to mark them watched</div>' +
+          '</div>'
+
+        setTimeout(closeModal, 1600)
+      })
+      countRow.appendChild(btn)
+    })
+
+    box.querySelector('#wn-cancel').addEventListener('click', closeModal)
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal() })
+    document.addEventListener('keydown', function escH(e) {
+      if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escH) }
+    })
+
+    function closeModal() {
+      overlay.classList.remove('visible')
+      document.body.style.overflow = ''
+      setTimeout(function() { if (overlay.parentNode) overlay.remove() }, 240)
+    }
+
+    overlay.appendChild(box)
+    document.body.appendChild(overlay)
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { overlay.classList.add('visible') })
+    })
+  }
+
+  /* =================================================================
      SCHEDULE MODAL — openSchedModal(dateKey, dayLabel, library, onSave)
      Lets users add a library item to any day. If no date is provided,
      it displays a date-picker dropdown.
@@ -15902,7 +16237,6 @@
   function renderOverview() {
     var main    = document.getElementById('app-main')
     var library = loadData(KEYS.library, [])
-    var tasks   = loadData(KEYS.tasks, [])
 
     var activeStatus = 'all'
     var activeType   = 'all'
@@ -16073,16 +16407,6 @@
         })
       }
 
-      // "+ schedule" add button per day
-      ;(function(cdk, cdayShort) {
-        var addBtn = document.createElement('button')
-        addBtn.className = 'sched-add-btn'
-        addBtn.textContent = '+ schedule'
-        addBtn.addEventListener('click', function() {
-          openSchedModal(cdk, cdayShort, library, function() { navigateTo('overview') })
-        })
-        col.appendChild(addBtn)
-      })(dateKey, dayShort)
 
       calGrid.appendChild(col)
     }
@@ -16094,7 +16418,7 @@
     headerRow.innerHTML =
       '<div class="section-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">OPERATIONS MANIFEST</div>' +
       '<span style="font:var(--text-xs) var(--font-mono);color:var(--text-3);">[' +
-        library.length + ' OPS + ' + tasks.filter(function(t){return !t.completed}).length + ' PROCESSES]</span>'
+        library.length + ' OPS]</span>'
     main.appendChild(headerRow)
 
     var sep = document.createElement('div')
@@ -16109,18 +16433,12 @@
     //                tasks use active/done
     // Type values:   library content types + 'task' for task-only view
     var LIBRARY_STATUS_PILLS = ['all','watching','reading','not started','upcoming','completed','on hold','graveyard']
-    var TASK_STATUS_PILLS    = ['active','done']
     var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel','social']
 
     // Row 1: Library status (cyan accent)
     var row1 = document.createElement('div'); row1.className = 'overview-filter-row'
     var lbl1 = document.createElement('span'); lbl1.className = 'overview-filter-label'; lbl1.textContent = 'Library'
     row1.appendChild(lbl1)
-
-    // Row 2: Task status (violet accent)
-    var row2 = document.createElement('div'); row2.className = 'overview-filter-row'
-    var lbl2 = document.createElement('span'); lbl2.className = 'overview-filter-label'; lbl2.textContent = 'Tasks'
-    row2.appendChild(lbl2)
 
     // Row 3: Content type
     var row3 = document.createElement('div'); row3.className = 'overview-filter-row'
@@ -16135,25 +16453,10 @@
       return btn
     }
 
-    // All library-status pills reset task-status pills to neutral and vice versa
-    // so you can only have one active status at a time across both groups
-    function clearAllStatusPills() {
-      row1.querySelectorAll('.overview-pill').forEach(function(p) { p.classList.remove('active') })
-      row2.querySelectorAll('.overview-pill').forEach(function(p) { p.classList.remove('active') })
-    }
-
     LIBRARY_STATUS_PILLS.forEach(function(s) {
       row1.appendChild(makePill(s, s === activeStatus, '', function(btn) {
         activeStatus = s
-        clearAllStatusPills()
-        btn.classList.add('active')
-        renderManifest()
-      }))
-    })
-    TASK_STATUS_PILLS.forEach(function(s) {
-      row2.appendChild(makePill(s, s === activeStatus, 'task-pill', function(btn) {
-        activeStatus = s
-        clearAllStatusPills()
+        row1.querySelectorAll('.overview-pill').forEach(function(p) { p.classList.remove('active') })
         btn.classList.add('active')
         renderManifest()
       }))
@@ -16167,11 +16470,9 @@
       }))
     })
     filterWrap.appendChild(row1)
-    filterWrap.appendChild(row2)
     filterWrap.appendChild(row3)
     main.appendChild(filterWrap)
 
-    // Manifest container
     var manifestWrap = document.createElement('div')
     manifestWrap.id = 'manifest-wrap'
     main.appendChild(manifestWrap)
@@ -16180,37 +16481,28 @@
       var wrap = document.getElementById('manifest-wrap')
       wrap.innerHTML = ''
 
-      // Build combined entries
       var entries = []
       library.forEach(function(item) {
         entries.push({ kind: 'library', item: item, sortStatus: item.status })
       })
-      tasks.forEach(function(task) {
-        entries.push({ kind: 'task', item: task, sortStatus: task.completed ? 'done' : 'active' })
-      })
 
-      // Filter — "all" excludes graveyard and on-hold (they live in separate sections)
       var filtered = entries.filter(function(e) {
         var statusOk = true
         var typeOk   = true
-        if (e.kind === 'library' && e.item.status === 'graveyard' && activeStatus === 'all') return false
-        if (e.kind === 'library' && e.item.status === 'on-hold' && activeStatus === 'all') return false
+        if (e.item.status === 'graveyard' && activeStatus === 'all') return false
+        if (e.item.status === 'on-hold' && activeStatus === 'all') return false
         if (activeStatus !== 'all') {
-          if (e.kind === 'library') {
-            var w = (e.item.watchedEpisodes || []).length
-            var isReadType = (e.item.type === 'manga' || e.item.type === 'manhwa' || e.item.type === 'novel')
-            if (activeStatus === 'not started') statusOk = e.item.status === 'watching' && w === 0
-            else if (activeStatus === 'watching') statusOk = e.item.status === 'watching' && w > 0 && !isReadType
-            else if (activeStatus === 'reading') statusOk = e.item.status === 'watching' && w > 0 && isReadType
-            else if (activeStatus === 'upcoming') statusOk = e.item.status === 'upcoming'
-            else if (activeStatus === 'on hold') statusOk = e.item.status === 'on-hold'
-            else statusOk = e.item.status === activeStatus
-          }
-          else statusOk = activeStatus === 'active' ? !e.item.completed : activeStatus === 'done' ? e.item.completed : false
+          var w = (e.item.watchedEpisodes || []).length
+          var isReadType = (e.item.type === 'manga' || e.item.type === 'manhwa' || e.item.type === 'novel')
+          if (activeStatus === 'not started') statusOk = e.item.status === 'watching' && w === 0
+          else if (activeStatus === 'watching') statusOk = e.item.status === 'watching' && w > 0 && !isReadType
+          else if (activeStatus === 'reading') statusOk = e.item.status === 'watching' && w > 0 && isReadType
+          else if (activeStatus === 'upcoming') statusOk = e.item.status === 'upcoming'
+          else if (activeStatus === 'on hold') statusOk = e.item.status === 'on-hold'
+          else statusOk = e.item.status === activeStatus
         }
         if (activeType !== 'all') {
-          if (activeType === 'task') typeOk = e.kind === 'task'
-          else typeOk = e.kind === 'library' && e.item.type === activeType
+          typeOk = e.item.type === activeType
         }
         return statusOk && typeOk
       })
@@ -16248,23 +16540,12 @@
   function buildManifestRow(entry) {
     var row = document.createElement('div')
     row.className = 'manifest-row'
-
-    var isTask = entry.kind === 'task'
-    var item   = entry.item
+    var item = entry.item
 
     // Status
     var statusWrap = document.createElement('div')
     statusWrap.className = 'manifest-status'
-    var dotClass, labelText, labelColor
-    if (isTask) {
-      dotClass   = item.completed ? 'lib-status-dot completed' : 'lib-status-dot watching'
-      labelText  = item.completed ? 'TERM' : 'RUN'
-      labelColor = item.completed ? 'var(--text-3)' : 'var(--success)'
-      statusWrap.innerHTML =
-        '<span class="' + dotClass + '"></span>' +
-        '<span class="manifest-status-label" style="color:' + labelColor + ';">' + labelText + '</span>'
-    } else if (item.status === 'watching') {
-      // Change 16: styled WATCHING pill
+    if (item.status === 'watching') {
       var itemWatched = (item.watchedEpisodes || []).length
       var watchLabel = itemWatched === 0 ? 'NOT STARTED' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING'
       statusWrap.innerHTML =
@@ -16272,54 +16553,41 @@
           '<span class="chip-dot"' + (itemWatched === 0 ? ' style="background:var(--text-3)"' : '') + '></span>' + watchLabel +
         '</span>'
     } else if (item.status === 'on-hold') {
-      // Styled ON HOLD pill
       statusWrap.innerHTML =
         '<span class="manifest-status-watch-chip" style="background:rgba(255,225,77,0.1);border:1px solid rgba(255,225,77,0.3);color:var(--accent-yellow);">' +
           '<span class="chip-dot" style="background:#f97316;box-shadow:0 0 8px #f97316;"></span>ON HOLD' +
         '</span>'
     } else if (item.status === 'upcoming') {
-      // Styled UPCOMING pill
       statusWrap.innerHTML =
         '<span class="manifest-status-watch-chip upcoming">' +
           '<span class="chip-dot" style="background:var(--accent-cool);box-shadow:0 0 8px var(--accent-cool);"></span>UPCOMING' +
         '</span>'
     } else {
       var S = { completed:['lib-status-dot completed','DONE','var(--text-3)'],
-                graveyard:['lib-status-dot graveyard','DEAD','var(--danger)'],
-                upcoming:['lib-status-dot upcoming','UPCOMING','var(--accent-cool)'] }
-      var fallbackLabel = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READ' : 'WATCH'
-      var s = S[item.status] || ['lib-status-dot watching', fallbackLabel, 'var(--success)']
-      dotClass = s[0]; labelText = s[1]; labelColor = s[2]
+                graveyard:['lib-status-dot graveyard','DEAD','var(--danger)'] }
+      var s = S[item.status] || ['lib-status-dot watching','WATCH','var(--success)']
       statusWrap.innerHTML =
-        '<span class="' + dotClass + '"></span>' +
-        '<span class="manifest-status-label" style="color:' + labelColor + ';">' + labelText + '</span>'
+        '<span class="' + s[0] + '"></span>' +
+        '<span class="manifest-status-label" style="color:' + s[2] + ';">' + s[1] + '</span>'
     }
     row.appendChild(statusWrap)
+
     // Type badge
     var badgeWrap = document.createElement('div')
-    if (isTask) {
-      badgeWrap.innerHTML = '<span style="font:var(--text-xs) var(--font-mono);color:var(--text-3);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:var(--radius-sm);">TASK</span>'
-    } else {
-      badgeWrap.innerHTML = '<span class="badge" data-type="' + item.type + '">' + item.type + '</span>'
-    }
+    badgeWrap.innerHTML = '<span class="badge" data-type="' + item.type + '">' + item.type + '</span>'
     row.appendChild(badgeWrap)
 
     // Title
     var titleCell = document.createElement('div')
-    titleCell.className = 'manifest-title-cell' + (isTask ? ' task-entry' : '')
-    titleCell.textContent = item.name || item.title || ''
+    titleCell.className = 'manifest-title-cell'
+    titleCell.textContent = item.title || ''
     row.appendChild(titleCell)
 
     // Progress bar
     var progCell = document.createElement('div')
     progCell.className = 'manifest-prog-cell'
-    var pct = 0
-    if (isTask) {
-      pct = item.completed ? 100 : 0
-    } else {
-      pct = item.totalEpisodes > 0
-        ? Math.min(((item.watchedEpisodes||[]).length / item.totalEpisodes) * 100, 100) : 0
-    }
+    var pct = item.totalEpisodes > 0
+      ? Math.min(((item.watchedEpisodes||[]).length / item.totalEpisodes) * 100, 100) : 0
     progCell.innerHTML =
       '<div class="manifest-prog-bar"><div class="manifest-prog-fill" style="width:' + pct + '%;"></div></div>'
     row.appendChild(progCell)
@@ -16327,19 +16595,15 @@
     // Left / remaining
     var leftCell = document.createElement('div')
     leftCell.className = 'manifest-left-cell'
-    if (isTask) {
-      leftCell.textContent = item.duration ? ('~' + item.duration + 'm') : '\u2014'
-    } else {
-      var rem = item.totalEpisodes - (item.watchedEpisodes||[]).length
-      var unit = (item.type==='manga'||item.type==='manhwa'||item.type==='novel') ? 'ch' : 'ep'
-      leftCell.textContent = rem > 0 ? (rem + ' ' + unit) : '\u2014'
-    }
+    var rem = item.totalEpisodes - (item.watchedEpisodes||[]).length
+    var unit = (item.type==='manga'||item.type==='manhwa'||item.type==='novel') ? 'ch' : 'ep'
+    leftCell.textContent = rem > 0 ? (rem + ' ' + unit) : '\u2014'
     row.appendChild(leftCell)
 
     // Rating
     var ratingCell = document.createElement('div')
     ratingCell.className = 'manifest-rating-cell'
-    ratingCell.textContent = (!isTask && item.rating) ? ('\u2605' + Number(item.rating).toFixed(1)) : '\u2014'
+    ratingCell.textContent = item.rating ? ('\u2605' + Number(item.rating).toFixed(1)) : '\u2014'
     row.appendChild(ratingCell)
 
     // Day
@@ -16350,12 +16614,7 @@
     if (!day) dayCell.style.color = 'var(--text-3)'
     row.appendChild(dayCell)
 
-    // Click
-    row.addEventListener('click', function() {
-      if (isTask) navigateTo('tasks')
-      else navigateTo('detail', item.id)
-    })
-
+    row.addEventListener('click', function() { navigateTo('detail', item.id) })
     return row
   }
 
@@ -16866,14 +17125,6 @@
              </svg>`
     },
     {
-      section: 'tasks', label: 'Tasks',
-      icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-               <path d="M2 4h12M2 8h8M2 12h5"/>
-               <polyline points="11,10 12.5,11.5 15,9"/>
-             </svg>`
-    },
-    {
       section: 'overview', label: 'Overview',
       icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -17188,7 +17439,7 @@
     // 4. Boot screen removed
 
     // Restore last visited section (or dashboard on first visit)
-    const VALID_SECTIONS = ['dashboard','library','moodqueue','tasks','overview','graveyard','sessionlog','detail']
+    const VALID_SECTIONS = ['dashboard','library','moodqueue','overview','graveyard','sessionlog','detail']
     let startSection = 'dashboard'
     let startDetailId = null
     try {
@@ -18053,7 +18304,6 @@
       { label: 'Dashboard',   icon: '◈', action: function() { navigateTo('dashboard') } },
       { label: 'Library',     icon: '⊞', action: function() { navigateTo('library') } },
       { label: 'Mood Queue',  icon: '◉', action: function() { navigateTo('moodqueue') } },
-      { label: 'Tasks',       icon: '▣', action: function() { navigateTo('tasks') } },
       { label: 'Overview',    icon: '◎', action: function() { navigateTo('overview') } },
       { label: 'Graveyard',   icon: '†', action: function() { navigateTo('graveyard') } },
       { label: 'Session Log', icon: '⧖', action: function() { navigateTo('sessionlog') } },
@@ -18074,7 +18324,6 @@
     function buildResults(query) {
       var results = []
       var lib = loadData(KEYS.library, [])
-      var tasks = loadData(KEYS.tasks, [])
       if (!query.trim()) {
         SECTIONS.forEach(function(s) { results.push({ label: s.label, sub: 'Navigate', icon: s.icon, action: s.action }) })
       } else {
@@ -18090,11 +18339,6 @@
               action: (function(id) { return function() { navigateTo('detail', id) } })(item.id),
               accentColor: item.themeStyles && item.themeStyles['--accent-cool'] ? item.themeStyles['--accent-cool'] : 'var(--accent-cool)'
             })
-          }
-        })
-        tasks.filter(function(t) { return !t.completed }).forEach(function(t) {
-          if (fuzzy(t.name, query)) {
-            results.push({ label: t.name, sub: 'TASK' + (t.duration ? ' · ' + t.duration + 'min' : ''), icon: '⚡', action: function() { navigateTo('tasks') } })
           }
         })
         SECTIONS.forEach(function(s) {
@@ -18255,7 +18499,6 @@
   function computeDebtScore() {
     var schedule = loadData(KEYS.schedule, {})
     var log = loadData(KEYS.log, [])
-    var tasks = loadData(KEYS.tasks, [])
     var library = loadData(KEYS.library, [])
     var todayKey = localDateStr()
     var score = 0
@@ -18275,14 +18518,6 @@
       if (new Date(evt.timestamp).getTime() < cutoff) return
       var t = (evt.text || '').toLowerCase()
       if (t.includes('watched ep') || t.includes('read ch')) score -= 5
-    })
-
-    // -8 per task completed (last 30 days)
-    tasks.forEach(function(t) {
-      if (t.completed && t.completedDate) {
-        var d = new Date(t.completedDate + 'T12:00:00').getTime()
-        if (d > cutoff) score -= 8
-      }
     })
 
     // -15 per series completed ever
@@ -19148,12 +19383,7 @@
     var caught = log.filter(function(e) {
       return e.timestamp >= cutoff && (e.text.indexOf('Watched ep') !== -1 || e.text.indexOf('Read ch') !== -1)
     }).length
-    // Count tasks completed in last 14 days
-    var tasks = loadData(KEYS.tasks, [])
-    var tasksDone = tasks.filter(function(t) {
-      return t.completed && t.completedDate && (t.completedDate + 'T23:59:59') >= cutoff
-    }).length
-    var raw = (missed * 10) - (caught * 5) - (tasksDone * 8)
+    var raw = (missed * 10) - (caught * 5)
     return Math.max(0, Math.min(999, raw))
   }
 
@@ -19278,7 +19508,6 @@
       { label:'Dashboard',   sub:'Home',           section:'dashboard'  },
       { label:'Library',     sub:'All content',    section:'library'    },
       { label:'Mood Queue',  sub:'Recommendations',section:'moodqueue'  },
-      { label:'Tasks',       sub:'Process queue',  section:'tasks'      },
       { label:'Overview',    sub:'Schedule + manifest', section:'overview' },
       { label:'Graveyard',   sub:'Dropped content',section:'graveyard'  },
       { label:'Session Log', sub:'Activity history',section:'sessionlog' },
@@ -19287,26 +19516,17 @@
 
     function buildItems(q) {
       var lib   = loadData(KEYS.library, [])
-      var tasks = loadData(KEYS.tasks, [])
       var items = []
       q = q.toLowerCase().trim()
 
-      // Sections first (when query is short or matches)
       SECTIONS.forEach(function(s) {
         if (!q || s.label.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q)) {
           items.push({ kind:'section', label:s.label, sub:s.sub, section:s.section })
         }
       })
-      // Library
       lib.forEach(function(it) {
         if (!q || it.title.toLowerCase().includes(q)) {
           items.push({ kind:'library', label:it.title, sub:it.type + ' · ' + (it.watchedEpisodes||[]).length + ' / ' + (it.totalEpisodes||0) + ' · ' + it.status, id:it.id, type:it.type })
-        }
-      })
-      // Tasks
-      tasks.forEach(function(t) {
-        if (!q || t.name.toLowerCase().includes(q)) {
-          items.push({ kind:'task', label:t.name, sub:'task · ' + (t.completed ? 'done' : 'active'), id:t.id })
         }
       })
       return items.slice(0, 14)
@@ -19330,9 +19550,6 @@
         if (item.kind === 'section') {
           iconEl.style.cssText = 'background:var(--surface-2);color:var(--text-2);'
           iconEl.textContent = '⊞'
-        } else if (item.kind === 'task') {
-          iconEl.style.cssText = 'background:rgba(168,85,247,0.15);color:#a855f7;'
-          iconEl.textContent = 'TSK'
         } else {
           var tc = TYPE_COLORS[item.type] || '#00e5ff'
           iconEl.style.cssText = 'background:' + tc + '22;color:' + tc + ';font-size:8px;'
@@ -19360,7 +19577,6 @@
       closeP7Palette()
       if (item.kind === 'section') navigateTo(item.section)
       else if (item.kind === 'library') navigateTo('detail', item.id)
-      else if (item.kind === 'task') navigateTo('tasks')
     }
 
     function move(dir) {
@@ -19622,3 +19838,5 @@
   // ════════════════════════════════════════════════════════════
   </script>
   <script src="hub-nav.js"></script>
+</body>
+</html>

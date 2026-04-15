@@ -2193,8 +2193,8 @@
       gap: var(--space-4);
       border-left-width: 2px;
       border-left-style: solid;
-      opacity: 0;
-      transform: translateY(16px);
+      opacity: 1;
+      transform: translateY(0);
       will-change: transform, opacity;
       
       box-shadow: var(--glow-card), inset 0 1px 0 rgba(100,180,255,0.12);
@@ -8400,13 +8400,16 @@
     document.body.classList.remove('in-graveyard')
     // Remove multi-select bar if present
     var _sb = document.getElementById('detail-select-bar'); if (_sb) _sb.remove()
+    
     currentSection  = section
     currentDetailId = detailId
     updateSidebarActive(section)
+    
     const main = document.getElementById('app-main')
     main.innerHTML = ''
     main.scrollTop = 0
     window.scrollTo({top: 0, behavior: 'instant'})
+    
     const renderers = {
       dashboard:  () => (window.renderDashboard || renderDashboard)(),
       library:    renderLibrary,
@@ -8417,7 +8420,18 @@
       settings:   renderSettings,
       detail:     () => renderDetail(detailId)
     }
-    renderers[section]?.()
+    
+    try {
+      renderers[section]?.()
+    } catch(e) {
+      console.error('Error rendering section:', section, e)
+      // Fallback to dashboard if render fails
+      if (section !== 'dashboard') {
+        renderers['dashboard']?.()
+        currentSection = 'dashboard'
+        updateSidebarActive('dashboard')
+      }
+    }
 
     // Persist last location so refresh restores it
     try {
@@ -8446,8 +8460,15 @@
   }
 
   function updateSidebarActive(section) {
-    document.querySelectorAll('.bn-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.section === section)
+    // Map sub-sections that don't have their own nav item to their parent nav item
+    const sectionNavMap = { detail: 'library' }
+    const target = sectionNavMap[section] || section
+
+    // Only select .bn-item elements that have a data-section attribute (exclude mute button, etc.)
+    const items = document.querySelectorAll('.bn-item[data-section]')
+
+    items.forEach(el => {
+      el.classList.toggle('active', el.dataset.section === target)
     })
   }
 
@@ -9759,8 +9780,9 @@
     noResults.textContent = 'NO FILES MATCH THIS QUERY'
     grid.appendChild(noResults)
 
+    let cardObserver = null  // declared here so observe call below is always in scope
+
     if (library.length === 0) {
-      const empty = document.createElement('div')
       empty.style.gridColumn = '1 / -1'
       empty.innerHTML =
         '<div class="lib-empty-state">' +
@@ -9778,7 +9800,7 @@
       grid.appendChild(frag)
 
       // Intersection Observer -- entrance animations, never animate offscreen cards
-      const cardObserver = new IntersectionObserver(function(entries) {
+      cardObserver = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (!entry.isIntersecting) return
           const card  = entry.target
@@ -9795,10 +9817,6 @@
           }, 0)
         })
       }, { threshold: 0.1 })
-
-      grid.querySelectorAll('.library-card').forEach(function(card) {
-        cardObserver.observe(card)
-      })
 
       // 3D tilt -- single delegated mousemove on grid, rAF-gated
       var tiltCard    = null
@@ -9838,6 +9856,13 @@
     }
 
     main.appendChild(grid)
+
+    // Start observing cards now that grid is in the DOM
+    if (library.length > 0 && cardObserver) {
+      grid.querySelectorAll('.library-card').forEach(function(card) {
+        cardObserver.observe(card)
+      })
+    }
 
     // ---- FILTER -- never re-creates DOM, just toggles display ----
     function filterCards() {
@@ -10226,7 +10251,7 @@
           '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass === 'on-hold' ? 'ON HOLD' : statusClass.toUpperCase()) + '</span>' +
           dayHTML +
         '</div>' +
-        '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File \u2192</button>' +
+        '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File →</button>' +
         (item.status === 'watching' && item.type !== 'social'
           ? '<button class="lib-watch-next-btn" data-item-id="' + item.id + '">▶ QUEUE</button>'
           : '') +
@@ -15714,7 +15739,9 @@
         var btn = document.createElement('button')
         btn.className = 'what-now-time-btn'
         btn.innerHTML = '<div style="font-size:15px;margin-bottom:4px;">' + opt.label + '</div>'
-        btn.addEventListener('click', function() { buildResults(opt.mins) })
+        ;(function(mins) {
+          btn.addEventListener('click', function() { buildResults(mins) })
+        })(opt.mins)
         timeRow.appendChild(btn)
       })
 
@@ -15726,7 +15753,8 @@
       var suggestions = []
       watching.forEach(function(item) {
         var avgMins = AVG_MINS[item.type] || 24
-        var epsFit  = Math.max(1, Math.floor(availMins / avgMins))
+        var epsFit  = Math.floor(availMins / avgMins)
+        if (epsFit < 1) return // doesn't fit at all — skip
 
         // How many unwatched left
         var watched = item.watchedEpisodes || []
@@ -15754,14 +15782,19 @@
         if (item.lastActivityAt) {
           daysSince = Math.floor((Date.now() - new Date(item.lastActivityAt).getTime()) / (1000*3600*24))
         }
-        var score = daysSince + (actualEps / Math.max(epsFit, 1)) * 10
+        var score = daysSince + (actualEps / epsFit) * 10
 
         var unit = (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'ch' : 'ep'
         suggestions.push({ item: item, epsFit: actualEps, totalMins: totalMins, score: score, unit: unit, remaining: remaining })
       })
 
-      // Sort by score descending
-      suggestions.sort(function(a, b) { return b.score - a.score })
+      // Sort by score descending — watching/not-started first, on-hold last
+      suggestions.sort(function(a, b) {
+        var aOnHold = a.item.status === 'on-hold' ? 1 : 0
+        var bOnHold = b.item.status === 'on-hold' ? 1 : 0
+        if (aOnHold !== bOnHold) return aOnHold - bOnHold
+        return b.score - a.score
+      })
       var top = suggestions.slice(0, 3)
 
       box.innerHTML =
@@ -17439,12 +17472,12 @@
     // 4. Boot screen removed
 
     // Restore last visited section (or dashboard on first visit)
-    const VALID_SECTIONS = ['dashboard','library','moodqueue','overview','graveyard','sessionlog','detail']
+    const VALID_SECTIONS = ['dashboard','library','moodqueue','overview','graveyard','sessionlog','detail','tasks','settings']
     let startSection = 'dashboard'
     let startDetailId = null
     try {
       const saved = JSON.parse(localStorage.getItem('phub_last_location'))
-      if (saved && VALID_SECTIONS.includes(saved.section)) {
+      if (saved && saved.section && VALID_SECTIONS.includes(saved.section)) {
         // Don't restore a detail view for an item that no longer exists
         if (saved.section === 'detail' && saved.detailId) {
           const lib = loadData(KEYS.library, [])
@@ -17455,8 +17488,15 @@
           startSection = saved.section
         }
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error('Error restoring location:', e)
+    }
     navigateTo(startSection, startDetailId)
+
+    // Re-sync nav highlight after all deferred timers have settled (Part 6 injects
+    // mute button at 100ms, settings button at 200ms — both append to the nav and
+    // can shift DOM order before active is visually applied).
+    setTimeout(() => updateSidebarActive(currentSection), 300)
   })
 
   // ═══ PART 1 COMPLETE — SKELETON ARMED AND READY ═══
@@ -18088,6 +18128,7 @@
 
     // Watch for overview renders
     const observer = new MutationObserver(() => {
+      if (currentSection !== 'overview') return
       if (document.getElementById('manifest-wrap')) {
         setTimeout(applyHeartbeat, 100)
       }
@@ -18574,6 +18615,8 @@
   // Patch renderDashboard to inject debt score block
   var _origRenderDashboard = renderDashboard
   window.renderDashboard = renderDashboard = function() {
+    // Guard: only inject if we're actually on the dashboard section
+    if (currentSection !== 'dashboard') return
     _origRenderDashboard()
     // Inject after the stat cards block (b2) — find the dash-stats-grid
     var main = document.getElementById('app-main')
@@ -19257,6 +19300,9 @@
       settingsBtn.innerHTML = settingsIcon
       settingsBtn.addEventListener('click', function() { navigateTo('settings') })
       nav.appendChild(settingsBtn)
+
+      // Re-sync active highlight now that nav is fully populated
+      updateSidebarActive(currentSection)
     }, 200)
   })
 
@@ -19787,6 +19833,8 @@
       var mainEl = document.getElementById('app-main')
       if (!mainEl) return
       var _p7DetailObserver = new MutationObserver(function() {
+        // Guard: only act when we're actually in the detail section
+        if (currentSection !== 'detail') return
         var progFill = document.getElementById('detail-prog-fill')
         if (!progFill || progFill._p7VeloPatched) return
         progFill._p7VeloPatched = true

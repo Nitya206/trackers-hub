@@ -2765,7 +2765,7 @@
       margin-bottom: var(--space-3);
       text-shadow: 0 0 20px rgba(255,87,34,0.4);
     }
-    .detail-mood-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+    .detail-mood-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); align-items: center; }
     .detail-mood-pill {
       font: 400 12px var(--font-mono);
       padding: 3px 10px;
@@ -2774,6 +2774,14 @@
       border: 1px solid rgba(255,255,255,0.08);
       letter-spacing: 0.1em;
     }
+    .detail-tags-edit-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none;
+      color: var(--text-3); font-size: 15px;
+      width: 22px; height: 22px; cursor: none; flex-shrink: 0;
+      transition: color 150ms var(--ease-snap); line-height: 1; padding: 0;
+    }
+    .detail-tags-edit-btn:hover { color: var(--accent-cool); }
     .detail-progress-label { font: 500 11px var(--font-mono); color: var(--text-3); margin-top: var(--space-1); letter-spacing: 0.05em; }
     .detail-progress-bar-wrap { margin-bottom: var(--space-5); }
     .detail-day-label { font: 700 12px var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: var(--space-2); }
@@ -4526,15 +4534,51 @@
       background: rgba(12,10,30,1);
       border: 1px solid rgba(130,160,255,0.3);
       border-radius: var(--radius-sm);
-      padding: 4px 6px;
+      padding: 8px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 2px;
+      flex-direction: column;
+      gap: 6px;
       z-index: 9999;
       box-shadow: 0 8px 30px rgba(0,0,0,0.8);
       animation: slideInResult 150ms var(--ease-spring) both;
       max-width: calc(100vw - 24px);
+      min-width: 180px;
     }
+    .ep-rate-popup-stars {
+      display: flex;
+      gap: 2px;
+      flex-wrap: nowrap;
+    }
+    .ep-rate-popup-platforms {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      border-top: 1px solid rgba(130,160,255,0.15);
+      padding-top: 6px;
+    }
+    .ep-rate-plat-label {
+      font: 700 8px var(--font-mono);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .ep-rate-plat-label.imdb { color: #f5c518; }
+    .ep-rate-plat-label.mal  { color: #2e51a2; }
+    .ep-rate-plat-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(130,160,255,0.2);
+      border-radius: 4px;
+      color: var(--text-1);
+      font: 500 12px var(--font-mono);
+      padding: 3px 6px;
+      outline: none;
+      cursor: text;
+      -moz-appearance: textfield;
+    }
+    .ep-rate-plat-input::-webkit-outer-spin-button,
+    .ep-rate-plat-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ep-rate-plat-input:focus { border-color: rgba(130,160,255,0.5); }
     .ep-rate-star {
       background: none;
       border: none;
@@ -6828,8 +6872,9 @@
     if (!card) return ''
     var id = card.dataset.itemId || ''
     if (id) return id
-    var btn = card.querySelector('.lib-open-btn')
-    return (btn && btn.dataset.itemId) ? btn.dataset.itemId : ''
+    // Fallback: try to find item ID from other elements in the card
+    var queueBtn = card.querySelector('.lib-watch-next-btn')
+    return (queueBtn && queueBtn.dataset.itemId) ? queueBtn.dataset.itemId : ''
   }
 
   function orderLibraryCardsInGrid(gridEl, mode) {
@@ -8344,6 +8389,297 @@
       if (_aChanged) saveData(KEYS.library, _aLib)
     })()
 
+    // Migration: inject Invincible (4 seasons + Atom Eve special)
+    if (!localStorage.getItem('phub_added_invincible_v1')) {
+      var _invLib = loadData(KEYS.library, [])
+      var _hasInv = _invLib.some(function(it) { return it.id === 'invincible-seed-v1' })
+      if (!_hasInv) {
+        _invLib.unshift({
+          id: 'invincible-seed-v1',
+          title: 'Invincible',
+          type: 'show',
+          totalEpisodes: 33,
+          watchedEpisodes: [],
+          theme: 'invincible-gold',
+          themeStyles: {
+            '--accent-cool':     '#ffd700',
+            '--accent-warm':     '#ff8c00',
+            '--accent-cool-dim': 'rgba(255,215,0,0.18)',
+            '--tc-rgb':          '255,215,0',
+            '--surface':         'rgba(255,215,0,0.05)',
+            '--surface-2':       'rgba(255,215,0,0.09)',
+            '--surface-3':       'rgba(255,215,0,0.14)',
+            '--border':          'rgba(255,215,0,0.16)',
+            '--border-bright':   'rgba(255,215,0,0.35)',
+            '--border-glow':     'rgba(255,215,0,0.52)'
+          },
+          moodTags: ['action', 'dark', 'hype', 'emotional damage', 'psychological'],
+          rating: 0,
+          ratingIMDb: 8.7,
+          ratingIMDbManual: true,
+          imdbUrl: 'https://www.imdb.com/title/tt6741278/reviews/?ref_=ttrt_sa_3',
+          seasons: [
+            {
+              id: 's1', name: 'Season 1',
+              ratingIMDb: 8.7,
+              imdbUrl: 'https://www.imdb.com/title/tt6741278/episodes/?season=1',
+              episodes: [
+                { number: 1,  title: "It's About Time",                    ratingIMDb: 9.0 },
+                { number: 2,  title: 'Here Goes Nothing',                   ratingIMDb: 8.4 },
+                { number: 3,  title: "Who You Calling Ugly?",               ratingIMDb: 8.1 },
+                { number: 4,  title: 'Neil Armstrong, Eat Your Heart Out',  ratingIMDb: 7.7 },
+                { number: 5,  title: 'That Actually Hurt',                  ratingIMDb: 9.1 },
+                { number: 6,  title: 'You Look Kinda Dead',                 ratingIMDb: 7.6 },
+                { number: 7,  title: 'We Need to Talk',                     ratingIMDb: 9.6 },
+                { number: 8,  title: 'Where I Really Come From',            ratingIMDb: 9.7 }
+              ]
+            },
+            {
+              id: 'atom-eve', name: 'Atom Eve Special',
+              ratingIMDb: 7.6,
+              imdbUrl: 'https://www.imdb.com/title/tt28452191/reviews/?ref_=ttrt_sa_3',
+              episodes: [
+                { number: 9,  title: 'Atom Eve',                            ratingIMDb: 7.6 }
+              ]
+            },
+            {
+              id: 's2', name: 'Season 2',
+              ratingIMDb: 8.4,
+              imdbUrl: 'https://www.imdb.com/title/tt6741278/episodes/?season=2',
+              episodes: [
+                { number: 10, title: 'A Lesson for Your Next Life',         ratingIMDb: 8.1 },
+                { number: 11, title: 'In About Six Hours I Unmake the World', ratingIMDb: 7.2 },
+                { number: 12, title: 'This Missive, This Time, This Warning', ratingIMDb: 8.1 },
+                { number: 13, title: "It's Been a While",                   ratingIMDb: 9.2 },
+                { number: 14, title: 'This Must Come as a Shock',           ratingIMDb: 8.7 },
+                { number: 15, title: "It's Not That Simple",                ratingIMDb: 7.8 },
+                { number: 16, title: "I'm Not Going Anywhere",              ratingIMDb: 8.7 },
+                { number: 17, title: "What's Eating You?",                  ratingIMDb: 9.1 }
+              ]
+            },
+            {
+              id: 's3', name: 'Season 3',
+              ratingIMDb: 8.8,
+              imdbUrl: 'https://www.imdb.com/title/tt6741278/episodes/?season=3',
+              episodes: [
+                { number: 18, title: 'You Robot',                           ratingIMDb: 8.0 },
+                { number: 19, title: "Quiet Or I'll Call My Lawyer",        ratingIMDb: 9.1 },
+                { number: 20, title: 'Episode 3',                           ratingIMDb: 8.5 },
+                { number: 21, title: 'Episode 4',                           ratingIMDb: 9.1 },
+                { number: 22, title: 'Episode 5',                           ratingIMDb: 7.4 },
+                { number: 23, title: 'Episode 6',                           ratingIMDb: 8.7 },
+                { number: 24, title: 'Episode 7',                           ratingIMDb: 9.7 },
+                { number: 25, title: 'Episode 8',                           ratingIMDb: 9.9 }
+              ]
+            },
+            {
+              id: 's4', name: 'Season 4',
+              ratingIMDb: 8.7,
+              imdbUrl: 'https://www.imdb.com/title/tt6741278/episodes/?season=4',
+              episodes: [
+                { number: 26, title: 'Episode 1',                           ratingIMDb: 8.3 },
+                { number: 27, title: 'Episode 2',                           ratingIMDb: 9.3 },
+                { number: 28, title: 'Episode 3',                           ratingIMDb: 8.1 },
+                { number: 29, title: 'Episode 4',                           ratingIMDb: 6.6 },
+                { number: 30, title: 'Episode 5',                           ratingIMDb: 9.8 },
+                { number: 31, title: 'Episode 6',                           ratingIMDb: 9.2 },
+                { number: 32, title: 'Episode 7',                           ratingIMDb: 9.9 },
+                { number: 33, title: 'Episode 8',                           ratingIMDb: 0   }
+              ]
+            }
+          ],
+          arcs: [],
+          scheduledDay: null,
+          status: 'watching',
+          addedDate: new Date().toISOString().split('T')[0],
+          graveyardDate: null, graveyardNote: '',
+          timerMinutes: 0, notes: ''
+        })
+        saveData(KEYS.library, _invLib)
+        logEvent('Invincible (4 seasons + Atom Eve special) added to library')
+      }
+      localStorage.setItem('phub_added_invincible_v1', 'true')
+    }
+
+    // Migration: inject Witch Hat Atelier manga (volumes 1–13)
+    if (!localStorage.getItem('phub_added_wha_manga_v1')) {
+      var _whaLib = loadData(KEYS.library, [])
+      var _hasWha = _whaLib.some(function(it) { return it.id === 'witch-hat-atelier-manga-v1' })
+      if (!_hasWha) {
+        _whaLib.unshift({
+          id: 'witch-hat-atelier-manga-v1',
+          title: 'Witch Hat Atelier',
+          type: 'manga',
+          totalEpisodes: 75,
+          watchedEpisodes: [],
+          theme: 'wha-ice',
+          themeStyles: {
+            '--accent-cool':     '#d0eeff',
+            '--accent-warm':     '#ffa89e',
+            '--accent-cool-dim': 'rgba(208,238,255,0.18)',
+            '--tc-rgb':          '208,238,255',
+            '--surface':         'rgba(208,238,255,0.05)',
+            '--surface-2':       'rgba(208,238,255,0.09)',
+            '--surface-3':       'rgba(208,238,255,0.14)',
+            '--border':          'rgba(208,238,255,0.16)',
+            '--border-bright':   'rgba(208,238,255,0.35)',
+            '--border-glow':     'rgba(208,238,255,0.52)'
+          },
+          moodTags: ['aesthetic', 'binge-worthy'],
+          rating: 0,
+          seasons: [],
+          arcs: [
+            { id: 'vol-1',  name: 'Volume 1',  chapterStart: 1,  chapterEnd: 5    },
+            { id: 'vol-2',  name: 'Volume 2',  chapterStart: 6,  chapterEnd: 11   },
+            { id: 'vol-3',  name: 'Volume 3',  chapterStart: 12, chapterEnd: 17   },
+            { id: 'vol-4',  name: 'Volume 4',  chapterStart: 18, chapterEnd: 23.5 },
+            { id: 'vol-5',  name: 'Volume 5',  chapterStart: 24, chapterEnd: 29   },
+            { id: 'vol-6',  name: 'Volume 6',  chapterStart: 30, chapterEnd: 35.2 },
+            { id: 'vol-7',  name: 'Volume 7',  chapterStart: 36, chapterEnd: 40   },
+            { id: 'vol-8',  name: 'Volume 8',  chapterStart: 41, chapterEnd: 45.5 },
+            { id: 'vol-9',  name: 'Volume 9',  chapterStart: 46, chapterEnd: 51   },
+            { id: 'vol-10', name: 'Volume 10', chapterStart: 52, chapterEnd: 57   },
+            { id: 'vol-11', name: 'Volume 11', chapterStart: 58, chapterEnd: 62.5 },
+            { id: 'vol-12', name: 'Volume 12', chapterStart: 63, chapterEnd: 68.5 },
+            { id: 'vol-13', name: 'Volume 13', chapterStart: 69, chapterEnd: 75   }
+          ],
+          scheduledDay: null,
+          status: 'watching',
+          addedDate: new Date().toISOString().split('T')[0],
+          graveyardDate: null, graveyardNote: '',
+          timerMinutes: 0, notes: ''
+        })
+        saveData(KEYS.library, _whaLib)
+        logEvent('Witch Hat Atelier manga (Vol 1–13) added to library')
+      }
+      localStorage.setItem('phub_added_wha_manga_v1', 'true')
+    }
+
+    // Always-run patch: fix WHA manga totalEpisodes + MAL rating
+    ;(function() {
+      var _whaFix = loadData(KEYS.library, [])
+      var _whaIt = _whaFix.find(function(it) { return it.id === 'witch-hat-atelier-manga-v1' })
+      if (!_whaIt) return
+      var _changed = false
+      if (_whaIt.totalEpisodes === 75) { _whaIt.totalEpisodes = 80; _changed = true }
+      if (_whaIt.ratingMAL !== 8.71) { _whaIt.ratingMAL = 8.71; _changed = true }
+      if (_changed) saveData(KEYS.library, _whaFix)
+    })()
+
+    // Migration: inject Yatagarasu: The Raven Does Not Choose Its Master (1 season, 20 eps)
+    if (!localStorage.getItem('phub_added_yatagarasu_v1')) {
+      var _yataLib = loadData(KEYS.library, [])
+      var _hasYata = _yataLib.some(function(it) { return it.id === 'yatagarasu-raven-v1' })
+      if (!_hasYata) {
+        _yataLib.unshift({
+          id: 'yatagarasu-raven-v1',
+          title: 'Yatagarasu: The Raven Does Not Choose Its Master',
+          type: 'show',
+          totalEpisodes: 20,
+          watchedEpisodes: [],
+          themeStyles: {
+            '--accent-cool':     '#1a2030',
+            '--accent-warm':     '#800000',
+            '--accent-cool-dim': 'rgba(26,32,48,0.18)',
+            '--tc-rgb':          '26,32,48',
+            '--surface':         'rgba(26,32,48,0.05)',
+            '--surface-2':       'rgba(26,32,48,0.09)',
+            '--surface-3':       'rgba(26,32,48,0.14)',
+            '--border':          'rgba(26,32,48,0.16)',
+            '--border-bright':   'rgba(26,32,48,0.35)',
+            '--border-glow':     'rgba(26,32,48,0.52)'
+          },
+          moodTags: ['slow-burn', 'mystery'],
+          rating: 0,
+          ratingIMDb: 7.7,
+          ratingIMDbManual: true,
+          ratingMAL: 8.06,
+          imdbUrl: 'https://www.imdb.com/title/tt32174340/episodes/?season=1&ref_=tt_eps_sn_1',
+          malUrl: 'https://myanimelist.net/anime/56980/Karasu_wa_Aruji_wo_Erabanai/episode',
+          seasons: [
+            {
+              id: 'yata-s1', name: 'Season 1',
+              imdbUrl: 'https://www.imdb.com/title/tt32174340/episodes/?season=1&ref_=tt_eps_sn_1',
+              episodes: [
+                { number: 1,  title: 'A Lady out of Place',             ratingIMDb: 7.7 },
+                { number: 2,  title: 'The Blockhead Second Son',         ratingIMDb: 8.0 },
+                { number: 3,  title: 'A True Golden Raven',              ratingIMDb: 7.9 },
+                { number: 4,  title: 'An Imperial Council',              ratingIMDb: 8.6 },
+                { number: 5,  title: 'A Purge',                         ratingIMDb: 8.4 },
+                { number: 6,  title: 'A Tanabata Invitation',            ratingIMDb: 8.4 },
+                { number: 7,  title: 'Falling',                         ratingIMDb: 8.6 },
+                { number: 8,  title: 'The Intruder',                    ratingIMDb: 8.4 },
+                { number: 9,  title: 'Lady Raven',                      ratingIMDb: 8.4 },
+                { number: 10, title: 'Assassinating the Prince',        ratingIMDb: 8.9 },
+                { number: 11, title: 'The Loyal Retainer',              ratingIMDb: 8.5 },
+                { number: 12, title: 'To Choose a Consort',             ratingIMDb: 9.3 },
+                { number: 13, title: "Ravens Shouldn't Wear Kimono",    ratingIMDb: 9.3 },
+                { number: 14, title: 'The Taboo Elixir',                ratingIMDb: 8.7 },
+                { number: 15, title: 'The Girl Who Lived',              ratingIMDb: 8.4 },
+                { number: 16, title: 'Wisteria Arrows',                 ratingIMDb: 8.6 },
+                { number: 17, title: 'King of the Underground',         ratingIMDb: 8.8 },
+                { number: 18, title: 'The World Outside',               ratingIMDb: 9.1 },
+                { number: 19, title: 'A Well Run Dry',                  ratingIMDb: 8.8 },
+                { number: 20, title: 'The Golden Raven',                ratingIMDb: 8.7 }
+              ]
+            }
+          ],
+          arcs: [],
+          scheduledDay: null,
+          status: 'plan-to-watch',
+          addedDate: new Date().toISOString().split('T')[0],
+          graveyardDate: null, graveyardNote: '',
+          timerMinutes: 0, notes: ''
+        })
+        saveData(KEYS.library, _yataLib)
+        logEvent('Yatagarasu: The Raven Does Not Choose Its Master added to library')
+      }
+      localStorage.setItem('phub_added_yatagarasu_v1', 'true')
+    }
+
+    // Always-run patch: fix Yatagarasu type show→anime + theme Obsidian→Indigo
+    ;(function() {
+      var _yataFix = loadData(KEYS.library, [])
+      var _yataIt = _yataFix.find(function(it) { return it.id === 'yatagarasu-raven-v1' })
+      if (!_yataIt) return
+      var _yc = false
+      if (_yataIt.type !== 'anime') { _yataIt.type = 'anime'; _yc = true }
+      if (_yataIt.themeStyles && _yataIt.themeStyles['--accent-cool'] === '#1a2030') {
+        _yataIt.themeStyles = {
+          '--accent-cool':     '#4338ca',
+          '--accent-warm':     '#ff1b00',
+          '--accent-cool-dim': 'rgba(67,56,202,0.18)',
+          '--tc-rgb':          '67,56,202',
+          '--surface':         'rgba(67,56,202,0.05)',
+          '--surface-2':       'rgba(67,56,202,0.09)',
+          '--surface-3':       'rgba(67,56,202,0.14)',
+          '--border':          'rgba(67,56,202,0.16)',
+          '--border-bright':   'rgba(67,56,202,0.35)',
+          '--border-glow':     'rgba(67,56,202,0.52)'
+        }
+        _yc = true
+      }
+      if (_yc) saveData(KEYS.library, _yataFix)
+    })()
+
+    // Migration: fix schedule entries that stored raw epKeys like "Ep. s0_4" instead of "Ep. 4"
+    if (!localStorage.getItem('phub_fix_sched_epkey_v1')) {
+      var _sched = loadData(KEYS.schedule, {})
+      var _schedChanged = false
+      var _epKeyRx = /^(Ep\.|Ch\.)\s+s\d+_(\d+)$/
+      Object.keys(_sched).forEach(function(dk) {
+        _sched[dk].forEach(function(entry) {
+          var m = entry.eps && String(entry.eps).match(_epKeyRx)
+          if (m) {
+            entry.eps = m[1] + ' ' + m[2]
+            _schedChanged = true
+          }
+        })
+      })
+      if (_schedChanged) saveData(KEYS.schedule, _sched)
+      localStorage.setItem('phub_fix_sched_epkey_v1', 'true')
+    }
+
     if (!localStorage.getItem(KEYS.budget)) {
       saveData(KEYS.budget, getDefaultBudget())
     }
@@ -9000,8 +9336,16 @@
     { key: 'action',          label: 'action'           },
     { key: 'thriller',        label: 'thriller'         },
     { key: 'binge-worthy',    label: 'binge-worthy'     },
-    { key: 'aesthetic',       label: 'aesthetic'         },
-    { key: 'horror',          label: 'horror'            }
+    { key: 'aesthetic',       label: 'aesthetic'        },
+    { key: 'horror',          label: 'horror'           },
+    { key: 'comedy',          label: 'comedy'           },
+    { key: 'romance',         label: 'romance'          },
+    { key: 'fantasy',         label: 'fantasy'          },
+    { key: 'sci-fi',          label: 'sci-fi'           },
+    { key: 'wholesome',       label: 'wholesome'        },
+    { key: 'mystery',         label: 'mystery'          },
+    { key: 'slice-of-life',   label: 'slice-of-life'   },
+    { key: 'nostalgic',       label: 'nostalgic'        }
   ]
 
   function renderMoodWidget(containerId) {
@@ -9611,7 +9955,15 @@
       'thriller':        '#14b8a6',
       'binge-worthy':    '#f97316',
       'aesthetic':       '#e879f9',
-      'horror':          '#be123c'
+      'horror':          '#be123c',
+      'comedy':          '#facc15',
+      'romance':         '#fb7185',
+      'fantasy':         '#818cf8',
+      'sci-fi':          '#22d3ee',
+      'wholesome':       '#4ade80',
+      'mystery':         '#a78bfa',
+      'slice-of-life':   '#fdba74',
+      'nostalgic':       '#fb923c'
     }
 
     // ---- STICKY TOP BAR ----
@@ -10190,18 +10542,24 @@
     var _isToday = (_sched2[_todayKey2]||[]).some(function(e){return e.id===item.id})
     var _isTomorrow = !_isToday && (_sched2[_tomorrowKey]||[]).some(function(e){return e.id===item.id})
 
-    // Release date countdown for upcoming items
+    // Release date countdown — only for genuinely upcoming items (no watched eps, has a 'Releases' schedule entry)
     var _releasePill = ''
-    if (item.releaseDate && item.status === 'upcoming') {
-      var _relDate = new Date(item.releaseDate + 'T00:00:00')
-      var _today0  = new Date(); _today0.setHours(0,0,0,0)
-      var _diffDays = Math.round((_relDate - _today0) / (1000*3600*24))
-      if (_diffDays > 0) {
-        _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#c084fc;">in ' + _diffDays + 'd</span>'
-      } else if (_diffDays === 0) {
-        _releasePill = '<span class="lib-card-schedule-pill" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);color:#c084fc;">RELEASES TODAY</span>'
-      } else {
-        _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(0,255,170,0.1);border-color:rgba(0,255,170,0.3);color:var(--accent-green);">OUT NOW</span>'
+    if (item.releaseDate && item.status === 'upcoming' && !(item.watchedEpisodes && item.watchedEpisodes.length > 0)) {
+      // Confirm there's a 'Releases' marker in the schedule (not just a weekly ep entry)
+      var _hasReleaseEntry = Object.values(_sched2).some(function(entries) {
+        return entries.some(function(e) { return e.id === item.id && e.eps === 'Releases' })
+      })
+      if (_hasReleaseEntry || !Object.values(_sched2).some(function(entries) { return entries.some(function(e) { return e.id === item.id }) })) {
+        var _relDate = new Date(item.releaseDate + 'T00:00:00')
+        var _today0  = new Date(); _today0.setHours(0,0,0,0)
+        var _diffDays = Math.round((_relDate - _today0) / (1000*3600*24))
+        if (_diffDays > 0) {
+          _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#c084fc;">in ' + _diffDays + 'd</span>'
+        } else if (_diffDays === 0) {
+          _releasePill = '<span class="lib-card-schedule-pill" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);color:#c084fc;">RELEASES TODAY</span>'
+        } else {
+          _releasePill = '<span class="lib-card-schedule-pill tomorrow" style="background:rgba(0,255,170,0.1);border-color:rgba(0,255,170,0.3);color:var(--accent-green);">OUT NOW</span>'
+        }
       }
     }
 
@@ -10251,7 +10609,6 @@
           '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass === 'on-hold' ? 'ON HOLD' : statusClass.toUpperCase()) + '</span>' +
           dayHTML +
         '</div>' +
-        '<button class="lib-open-btn" data-item-id="' + item.id + '">Open File →</button>' +
         (item.status === 'watching' && item.type !== 'social'
           ? '<button class="lib-watch-next-btn" data-item-id="' + item.id + '">▶ QUEUE</button>'
           : '') +
@@ -10270,11 +10627,6 @@
     card.addEventListener('click', function(e) {
       // Don't navigate if clicking a button inside the card
       if (e.target.closest('button')) return
-      navigateTo('detail', item.id)
-    })
-
-    card.querySelector('.lib-open-btn').addEventListener('click', function(e) {
-      e.stopPropagation()
       navigateTo('detail', item.id)
     })
 
@@ -10434,9 +10786,10 @@
       saveData(KEYS.library, lib)
       // Remove card from DOM
       var card = document.querySelector('.library-card[data-item-id="' + itemId + '"]')
-      // Try by open btn
-      var openBtn = document.querySelector('.lib-open-btn[data-item-id="' + itemId + '"]')
-      if (openBtn) { var c2 = openBtn.closest('.library-card'); if (c2) c2.remove() }
+      if (card) card.remove()
+      // Try by queue btn as fallback
+      var queueBtn = document.querySelector('.lib-watch-next-btn[data-item-id="' + itemId + '"]')
+      if (queueBtn) { var c2 = queueBtn.closest('.library-card'); if (c2) c2.remove() }
       var badge = document.getElementById('lib-file-count')
       if (badge) badge.textContent = '[' + lib.length + ' FILES]'
       library = lib
@@ -10560,71 +10913,59 @@
     return r + ',' + g + ',' + b
   }
 
-  // Colour palette for theme picker — 20 distinct neon/moody colours
+  // Colour palette for theme picker — vibrant colours that glow well on dark backgrounds
   var THEME_PALETTE = [
     { label: 'None',         hex: null },
-    { label: 'Cyber Cyan',   hex: '#00e5ff' },
-    { label: 'Neon Green',   hex: '#39ff14' },
-    { label: 'Crimson',      hex: '#e8372a' },
-    { label: 'Demon Red',    hex: '#ff3b6b' },
-    { label: 'Hot Pink',     hex: '#ff2d95' },
-    { label: 'Rose',         hex: '#ff6eb4' },
-    { label: 'Violet',       hex: '#a855f7' },
-    { label: 'Deep Purple',  hex: '#8b5cf6' },
-    { label: 'Royal Blue',   hex: '#3b82f6' },
-    { label: 'Steel Blue',   hex: '#7b92d4' },
-    { label: 'Aqua',         hex: '#00eeff' },
-    { label: 'Teal',         hex: '#00d4bc' },
-    { label: 'Mint',         hex: '#00ffaa' },
-    { label: 'Gold',         hex: '#ffe14d' },
-    { label: 'Amber',        hex: '#ff9900' },
-    { label: 'Orange',       hex: '#ff6040' },
-    { label: 'Blood Orange', hex: '#ff4500' },
-    { label: 'Sakura',       hex: '#ff6fa3' },
-    { label: 'Ice White',    hex: '#ddeeff' },
-    { label: 'Sunset Orange', hex: '#ff7e5f' },
-{ label: 'Magenta',       hex: '#ff006e' },
-{ label: 'Indigo',        hex: '#6366f1' },
-{ label: 'Emerald',       hex: '#10e881' },
-{ label: 'Cyan Blue',     hex: '#06d4f4' },
-{ label: 'Purple Haze',   hex: '#e946ef' },
-{ label: 'Scarlet',       hex: '#ff3333' },
-{ label: 'Lime',          hex: '#a3e635' },
-{ label: 'Midnight Blue', hex: '#3b6eef' },
-{ label: 'Electric Indigo', hex: '#6554f5' },
-{ label: 'Lavender',      hex: '#c084fc' },
-{ label: 'Arctic Mint',   hex: '#5eead4' },
-{ label: 'Ocean Deep',    hex: '#0ea5e9' },
-{ label: 'Coral',         hex: '#ff6085' },
-{ label: 'Cherry Red',    hex: '#f92020' },
-{ label: 'Peach',         hex: '#ffb056' },
-{ label: 'Neon Yellow',   hex: '#f5d800' },
-{ label: 'Forest',        hex: '#20d460' },
-{ label: 'Slate',         hex: '#7e9abf' },
-{ label: 'Obsidian',      hex: '#2a3a5c' },
-{ label: 'Graphite',      hex: '#5a6a82' },
-{ label: 'Silver',        hex: '#b8d0e8' },
-{ label: 'Frost',         hex: '#a0c8ff' },
-{ label: 'Periwinkle',    hex: '#818cf8' },
-{ label: 'Azure',         hex: '#2d80f5' },
-{ label: 'Skyline',       hex: '#38bdf8' },
-{ label: 'Turquoise',     hex: '#2dd4bf' },
-{ label: 'Seafoam',       hex: '#34d399' },
-{ label: 'Jade',          hex: '#22e55e' },
-{ label: 'Olive',         hex: '#8bc820' },
-{ label: 'Sunflower',     hex: '#facc15' },
-{ label: 'Sand',          hex: '#ffdf6d' },
-{ label: 'Apricot',       hex: '#ffaa54' },
-{ label: 'Tangerine',     hex: '#ff8c1a' },
-{ label: 'Burnt Sienna',  hex: '#ff6820' },
-{ label: 'Brick',         hex: '#e82222' },
-{ label: 'Ruby',          hex: '#f01d48' },
-{ label: 'Fuchsia',       hex: '#e030e8' },
-{ label: 'Orchid',        hex: '#c428d4' },
-{ label: 'Plum',          hex: '#9b30e8' },
-{ label: 'Grape',         hex: '#8438f0' },
-{ label: 'Storm',         hex: '#6880a8' },
-{ label: 'Moonlight',     hex: '#c0d8ff' },
+    // ── REDS — neon / vivid / deep ──
+    { label: 'Scarlet',      hex: '#ff2020' },   // pure neon red
+    { label: 'Crimson',      hex: '#a50020' },   // deep classic red
+    { label: 'Raspberry',    hex: '#e11d48' },   // vivid rose-red
+    // ── CORAL / WARM PINKS ──
+    { label: 'Coral',        hex: '#ff6b6b' },   // warm salmon-coral
+    { label: 'Hot Pink',     hex: '#ff2d95' },   // neon magenta-pink
+    { label: 'Sakura',       hex: '#ffb7d5' },   // pale cherry blossom (light!)
+    // ── ORANGES — vivid / warm / earthy ──
+    { label: 'Blood Orange', hex: '#ff4500' },   // vivid red-orange
+    { label: 'Amber',        hex: '#ff9900' },   // warm golden orange
+    { label: 'Terracotta',   hex: '#b84c1e' },   // earthy muted orange-brown
+    { label: 'Copper',       hex: '#b5651d' },   // metallic warm brown
+    // ── YELLOWS ──
+    { label: 'Neon Yellow',  hex: '#f5e400' },   // bright neon
+    { label: 'Gold',         hex: '#ffd700' },   // classic gold
+    { label: 'Champagne',    hex: '#e8c87a' },   // warm cream (distinctly pale)
+    // ── YELLOW-GREENS ──
+    { label: 'Lime',         hex: '#a3e635' },   // yellow-green
+    // ── GREENS — neon / lush / forest / muted ──
+    { label: 'Neon Green',   hex: '#39ff14' },   // vivid neon
+    { label: 'Emerald',      hex: '#00c850' },   // rich lush green
+    { label: 'Forest',       hex: '#16a34a' },   // natural forest green
+    { label: 'Sage',         hex: '#6baa8e' },   // muted earthy green
+    // ── TEAL / MINT ──
+    { label: 'Mint',         hex: '#00ffaa' },   // bright cyan-green
+    { label: 'Teal',         hex: '#008080' },   // classic deep teal
+    // ── CYANS ──
+    { label: 'Cyber Cyan',   hex: '#00e5ff' },   // neon cyan
+    { label: 'Ice',          hex: '#d0eeff' },   // very pale blue (almost white)
+    // ── BLUES — sky / classic / vivid deep ──
+    { label: 'Sky Blue',     hex: '#56b4e9' },   // airy sky blue
+    { label: 'Royal Blue',   hex: '#4169e1' },   // classic royal blue
+    { label: 'Cobalt',       hex: '#1a56db' },   // vivid deep cobalt blue
+    // ── INDIGO / BLUE-PURPLE ──
+    { label: 'Periwinkle',   hex: '#818cf8' },   // soft blue-purple
+    { label: 'Indigo',       hex: '#4338ca' },   // deep indigo
+    // ── PURPLES — vivid / soft / rich / mid ──
+    { label: 'Violet',       hex: '#a855f7' },   // vivid purple
+    { label: 'Lavender',     hex: '#d8b4fe' },   // pale soft purple (light!)
+    { label: 'Deep Purple',  hex: '#6b21a8' },   // rich deep purple
+    { label: 'Plum',         hex: '#a21caf' },   // vivid mid-dark plum
+    // ── PINK-PURPLES ──
+    { label: 'Fuchsia',      hex: '#e040fb' },   // vivid pink-purple
+    { label: 'Magenta',      hex: '#ff006e' },   // vivid magenta
+    { label: 'Orchid',       hex: '#da70d6' },   // soft orchid (distinctly lighter)
+    // ── NEUTRALS ──
+    { label: 'Slate',        hex: '#7e9abf' },   // blue-grey
+    { label: 'Silver',       hex: '#94a3b8' },   // cool light grey
+    { label: 'Steel',        hex: '#4682b4' },   // steel blue-grey
   ]
 
   function openAddModal(onSuccess) {
@@ -10645,7 +10986,7 @@
     box.style.background = 'linear-gradient(165deg, rgba(12,18,50,0.95) 0%, rgba(10,10,28,0.96) 60%, rgba(8,8,20,0.98) 100%)'
     box.style.boxShadow = '0 30px 80px rgba(0,0,0,0.65), 0 0 45px rgba(0,229,255,0.1)'
 
-    const MOOD_OPTIONS = ['brain-off','hype','emotional damage','cozy','chaos','slow-burn','dark','psychological','action','thriller','binge-worthy','aesthetic','horror']
+    const MOOD_OPTIONS = ['brain-off','hype','emotional damage','cozy','chaos','slow-burn','dark','psychological','action','thriller','binge-worthy','aesthetic','horror','comedy','romance','fantasy','sci-fi','wholesome','mystery','slice-of-life','nostalgic']
     const selectedMoods = []
     var selectedThemeHex = null  // null = no theme
 
@@ -10704,7 +11045,7 @@
           '<div><label class="modal-field-label" style="margin:0 0 4px 0;">Airs Every</label><select class="modal-select" id="modal-rec-day"><option value="">— Pick day —</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>' +
           '<div><label class="modal-field-label" style="margin:0 0 4px 0;">Start Date</label><input class="modal-input" id="modal-rec-start" type="date" autocomplete="off"/></div>' +
           '<div><label class="modal-field-label" style="margin:0 0 4px 0;">First Episode #</label><input class="modal-input" id="modal-rec-ep-start" type="number" min="1" value="1" autocomplete="off"/></div>' +
-          '<div><label class="modal-field-label" style="margin:0 0 4px 0;">End Date</label><input class="modal-input" id="modal-rec-end" type="date" autocomplete="off"/></div>' +
+          '<div><label class="modal-field-label" style="margin:0 0 4px 0;"># of Episodes</label><input class="modal-input" id="modal-rec-end" type="number" min="1" placeholder="e.g. 12" autocomplete="off"/></div>' +
         '</div>' +
         '<div id="modal-rec-preview" style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:8px;">Optional: set weekly recurrence for upcoming episodes.</div>' +
       '</div>' +
@@ -10865,7 +11206,7 @@
       var releaseDate = box.querySelector('#modal-release-date').value
       var recDay = box.querySelector('#modal-rec-day').value
       var recStart = box.querySelector('#modal-rec-start').value
-      var recEnd = box.querySelector('#modal-rec-end').value
+      var recCount = parseInt(box.querySelector('#modal-rec-end').value, 10) || 0
       var recEpStart = parseInt(box.querySelector('#modal-rec-ep-start').value, 10) || 1
 
       // Build themeStyles from selected colour
@@ -10917,16 +11258,21 @@
       if (releaseDate) {
         var sched = loadData(KEYS.schedule, {})
         if (!sched[releaseDate]) sched[releaseDate] = []
-        var existingIdx = sched[releaseDate].findIndex(function(x) { return x.id === newItem.id })
-        var schedEntry = { id: newItem.id, title: newItem.title, type: newItem.type, eps: 'Releases' }
-        if (existingIdx >= 0) sched[releaseDate][existingIdx] = schedEntry
-        else sched[releaseDate].push(schedEntry)
-        saveData(KEYS.schedule, sched)
-        logEvent('Scheduled release of ' + title + ' on ' + releaseDate)
+        // Only add a 'Releases' entry if NOT scheduling recurring episodes from ep > 1 on the same day
+        // (ep 1 starting on release date is the valid case — anything else is wrong)
+        var skipReleaseEntry = recDay && recStart && recCount > 0 && recEpStart > 1 && recStart === releaseDate
+        if (!skipReleaseEntry) {
+          var existingIdx = sched[releaseDate].findIndex(function(x) { return x.id === newItem.id })
+          var schedEntry = { id: newItem.id, title: newItem.title, type: newItem.type, eps: 'Releases' }
+          if (existingIdx >= 0) sched[releaseDate][existingIdx] = schedEntry
+          else sched[releaseDate].push(schedEntry)
+          saveData(KEYS.schedule, sched)
+          logEvent('Scheduled release of ' + title + ' on ' + releaseDate)
+        }
       }
-      if (recDay && recStart && recEnd) {
+      if (recDay && recStart && recCount > 0) {
         var isReadingType = (newItem.type === 'manga' || newItem.type === 'manhwa' || newItem.type === 'novel')
-        var recDates = getWeeklyDates(recDay, recStart, recEnd)
+        var recDates = getWeeklyDatesFromCount(recDay, recStart, recCount)
         if (recDates.length > 0) {
           var sched2 = loadData(KEYS.schedule, {})
           recDates.forEach(function(dk, idx) {
@@ -10963,16 +11309,16 @@
       var preview = box.querySelector('#modal-rec-preview')
       var day = box.querySelector('#modal-rec-day').value
       var start = box.querySelector('#modal-rec-start').value
-      var end = box.querySelector('#modal-rec-end').value
+      var count = parseInt(box.querySelector('#modal-rec-end').value, 10)
       var epStart = parseInt(box.querySelector('#modal-rec-ep-start').value, 10) || 1
       var typeNow = box.querySelector('#modal-type').value
       if (!preview) return
-      if (!day || !start || !end) {
+      if (!day || !start || !count || count < 1) {
         preview.textContent = 'Optional: set weekly recurrence for episodes.'
         preview.style.color = 'var(--text-3)'
         return
       }
-      var dates = getWeeklyDates(day, start, end)
+      var dates = getWeeklyDatesFromCount(day, start, count)
       if (!dates.length) {
         preview.textContent = 'No matching dates found. Check start/end values.'
         preview.style.color = 'var(--accent-warm)'
@@ -10991,11 +11337,27 @@
 
     var releaseDateInput = box.querySelector('#modal-release-date')
     var recStartInput = box.querySelector('#modal-rec-start')
+    var recEpStartInput = box.querySelector('#modal-rec-ep-start')
     if (releaseDateInput && recStartInput) {
       releaseDateInput.addEventListener('change', function() {
-        if (!recStartInput.value) recStartInput.value = releaseDateInput.value
+        // Only auto-fill recurring start date from release date when starting from ep 1
+        // If user has set a different starting episode, the start date should be set manually
+        var epStart = parseInt(recEpStartInput ? recEpStartInput.value : '1', 10) || 1
+        if (!recStartInput.value && epStart === 1) {
+          recStartInput.value = releaseDateInput.value
+        }
         updateAddModalRecurringPreview()
       })
+      // Also: if user changes the ep start, clear recStart auto-fill if it was the release date
+      if (recEpStartInput) {
+        recEpStartInput.addEventListener('change', function() {
+          var epStart = parseInt(recEpStartInput.value, 10) || 1
+          if (epStart > 1 && recStartInput.value === releaseDateInput.value) {
+            recStartInput.value = '' // clear stale auto-fill — user must pick correct start date
+          }
+          updateAddModalRecurringPreview()
+        })
+      }
     }
 
     var advWrap = box.querySelector('#modal-advanced-wrap')
@@ -11097,6 +11459,7 @@
     function startSocialTimer() {
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
       timerStart = Date.now()
+      window.__mediaTimerRunning = true;
       
       // Update activity timestamp when session starts
       var lib = loadData(KEYS.library, [])
@@ -11142,6 +11505,7 @@
     function stopSocialTimer() {
       if (!timerInterval) return
       clearInterval(timerInterval); timerInterval = null
+      window.__mediaTimerRunning = false;
       var elapsed = (Date.now() - timerStart) / 60000; timerStart = null
       var lib2 = loadData(KEYS.library, [])
       var it2  = lib2.find(function(i) { return i.id === id })
@@ -11160,7 +11524,7 @@
     }
 
     window.__detailCleanup = function() {
-      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; if (timerStart) { var _e = (Date.now()-timerStart)/60000; timerStart=null; var _l=loadData(KEYS.library,[]); var _it=_l.find(function(i){return i.id===id}); if(_it){_it.timerMinutes=(_it.timerMinutes||0)+_e;saveData(KEYS.library,_l)} addTimerMinutes(_e); logEvent('Session ended (navigated away) — '+Math.round(_e)+' min on '+item.title) } }
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; window.__mediaTimerRunning = false; if (timerStart) { var _e = (Date.now()-timerStart)/60000; timerStart=null; var _l=loadData(KEYS.library,[]); var _it=_l.find(function(i){return i.id===id}); if(_it){_it.timerMinutes=(_it.timerMinutes||0)+_e;saveData(KEYS.library,_l)} addTimerMinutes(_e); logEvent('Session ended (navigated away) — '+Math.round(_e)+' min on '+item.title) } }
       Object.keys(_cssOriginals).forEach(function(key) { if (_cssOriginals[key]) document.documentElement.style.setProperty(key, _cssOriginals[key]); else document.documentElement.style.removeProperty(key) })
       if (_themeClass) document.body.classList.remove(_themeClass)
     }
@@ -11700,6 +12064,7 @@
       if (timerInterval) {
         clearInterval(timerInterval)
         timerInterval = null
+        window.__mediaTimerRunning = false;
         if (timerStart) {
           var _elapsed = (Date.now() - timerStart) / 60000
           timerStart = null
@@ -11744,7 +12109,7 @@
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
       timerStart   = Date.now()
       timerEpLabel = epLabel || null
-      
+      window.__mediaTimerRunning = true;
       // Update activity timestamp when session starts
       var lib = loadData(KEYS.library, [])
       var it = lib.find(function(i) { return i.id === item.id })
@@ -11837,6 +12202,7 @@
     function stopTimer() {
       if (!timerInterval && !timerPaused) return
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
+      window.__mediaTimerRunning = false;
       var totalMs = timerElapsedBeforePause + (timerPaused ? 0 : (Date.now() - timerStart))
       var elapsed = totalMs / 60000   // minutes
       timerStart    = null
@@ -11883,6 +12249,7 @@
       clearInterval(timerInterval)
       timerInterval = null
       timerPaused = true
+      window.__mediaTimerRunning = false;
       timerElapsedBeforePause += (Date.now() - timerStart)
       timerPausedAt = Date.now()
       var pauseBtn = document.getElementById('session-overlay-pause-btn')
@@ -11900,6 +12267,7 @@
       timerPaused = false
       timerStart = Date.now()
       timerPausedAt = null
+      window.__mediaTimerRunning = true;
       var dispEl   = document.getElementById('detail-timer-display')
       var overlayTime = document.getElementById('session-overlay-time')
       if (dispEl) dispEl.style.opacity = ''
@@ -12006,15 +12374,19 @@
       dualRatingHTML += '</div>'
     }
 
+    var DETAIL_MOOD_COLORS = {
+      'brain-off':'#8888aa','hype':'#00d4ff','emotional damage':'#ff6b9d',
+      'cozy':'#ffd700','chaos':'#ff6b35','slow-burn':'#00c9a7',
+      'dark':'#9333ea','psychological':'#ec4899','action':'#ef4444',
+      'thriller':'#14b8a6','binge-worthy':'#f97316','aesthetic':'#e879f9',
+      'horror':'#be123c','comedy':'#facc15','romance':'#fb7185',
+      'fantasy':'#818cf8','sci-fi':'#22d3ee','wholesome':'#4ade80',
+      'mystery':'#a78bfa','slice-of-life':'#fdba74','nostalgic':'#fb923c'
+    }
+    var DETAIL_MOOD_OPTIONS = ['brain-off','hype','emotional damage','cozy','chaos','slow-burn','dark','psychological','action','thriller','binge-worthy','aesthetic','horror','comedy','romance','fantasy','sci-fi','wholesome','mystery','slice-of-life','nostalgic']
+
     var moodChipsHTML = (item.moodTags || []).map(function(tag) {
-      var MOOD_COLORS = {
-        'brain-off':'#8888aa','hype':'#00d4ff','emotional damage':'#ff6b9d',
-        'cozy':'#ffd700','chaos':'#ff6b35','slow-burn':'#00c9a7',
-        'dark':'#9333ea','psychological':'#ec4899','action':'#ef4444',
-        'thriller':'#14b8a6','binge-worthy':'#f97316','aesthetic':'#e879f9',
-        'horror':'#be123c'
-      }
-      var color = MOOD_COLORS[tag] || 'var(--text-3)'
+      var color = DETAIL_MOOD_COLORS[tag] || 'var(--text-3)'
       return '<span class="detail-mood-pill" style="color:' + color + ';">' + tag + '</span>'
     }).join('')
 
@@ -12022,7 +12394,7 @@
       '<span class="badge" data-type="' + item.type + '">' + item.type + '</span>' +
       '<div class="detail-title">' + item.title + '</div>' +
       (dualRatingHTML || (item.rating ? '<div class="detail-rating">' + ratingStr + '</div>' : '')) +
-      (moodChipsHTML ? '<div class="detail-mood-row">' + moodChipsHTML + '</div>' : '') +
+      '<div class="detail-mood-row" id="detail-mood-row">' + moodChipsHTML + '<button class="detail-tags-edit-btn" id="detail-tags-edit-btn" title="Edit tags">✎</button></div>' +
       '<div class="detail-progress-label">' + watched + ' of ' + total + ' ' + unit + ' ' + ((item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel') ? 'read' : 'watched') + '</div>' +
       '<div class="detail-progress-bar-wrap">' +
         '<div class="progress-bar">' +
@@ -12038,6 +12410,105 @@
       var fill = document.getElementById('detail-prog-fill')
       if (fill) fill.style.width = pct + '%'
     }, 60)
+
+    // ── MOOD TAG EDITOR ──
+    function renderDetailMoodPills(tags) {
+      var moodRow = document.getElementById('detail-mood-row')
+      if (!moodRow) return
+      var pills = (tags || []).map(function(tag) {
+        var color = DETAIL_MOOD_COLORS[tag] || 'var(--text-3)'
+        return '<span class="detail-mood-pill" style="color:' + color + ';">' + tag + '</span>'
+      }).join('')
+      moodRow.innerHTML = pills + '<button class="detail-tags-edit-btn" id="detail-tags-edit-btn" title="Edit tags">✎</button>'
+      bindTagsEditBtn()
+    }
+
+    function bindTagsEditBtn() {
+      var editBtn = heroLeft.querySelector('#detail-tags-edit-btn') || document.getElementById('detail-tags-edit-btn')
+      if (!editBtn) return
+      editBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        openTagsEditorModal()
+      })
+    }
+
+    function openTagsEditorModal() {
+      var overlay = document.createElement('div')
+      overlay.className = 'modal-overlay'
+      document.body.appendChild(overlay)
+
+      var box = document.createElement('div')
+      box.className = 'modal-box'
+      box.style.cssText = 'position:relative;width:min(480px,calc(100vw - 40px));padding:26px 24px 20px;border-radius:20px;border:1px solid rgba(100,160,255,0.22);background:linear-gradient(165deg,rgba(12,18,50,0.95) 0%,rgba(10,10,28,0.96) 60%,rgba(8,8,20,0.98) 100%);box-shadow:0 30px 80px rgba(0,0,0,0.65),0 0 45px rgba(0,229,255,0.1);'
+
+      var currentTags = (item.moodTags || []).slice()
+
+      var titleEl = document.createElement('div')
+      titleEl.className = 'modal-title-row'
+      titleEl.textContent = 'EDIT MOOD TAGS'
+      box.appendChild(titleEl)
+
+      var subtitleEl = document.createElement('div')
+      subtitleEl.style.cssText = 'font:500 11px var(--font-mono);letter-spacing:0.1em;color:var(--text-3);margin:-10px 0 16px 0;text-transform:uppercase;'
+      subtitleEl.textContent = item.title
+      box.appendChild(subtitleEl)
+
+      var grid = document.createElement('div')
+      grid.className = 'modal-mood-grid'
+      DETAIL_MOOD_OPTIONS.forEach(function(mood) {
+        var btn = document.createElement('button')
+        btn.className = 'modal-mood-toggle'
+        btn.textContent = mood
+        btn.type = 'button'
+        if (currentTags.indexOf(mood) !== -1) btn.classList.add('active')
+        btn.addEventListener('click', function() {
+          var i = currentTags.indexOf(mood)
+          if (i === -1) { currentTags.push(mood); btn.classList.add('active') }
+          else          { currentTags.splice(i, 1); btn.classList.remove('active') }
+        })
+        grid.appendChild(btn)
+      })
+      box.appendChild(grid)
+
+      var footer = document.createElement('div')
+      footer.style.cssText = 'display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:14px;border-top:1px solid rgba(100,160,255,0.16);'
+      var cancelBtn = document.createElement('button')
+      cancelBtn.className = 'btn-ghost'
+      cancelBtn.textContent = 'CANCEL'
+      var saveBtn = document.createElement('button')
+      saveBtn.className = 'btn-primary'
+      saveBtn.textContent = 'SAVE TAGS'
+      footer.appendChild(cancelBtn)
+      footer.appendChild(saveBtn)
+      box.appendChild(footer)
+      overlay.appendChild(box)
+
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() { overlay.classList.add('visible') })
+      })
+
+      function closeModal() {
+        overlay.classList.remove('visible')
+        setTimeout(function() { overlay.remove() }, 250)
+      }
+      cancelBtn.addEventListener('click', closeModal)
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal() })
+      var escHandler = function(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler) } }
+      document.addEventListener('keydown', escHandler)
+
+      saveBtn.addEventListener('click', function() {
+        var lib = loadData(KEYS.library, [])
+        var idx = lib.findIndex(function(x) { return x.id === id })
+        if (idx >= 0) {
+          lib[idx].moodTags = currentTags.slice()
+          saveData(KEYS.library, lib)
+        }
+        item.moodTags = currentTags.slice()
+        renderDetailMoodPills(currentTags)
+        closeModal()
+        logEvent('Updated mood tags for ' + item.title)
+      })
+    }
 
     // ── DATE-BASED SCHEDULE SYSTEM ──
     setTimeout(function() {
@@ -12142,6 +12613,7 @@
     selectWrap.appendChild(selectCountBadge)
     if (!(hasSeasonsData || hasArcsData)) heroLeft.appendChild(selectWrap)
     hero.appendChild(heroLeft)
+    bindTagsEditBtn()
 
     // --- Hero RIGHT ---
     var heroRight = document.createElement('div')
@@ -12661,9 +13133,19 @@
     var hasArcsData    = item.arcs    && item.arcs.length    > 0
 
     if (hasSeasonsData) {
-      renderSeasonTabs(contentArea, item, 0, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      var _initSeasonIdx = 0
+      for (var _si = 0; _si < item.seasons.length; _si++) {
+        var _sk = (item.seasons[_si].episodes || []).map(function(e) { return makeEpKey(_si, e.number) })
+        if (_sk.some(function(k) { return !item.watchedEpisodes || !item.watchedEpisodes.includes(k) })) { _initSeasonIdx = _si; break }
+      }
+      renderSeasonTabs(contentArea, item, _initSeasonIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
     } else if (hasArcsData) {
-      renderArcAccordion(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
+      var _initArcIdx = 0
+      for (var _ai = 0; _ai < item.arcs.length; _ai++) {
+        var _ak = getArcChapterNums(item.arcs[_ai]).map(function(n) { return makeEpKey(_ai, n) })
+        if (_ak.some(function(k) { return !item.watchedEpisodes || !item.watchedEpisodes.includes(k) })) { _initArcIdx = _ai; break }
+      }
+      renderArcTabs(contentArea, item, _initArcIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
     } else {
       renderFlatGrid(contentArea, item, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer)
     }
@@ -12704,8 +13186,7 @@
             var ai = parseInt(contentArea.dataset.activeArcIdx || '0', 10)
             var arc = item.arcs && item.arcs[isNaN(ai) ? 0 : ai]
             if (!arc) return
-            var nums = []
-            for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
+            var nums = getArcChapterNums(arc)
             addUniqueSelected(nums)
           }
         }
@@ -12717,7 +13198,7 @@
             addUniqueSelected(nums1)
           } else if (hasArcsData) {
             var nums2 = []
-            ;(item.arcs || []).forEach(function(a) { for (var n = a.chapterStart; n <= a.chapterEnd; n++) nums2.push(n) })
+            ;(item.arcs || []).forEach(function(a) { getArcChapterNums(a).forEach(function(n) { nums2.push(n) }) })
             addUniqueSelected(nums2)
           }
         }
@@ -12765,6 +13246,7 @@
   function renderSeasonTabs(container, item, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer) {
     container.dataset.activeSeasonIdx = String(activeIdx)
     container.dataset.activeArcIdx = ''
+    container._stopTimer = stopTimer
     // Tab row with arrow buttons
     var navRow = document.createElement('div')
     navRow.className = 'detail-season-tabs'
@@ -12871,6 +13353,7 @@
   function renderArcTabs(container, item, activeIdx, selectMode, selectedEps, selectBtn, selectCountBadge, startTimer, stopTimer) {
     container.dataset.activeArcIdx = String(activeIdx)
     container.dataset.activeSeasonIdx = ''
+    container._stopTimer = stopTimer
     // Use tab row for ≤6 arcs, dropdown select for more (e.g. manhwa with 31 arcs)
     var useDropdown = item.arcs.length > 6
     var hideArrows = (item.type === 'anime' || item.type === 'show')
@@ -12981,8 +13464,7 @@
         tab.addEventListener('click', function() {
           var arcIdx = parseInt(this.dataset.arcIdx, 10)
           if (selectMode && arcIdx === activeIdx) {
-            var nums = []
-            for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) nums.push(n)
+            var nums = getArcChapterNums(arc)
             nums.forEach(function(v) { if (selectedEps.indexOf(v) === -1) selectedEps.push(v) })
             selectCountBadge.style.display = 'none'
             // Create arc info object with episodes array for detection
@@ -13046,15 +13528,14 @@
 
     // Chapter grid
     var chapters = []
-    for (var n = arc.chapterStart; n <= arc.chapterEnd; n++) {
-      // Check if this chapter has a saved rating
+    getArcChapterNums(arc).forEach(function(n) {
       var savedRating = 0
       if (arc.chapters) {
         var savedCh = arc.chapters.find(function(c) { return c.number === n })
         if (savedCh) savedRating = savedCh.rating || 0
       }
       chapters.push({ number: n, title: 'Ch. ' + n, rating: savedRating, isChapter: true })
-    }
+    })
     // Create arc info object for select bar
     var arcInfo = {
       name: arc.name,
@@ -13118,6 +13599,16 @@
   ----------------------------------------------------------------- */
   function makeEpKey(seasonIdx, epNum) {
     return (seasonIdx !== null && seasonIdx !== undefined) ? ('s' + seasonIdx + '_' + epNum) : epNum
+  }
+
+  // Returns all chapter numbers for an arc, including decimal bonus chapters (e.g. 23.5, 35.2)
+  function getArcChapterNums(arc) {
+    var nums = []
+    var end = arc.chapterEnd
+    var endFloor = Math.floor(end)
+    for (var n = arc.chapterStart; n <= endFloor; n++) nums.push(n)
+    if (end !== endFloor) nums.push(end)
+    return nums
   }
 
   /* -----------------------------------------------------------------
@@ -13312,6 +13803,10 @@
         document.querySelectorAll('.ep-rate-popup').forEach(function(p) { p.remove() })
         var popup = document.createElement('div')
         popup.className = 'ep-rate-popup'
+
+        // ── Star row (personal 1-5) ──
+        var starsRow = document.createElement('div')
+        starsRow.className = 'ep-rate-popup-stars'
         for (var s = 1; s <= 5; s++) {
           var star = document.createElement('button')
           star.className = 'ep-rate-star' + (ep.rating >= s ? ' filled' : '')
@@ -13325,32 +13820,23 @@
             var lib = loadData(KEYS.library, [])
             var it = lib.find(function(i) { return i.id === item.id })
             if (it) {
-              // Find this ep in seasons or arcs
               var found = false
               ;(it.seasons || []).forEach(function(season) {
                 ;(season.episodes || []).forEach(function(e) {
                   if (e.number === ep.number) { e.rating = val; found = true }
                 })
               })
-              // Check arcs for chapters (reading content)
               if (!found && ep.isChapter) {
                 ;(it.arcs || []).forEach(function(arc) {
-                  // Initialize chapters array if it doesn't exist
                   if (!arc.chapters) arc.chapters = []
-                  // Find or create chapter entry
                   var ch = arc.chapters.find(function(c) { return c.number === ep.number })
-                  if (ch) {
-                    ch.rating = val
-                    found = true
-                  } else if (ep.number >= arc.chapterStart && ep.number <= arc.chapterEnd) {
-                    // Chapter is in this arc's range, add it
-                    arc.chapters.push({ number: ep.number, rating: val })
-                    found = true
+                  if (ch) { ch.rating = val; found = true }
+                  else if (ep.number >= arc.chapterStart && ep.number <= arc.chapterEnd) {
+                    arc.chapters.push({ number: ep.number, rating: val }); found = true
                   }
                 })
               }
               if (!found) {
-                // flat episodes — create in first season
                 if (it.seasons && it.seasons.length > 0) {
                   var sEp = it.seasons[0].episodes.find(function(e) { return e.number === ep.number })
                   if (sEp) sEp.rating = val
@@ -13364,28 +13850,18 @@
             var existingBar = tile.querySelector('.ep-ratings-bar')
             if (existingBar) {
               var existingBadge = existingBar.querySelector('.ep-rating-badge')
-              if (existingBadge) {
-                existingBadge.textContent = val
-              } else {
+              if (existingBadge) existingBadge.textContent = val
+              else {
                 var badge = document.createElement('span')
                 badge.className = 'ep-rating-badge'
                 badge.textContent = val
                 existingBar.appendChild(badge)
               }
-              // Update classes for proper width
               existingBar.classList.remove('no-personal')
               var hasIMDb = existingBar.querySelector('.ep-badge-imdb')
               var hasMAL = existingBar.querySelector('.ep-badge-mal')
-              var hasOnlyOne = (hasIMDb && !hasMAL) || (!hasIMDb && hasMAL)
-              if (hasOnlyOne) {
-                existingBar.classList.remove('only-one')
-              }
-              // Add personal-only class if no platform ratings
-              if (!hasIMDb && !hasMAL) {
-                tile.classList.add('personal-only')
-              }
+              if (!hasIMDb && !hasMAL) tile.classList.add('personal-only')
             } else {
-              // Create new ratings bar if it doesn't exist
               var newBar = document.createElement('div')
               newBar.className = 'ep-ratings-bar'
               var badge = document.createElement('span')
@@ -13393,20 +13869,18 @@
               badge.textContent = val
               newBar.appendChild(badge)
               tile.insertBefore(newBar, tile.firstChild)
-              // Add personal-only class since no platform ratings exist
               tile.classList.add('personal-only')
             }
-            // Refresh stats to update personal average
             if (typeof refreshStats === 'function') refreshStats(item.watchedEpisodes)
           })
-          popup.appendChild(star)
+          starsRow.appendChild(star)
         }
-        // Clear button
+        // Clear star button
         if (ep.rating) {
           var clearBtn = document.createElement('button')
           clearBtn.className = 'ep-rate-star clear-btn'
           clearBtn.textContent = '\u2715'
-          clearBtn.title = 'Clear rating'
+          clearBtn.title = 'Clear personal rating'
           clearBtn.addEventListener('click', function(ev) {
             ev.stopPropagation()
             ep.rating = 0
@@ -13414,46 +13888,107 @@
             var it = lib.find(function(i) { return i.id === item.id })
             if (it) {
               ;(it.seasons || []).forEach(function(season) {
-                ;(season.episodes || []).forEach(function(e) {
-                  if (e.number === ep.number) e.rating = 0
-                })
+                ;(season.episodes || []).forEach(function(e) { if (e.number === ep.number) e.rating = 0 })
               })
-              // Clear from arcs for chapters (reading content)
               if (ep.isChapter) {
                 ;(it.arcs || []).forEach(function(arc) {
-                  if (arc.chapters) {
-                    var ch = arc.chapters.find(function(c) { return c.number === ep.number })
-                    if (ch) ch.rating = 0
-                  }
+                  if (arc.chapters) { var ch = arc.chapters.find(function(c) { return c.number === ep.number }); if (ch) ch.rating = 0 }
                 })
               }
               saveData(KEYS.library, lib)
             }
             popup.remove()
-            // Remove personal rating badge from ratings bar
             var existingBar = tile.querySelector('.ep-ratings-bar')
             if (existingBar) {
               var existingBadge = existingBar.querySelector('.ep-rating-badge')
               if (existingBadge) existingBadge.remove()
-              // Update classes for proper width
               var hasIMDb = existingBar.querySelector('.ep-badge-imdb')
               var hasMAL = existingBar.querySelector('.ep-badge-mal')
               if (hasIMDb || hasMAL) {
                 existingBar.classList.add('no-personal')
-                var hasOnlyOne = (hasIMDb && !hasMAL) || (!hasIMDb && hasMAL)
-                if (hasOnlyOne) {
-                  existingBar.classList.add('only-one')
-                }
+                existingBar.classList.toggle('only-one', (!!hasIMDb) !== (!!hasMAL))
               } else {
-                // If ratings bar is now empty, remove it
                 existingBar.remove()
               }
+              tile.classList.remove('personal-only')
             }
-            // Refresh stats to update personal average
             if (typeof refreshStats === 'function') refreshStats(item.watchedEpisodes)
           })
-          popup.appendChild(clearBtn)
+          starsRow.appendChild(clearBtn)
         }
+        popup.appendChild(starsRow)
+
+        // ── IMDb / MAL manual inputs ──
+        var platRow = document.createElement('div')
+        platRow.className = 'ep-rate-popup-platforms'
+
+        function makePlatField(labelText, labelClass, currentVal, min, max, step, onSave) {
+          var wrap = document.createElement('div')
+          var lbl = document.createElement('div')
+          lbl.className = 'ep-rate-plat-label ' + labelClass
+          lbl.textContent = labelText
+          var inp = document.createElement('input')
+          inp.className = 'ep-rate-plat-input'
+          inp.type = 'number'
+          inp.min = min; inp.max = max; inp.step = step
+          inp.placeholder = min + '–' + max
+          if (currentVal) inp.value = Number(currentVal).toFixed(1)
+          inp.addEventListener('click', function(ev) { ev.stopPropagation() })
+          inp.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter') { ev.preventDefault(); onSave(inp.value); popup.remove() }
+            if (ev.key === 'Escape') { popup.remove() }
+          })
+          inp.addEventListener('blur', function() { if (inp.value) onSave(inp.value) })
+          wrap.appendChild(lbl); wrap.appendChild(inp)
+          return wrap
+        }
+
+        function saveEpPlatRating(field, rawVal) {
+          var val = parseFloat(rawVal)
+          if (isNaN(val)) return
+          ep[field] = Math.round(val * 10) / 10
+          var lib = loadData(KEYS.library, [])
+          var it = lib.find(function(i) { return i.id === item.id })
+          if (it) {
+            var saved = false
+            ;(it.seasons || []).forEach(function(season) {
+              ;(season.episodes || []).forEach(function(e) { if (e.number === ep.number) { e[field] = ep[field]; saved = true } })
+            })
+            if (!saved && ep.isChapter) {
+              ;(it.arcs || []).forEach(function(arc) {
+                if (arc.chapters) { var ch = arc.chapters.find(function(c) { return c.number === ep.number }); if (ch) { ch[field] = ep[field]; saved = true } }
+              })
+            }
+            saveData(KEYS.library, lib)
+          }
+          // Refresh badge on tile
+          var existingBar = tile.querySelector('.ep-ratings-bar')
+          var badgeClass = field === 'ratingIMDb' ? 'ep-badge-imdb' : 'ep-badge-mal'
+          if (existingBar) {
+            var b = existingBar.querySelector('.' + badgeClass)
+            if (b) b.textContent = ep[field].toFixed(1)
+            else {
+              var nb = document.createElement('span')
+              nb.className = badgeClass
+              nb.textContent = ep[field].toFixed(1)
+              existingBar.insertBefore(nb, existingBar.firstChild)
+            }
+            existingBar.classList.remove('no-personal', 'only-one', 'personal-only')
+            tile.classList.remove('personal-only')
+          } else {
+            var nb2 = document.createElement('div')
+            nb2.className = 'ep-ratings-bar no-personal' + (!ep.ratingMAL && !ep.ratingIMDb ? ' only-one' : '')
+            var b2 = document.createElement('span')
+            b2.className = badgeClass
+            b2.textContent = ep[field].toFixed(1)
+            nb2.appendChild(b2)
+            tile.insertBefore(nb2, tile.firstChild)
+          }
+        }
+
+        platRow.appendChild(makePlatField('IMDb /10', 'imdb', ep.ratingIMDb, 0, 10, 0.1, function(v) { saveEpPlatRating('ratingIMDb', v) }))
+        platRow.appendChild(makePlatField('MAL /5', 'mal', ep.ratingMAL, 0, 5, 0.1, function(v) { saveEpPlatRating('ratingMAL', v) }))
+        popup.appendChild(platRow)
         // Position fixed relative to rateBtn, append to body to escape tile opacity
         var tileRect = tile.getBoundingClientRect()
         popup.style.position = 'fixed'
@@ -14143,7 +14678,7 @@
     submitBtn.addEventListener('click', function() {
       var value = input.value.trim()
       var ratingVal = null
-      if (ratingInput && ratingTouched) {
+      if (ratingInput && (ratingTouched || ratingInput.value.trim())) {
         var rawRating = ratingInput.value.trim()
         if (rawRating) {
           var parsedRating = parseFloat(rawRating)
@@ -14637,7 +15172,8 @@
       recurBtn.style.cssText = 'font-size:11px;padding:7px 16px;border-color:rgba(0,229,255,0.3);color:var(--accent-cool);'
       recurBtn.textContent = '⚡ Weekly'
       recurBtn.addEventListener('click', function() {
-        var sorted = selectedEps.slice().sort(function(a,b){return a-b})
+        function _epNum(k) { var m = String(k).match(/_(\d+)$/); return m ? parseInt(m[1],10) : (parseInt(k,10)||0) }
+        var sorted = selectedEps.slice().sort(function(a,b){ return _epNum(a)-_epNum(b) })
         openWeeklyForSelectedEps(itemId, title, sorted, function() {
           bar.innerHTML = '<div style="font:600 13px var(--font-mono);color:var(--success);flex:1;text-align:center;">✓ WEEKLY SCHEDULE SET</div>'
           setTimeout(function() { bar.classList.remove('visible'); setTimeout(function() { bar.remove() }, 350) }, 1500)
@@ -14998,8 +15534,8 @@
             <input class="sched-modal-input" id="asm-rec-ep-start" type="number" min="1" value="${lastEpNum + 1}" placeholder="1" autocomplete="off"/>
           </div>
           <div>
-            <div class="sched-modal-label">Until date</div>
-            <input class="sched-modal-input" id="asm-rec-end" type="date" autocomplete="off"/>
+            <div class="sched-modal-label"># of episodes to schedule</div>
+            <input class="sched-modal-input" id="asm-rec-end" type="number" min="1" value="" placeholder="e.g. 12" autocomplete="off"/>
           </div>
         </div>
         <div style="font:400 10px var(--font-mono);color:var(--text-3);margin-top:8px;" id="asm-rec-preview">Fill in the fields above to preview the schedule.</div>
@@ -15050,12 +15586,12 @@
       var preview = box.querySelector('#asm-rec-preview')
       var day   = box.querySelector('#asm-rec-day').value
       var start = box.querySelector('#asm-rec-start').value
-      var end   = box.querySelector('#asm-rec-end').value
+      var count = parseInt(box.querySelector('#asm-rec-end').value, 10)
       var epS   = parseInt(box.querySelector('#asm-rec-ep-start').value, 10) || 1
-      if (!day || !start || !end) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return }
-      var dates = getWeeklyDates(day, start, end)
-      if (dates.length === 0) { preview.textContent = 'No dates found. Check start/end.'; preview.style.color = 'var(--accent-warm)'; return }
-      preview.innerHTML = '<span style="color:var(--accent-green)">✓ Will schedule <strong>' + dates.length + ' episodes</strong> (ep ' + epS + '–' + (epS + dates.length - 1) + ') every ' + day + ' from ' + formatDateShort(dates[0]) + ' to ' + formatDateShort(dates[dates.length-1]) + '</span>'
+      if (!day || !start || !count || count < 1) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return }
+      var dates = getWeeklyDatesFromCount(day, start, count)
+      if (dates.length === 0) { preview.textContent = 'No dates generated.'; preview.style.color = 'var(--accent-warm)'; return }
+      preview.innerHTML = '<span style="color:var(--accent-green)">✓ Will schedule <strong>' + dates.length + ' episodes</strong> (ep ' + epS + '–' + (epS + dates.length - 1) + ') every ' + day + ' · ' + formatDateShort(dates[0]) + ' → ' + formatDateShort(dates[dates.length-1]) + '</span>'
     }
     ;['#asm-rec-day','#asm-rec-start','#asm-rec-end','#asm-rec-ep-start'].forEach(function(sel) {
       var el = box.querySelector(sel)
@@ -15116,10 +15652,10 @@
       if (recurChk.checked) {
         var recDay   = box.querySelector('#asm-rec-day').value
         var recStart = box.querySelector('#asm-rec-start').value
-        var recEnd   = box.querySelector('#asm-rec-end').value
+        var recCount = parseInt(box.querySelector('#asm-rec-end').value, 10) || 0
         var recEpS   = parseInt(box.querySelector('#asm-rec-ep-start').value, 10) || 1
-        if (recDay && recStart && recEnd) {
-          var dates = getWeeklyDates(recDay, recStart, recEnd)
+        if (recDay && recStart && recCount > 0) {
+          var dates = getWeeklyDatesFromCount(recDay, recStart, recCount)
           var sched2 = loadData(KEYS.schedule, {})
           dates.forEach(function(dk, idx) {
             if (!sched2[dk]) sched2[dk] = []
@@ -15137,6 +15673,20 @@
       closeModal()
       if (onDone) onDone()
     })
+  }
+
+  /* Helper: get N weekly dates starting from the first occurrence of dayName on/after startDateStr */
+  function getWeeklyDatesFromCount(dayName, startDateStr, count) {
+    var targetDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(dayName)
+    if (targetDay === -1 || !count || count < 1) return []
+    var cur = new Date(startDateStr + 'T00:00:00')
+    while (cur.getDay() !== targetDay) cur.setDate(cur.getDate() + 1)
+    var results = []
+    for (var i = 0; i < count; i++) {
+      results.push(cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0') + '-' + String(cur.getDate()).padStart(2,'0'))
+      cur.setDate(cur.getDate() + 7)
+    }
+    return results
   }
 
   /* Helper: get all dates for a given weekday between start and end (inclusive) */
@@ -15387,8 +15937,8 @@
           <input class="sched-modal-input" id="rfi-ep-start" type="number" min="1" value="${nextEp}" placeholder="1" autocomplete="off"/>
         </div>
         <div class="sched-modal-field" style="margin-bottom:0;">
-          <div class="sched-modal-label">Until date</div>
-          <input class="sched-modal-input" id="rfi-end" type="date" autocomplete="off"/>
+          <div class="sched-modal-label"># of episodes to schedule</div>
+          <input class="sched-modal-input" id="rfi-end" type="number" min="1" value="" placeholder="e.g. 12" autocomplete="off"/>
         </div>
       </div>
       <div style="font:400 10px var(--font-mono);color:var(--text-3);margin:12px 0 4px;" id="rfi-preview">Fill in the fields above to preview.</div>
@@ -15407,10 +15957,10 @@
       var preview = box.querySelector('#rfi-preview')
       var day   = box.querySelector('#rfi-day').value
       var start = box.querySelector('#rfi-start').value
-      var end   = box.querySelector('#rfi-end').value
+      var count = parseInt(box.querySelector('#rfi-end').value, 10)
       var epS   = parseInt(box.querySelector('#rfi-ep-start').value, 10) || 1
-      if (!day || !start || !end) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return }
-      var dates = getWeeklyDates(day, start, end)
+      if (!day || !start || !count || count < 1) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return }
+      var dates = getWeeklyDatesFromCount(day, start, count)
       if (dates.length === 0) { preview.textContent = 'No dates in range. Check start/end.'; preview.style.color = 'var(--accent-warm)'; return }
       preview.innerHTML = '<span style="color:var(--accent-green)">✓ Will schedule <strong>' + dates.length + ' ' + unitLabel + '</strong> (' + unitShort + ' ' + epS + '–' + (epS + dates.length - 1) + ') every ' + day + ' · ' + formatDateShort(dates[0]) + ' → ' + formatDateShort(dates[dates.length-1]) + '</span>'
     }
@@ -15434,10 +15984,10 @@
     box.querySelector('#rfi-save').addEventListener('click', function() {
       var day   = box.querySelector('#rfi-day').value
       var start = box.querySelector('#rfi-start').value
-      var end   = box.querySelector('#rfi-end').value
+      var count = parseInt(box.querySelector('#rfi-end').value, 10)
       var epS   = parseInt(box.querySelector('#rfi-ep-start').value, 10) || 1
-      if (!day || !start || !end) { alert('Please fill in day, start date, and end date.'); return }
-      var dates = getWeeklyDates(day, start, end)
+      if (!day || !start || !count || count < 1) { alert('Please fill in day, start date, and episode count.'); return }
+      var dates = getWeeklyDatesFromCount(day, start, count)
       if (dates.length === 0) { alert('No matching dates. Check the date range.'); return }
       var sched2 = loadData(KEYS.schedule, {})
       dates.forEach(function(dk, idx) {
@@ -15578,6 +16128,7 @@
     var item = library.find(function(i) { return i.id === itemId })
     var isReading = item && (item.type === 'manga' || item.type === 'manhwa' || item.type === 'novel')
     var unitShort = isReading ? 'Ch.' : 'Ep.'
+    function parseEpNum(k) { var m = String(k).match(/_(\d+)$/); return m ? parseInt(m[1],10) : (parseInt(k,10)||0) }
 
     var overlay = document.createElement('div')
     overlay.className = 'sched-modal-overlay'
@@ -15588,7 +16139,7 @@
     box.style.cssText = 'width:min(460px,calc(100% - 48px));'
     box.innerHTML = `
       <div class="sched-modal-title">⚡ Weekly Schedule</div>
-      <div class="sched-modal-subtitle" style="margin-bottom:16px;">${itemTitle} · ${sortedEps.length} episodes selected (${unitShort} ${sortedEps[0]}–${sortedEps[sortedEps.length-1]})</div>
+      <div class="sched-modal-subtitle" style="margin-bottom:16px;">${itemTitle} · ${sortedEps.length} episodes selected (${unitShort} ${parseEpNum(sortedEps[0])}–${parseEpNum(sortedEps[sortedEps.length-1])})</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="sched-modal-field" style="margin-bottom:0;">
           <div class="sched-modal-label">Airs every</div>
@@ -15668,7 +16219,7 @@
       var sched = loadData(KEYS.schedule, {})
       dates.forEach(function(dk, idx) {
         if (!sched[dk]) sched[dk] = []
-        var epLabel = unitShort + ' ' + sortedEps[idx]
+        var epLabel = unitShort + ' ' + parseEpNum(sortedEps[idx])
         var alreadyI = sched[dk].findIndex(function(x) { return x.id === itemId })
         var ent = { id: itemId, title: itemTitle, type: item ? item.type : '', eps: epLabel }
         if (alreadyI >= 0) sched[dk][alreadyI] = ent
@@ -16059,8 +16610,8 @@
             <input class="sched-modal-input" id="sched-rec-ep-start" type="number" min="1" value="1" placeholder="1" autocomplete="off"/>
           </div>
           <div class="sched-modal-field" style="margin-bottom:0;">
-            <div class="sched-modal-label">Until date</div>
-            <input class="sched-modal-input" id="sched-rec-end" type="date" autocomplete="off"/>
+            <div class="sched-modal-label"># of episodes to schedule</div>
+            <input class="sched-modal-input" id="sched-rec-end" type="number" min="1" value="" placeholder="e.g. 12" autocomplete="off"/>
           </div>
         </div>
         <div style="font:400 10px var(--font-mono);color:var(--text-3);margin:10px 0 4px;" id="sched-rec-preview">Fill in the fields above to preview.</div>
@@ -16117,14 +16668,14 @@
       var preview = box.querySelector('#sched-rec-preview');
       var day   = box.querySelector('#sched-rec-day').value;
       var start = box.querySelector('#sched-rec-start').value;
-      var end   = box.querySelector('#sched-rec-end').value;
+      var count = parseInt(box.querySelector('#sched-rec-end').value, 10);
       var epS   = parseInt(box.querySelector('#sched-rec-ep-start').value, 10) || 1;
       var selItemId = recSel.value;
       var selItem = watching.find(function(i) { return i.id === selItemId });
       var isReading = selItem && (selItem.type==='manga'||selItem.type==='manhwa'||selItem.type==='novel');
       var unitShort = isReading ? 'Ch.' : 'Ep.';
-      if (!day || !start || !end) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return; }
-      var dates = getWeeklyDates(day, start, end);
+      if (!day || !start || !count || count < 1) { preview.textContent = 'Fill in all fields to preview.'; preview.style.color = 'var(--text-3)'; return; }
+      var dates = getWeeklyDatesFromCount(day, start, count);
       if (dates.length === 0) { preview.textContent = 'No dates in range. Check start/end.'; preview.style.color = 'var(--accent-warm)'; return; }
       preview.innerHTML = '<span style="color:var(--accent-green)">✓ Will schedule <strong>' + dates.length + ' entries</strong> (' + unitShort + ' ' + epS + '–' + (epS + dates.length - 1) + ') every ' + day + ' · ' + formatDateShort(dates[0]) + ' → ' + formatDateShort(dates[dates.length-1]) + '</span>';
     }
@@ -16237,10 +16788,10 @@
     box.querySelector('#sched-rec-save').addEventListener('click', function() {
       var recDay   = box.querySelector('#sched-rec-day').value;
       var recStart = box.querySelector('#sched-rec-start').value;
-      var recEnd   = box.querySelector('#sched-rec-end').value;
+      var recCount = parseInt(box.querySelector('#sched-rec-end').value, 10);
       var recEpS   = parseInt(box.querySelector('#sched-rec-ep-start').value, 10) || 1;
-      if (!recDay || !recStart || !recEnd) { alert('Please fill in day, start date, and end date.'); return; }
-      var dates = getWeeklyDates(recDay, recStart, recEnd);
+      if (!recDay || !recStart || !recCount || recCount < 1) { alert('Please fill in day, start date, and episode count.'); return; }
+      var dates = getWeeklyDatesFromCount(recDay, recStart, recCount);
       if (dates.length === 0) { alert('No matching dates found. Check the date range.'); return; }
       var itemId  = recSel.value;
       var recItem = watching.find(function(i) { return i.id === itemId });
@@ -16339,6 +16890,10 @@
       col.appendChild(hdr)
 
       var entries = schedule[dateKey] || []
+      // Deduplicate: if same item has both a 'Releases' entry and a weekly ep entry,
+      // drop the 'Releases' entry — the actual episode schedule takes priority
+      var itemsWithEp = new Set(entries.filter(function(e) { return e.eps && e.eps !== 'Releases' }).map(function(e) { return e.id }))
+      entries = entries.filter(function(e) { return !(e.eps === 'Releases' && itemsWithEp.has(e.id)) })
 
       if (entries.length === 0) {
         var emp = document.createElement('div')
@@ -19884,6 +20439,696 @@
   // MOOD ENGINE: CALIBRATED
   // YOU: STILL PROCRASTINATING, BUT INTELLIGENTLY
   // ════════════════════════════════════════════════════════════
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       STUDY GATE — LOCK SYSTEM
+       Rules:
+         • Locked until 4 hrs studied today (cycle 1)
+         • Each 4hr block → 75 min of Proc Hub access
+         • After 75 min used → locked again until next 4hr block
+         • Cycles accumulate daily, reset at midnight
+       ══════════════════════════════════════════════════════════= -->
+  <style>
+  /* ── GATE OVERLAY ── */
+  #study-gate {
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #03050b;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    overflow: hidden;
+    transition: opacity 0.6s ease;
+  }
+  #study-gate.gate-hidden { opacity: 0; pointer-events: none; }
+
+  /* scanlines */
+  #study-gate::before {
+    content: ''; position: absolute; inset: 0; z-index: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(0,229,255,0.025) 2px, rgba(0,229,255,0.025) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* animated hex grid bg */
+  #gate-hexbg {
+    position: absolute; inset: 0; z-index: 0;
+    opacity: 0.07;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cpolygon points='30,2 58,17 58,47 30,50 2,47 2,17' fill='none' stroke='%2300e5ff' stroke-width='0.8'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    animation: hexdrift 20s linear infinite;
+  }
+  @keyframes hexdrift { from { background-position: 0 0; } to { background-position: 60px 52px; } }
+
+  /* corner brackets */
+  #study-gate .sg-corner {
+    position: absolute; width: 28px; height: 28px;
+    border-color: rgba(0,229,255,0.4); border-style: solid;
+  }
+  #study-gate .sg-corner.tl { top: 22px; left: 22px; border-width: 2px 0 0 2px; }
+  #study-gate .sg-corner.tr { top: 22px; right: 22px; border-width: 2px 2px 0 0; }
+  #study-gate .sg-corner.bl { bottom: 22px; left: 22px; border-width: 0 0 2px 2px; }
+  #study-gate .sg-corner.br { bottom: 22px; right: 22px; border-width: 0 2px 2px 0; }
+
+  /* status bar top */
+  #sg-statusbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0,229,255,0.6), transparent);
+    animation: scanbar 3s ease-in-out infinite;
+  }
+  @keyframes scanbar {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.3; }
+  }
+
+  /* main content */
+  #sg-content {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0; text-align: center;
+    padding: 0 24px; max-width: 520px; width: 100%;
+  }
+
+  #sg-eyebrow {
+    font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase;
+    color: rgba(0,229,255,0.5); margin-bottom: 20px;
+  }
+
+  #sg-lock-icon {
+    font-size: 52px; line-height: 1;
+    filter: drop-shadow(0 0 18px rgba(0,229,255,0.5));
+    animation: lockpulse 2.5s ease-in-out infinite;
+    margin-bottom: 18px;
+  }
+  @keyframes lockpulse {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(0,229,255,0.3)); transform: scale(1); }
+    50%       { filter: drop-shadow(0 0 28px rgba(0,229,255,0.7)); transform: scale(1.06); }
+  }
+
+  #sg-title {
+    font-size: 28px; font-weight: 900; letter-spacing: 0.08em;
+    color: #fff; line-height: 1.1; margin-bottom: 6px;
+  }
+  #sg-title span { color: #00e5ff; }
+
+  #sg-subtitle {
+    font-size: 10px; letter-spacing: 0.25em; color: rgba(255,255,255,0.35);
+    text-transform: uppercase; margin-bottom: 32px;
+  }
+
+  /* progress ring */
+  #sg-ring-wrap {
+    position: relative; width: 200px; height: 200px;
+    margin: 0 auto 28px;
+  }
+  #sg-ring-svg { transform: rotate(-90deg); }
+  #sg-ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 8; }
+  #sg-ring-fill  { fill: none; stroke: #00e5ff; stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 565.48; /* 2π × 90 */
+    stroke-dashoffset: 565.48;
+    transition: stroke-dashoffset 1s ease, stroke 0.4s ease;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,0.7));
+  }
+  #sg-ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #sg-ring-pct {
+    font-size: 32px; font-weight: 900; color: #00e5ff;
+    letter-spacing: -0.02em; line-height: 1;
+  }
+  #sg-ring-label {
+    font-size: 9px; letter-spacing: 0.3em; color: rgba(255,255,255,0.35);
+    text-transform: uppercase; margin-top: 4px;
+  }
+  #sg-ring-studied {
+    font-size: 11px; color: rgba(255,255,255,0.5);
+    margin-top: 3px; letter-spacing: 0.05em;
+  }
+
+  /* info row */
+  #sg-info-row {
+    display: flex; gap: 24px; margin-bottom: 28px;
+  }
+  .sg-stat {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 12px 20px;
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 10px;
+  }
+  .sg-stat-val {
+    font-size: 18px; font-weight: 900; color: #00e5ff; line-height: 1;
+  }
+  .sg-stat-lbl {
+    font-size: 8px; letter-spacing: 0.3em; color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+  }
+
+  /* message */
+  #sg-msg {
+    font-size: 11px; color: rgba(255,255,255,0.25);
+    letter-spacing: 0.08em; line-height: 1.7;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 20px; margin-top: 4px;
+    max-width: 400px;
+  }
+  #sg-msg strong { color: rgba(0,229,255,0.7); }
+
+  #sg-back-btn {
+    margin-top: 24px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 28px; border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.3);
+    text-decoration: none; text-transform: uppercase;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  #sg-back-btn:hover {
+    border-color: rgba(0,229,255,0.35);
+    color: rgba(0,229,255,0.8);
+    background: rgba(0,229,255,0.06);
+  }
+
+  /* cycle dots */
+  #sg-cycles {
+    display: flex; gap: 8px; margin-bottom: 20px; align-items: center;
+  }
+  .sg-cycle-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid rgba(0,229,255,0.3);
+    transition: all 0.4s ease;
+  }
+  .sg-cycle-dot.done {
+    background: #00e5ff;
+    border-color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0,229,255,0.6);
+  }
+  .sg-cycle-dot.active {
+    border-color: rgba(0,229,255,0.8);
+    animation: dotpulse 1.5s ease infinite;
+  }
+  @keyframes dotpulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(0,229,255,0); }
+  }
+
+  /* unlocked banner */
+  #sg-unlocked-banner {
+    display: none;
+    position: absolute; inset: 0; z-index: 2;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    background: rgba(3,5,11,0.95);
+  }
+  #sg-unlocked-banner.show { display: flex; animation: fadeInBanner 0.5s ease; }
+  @keyframes fadeInBanner {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  #sub-unlock-title {
+    font-size: 32px; font-weight: 900; color: #4ade80;
+    letter-spacing: 0.06em;
+    filter: drop-shadow(0 0 18px rgba(74,222,128,0.6));
+    animation: unlockGlow 1s ease infinite alternate;
+  }
+  @keyframes unlockGlow {
+    from { filter: drop-shadow(0 0 10px rgba(74,222,128,0.4)); }
+    to   { filter: drop-shadow(0 0 28px rgba(74,222,128,0.9)); }
+  }
+  #sub-unlock-sub {
+    font-size: 10px; letter-spacing: 0.35em; color: rgba(74,222,128,0.6);
+    text-transform: uppercase;
+  }
+  #sub-unlock-timer {
+    font-size: 14px; color: rgba(255,255,255,0.5); letter-spacing: 0.1em;
+  }
+
+  /* budget bar inside gate when unlocked */
+  #sg-budget-bar-wrap {
+    width: 100%; max-width: 340px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px; height: 6px;
+    position: relative; margin-top: 8px;
+  }
+  #sg-budget-bar-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, #4ade80, #00e5ff);
+    box-shadow: 0 0 10px rgba(74,222,128,0.5);
+    transition: width 1s ease;
+  }
+  </style>
+
+  <!-- GATE DOM (injected into body) -->
+  <div id="study-gate">
+    <div id="gate-hexbg"></div>
+    <div id="sg-statusbar"></div>
+    <div class="sg-corner tl"></div>
+    <div class="sg-corner tr"></div>
+    <div class="sg-corner bl"></div>
+    <div class="sg-corner br"></div>
+
+    <!-- locked state -->
+    <div id="sg-content">
+      <div id="sg-eyebrow">// PROC//HUB ACCESS CONTROL //</div>
+      <div id="sg-lock-icon">🔒</div>
+      <div id="sg-title">ACCESS <span>LOCKED</span></div>
+      <div id="sg-subtitle">Complete your study target to unlock</div>
+
+      <div id="sg-ring-wrap">
+        <svg id="sg-ring-svg" width="200" height="200" viewBox="0 0 200 200">
+          <circle class="sg-ring-track" cx="100" cy="100" r="90"/>
+          <circle id="sg-ring-fill" cx="100" cy="100" r="90"/>
+        </svg>
+        <div id="sg-ring-center">
+          <div id="sg-ring-pct">0%</div>
+          <div id="sg-ring-label">of 4h target</div>
+          <div id="sg-ring-studied">0.0h studied</div>
+        </div>
+      </div>
+
+      <div id="sg-cycles"><!-- cycle dots injected by JS --></div>
+
+      <div id="sg-info-row">
+        <div class="sg-stat">
+          <div class="sg-stat-val" id="sg-stat-studied">0.0h</div>
+          <div class="sg-stat-lbl">Studied Today</div>
+        </div>
+        <div class="sg-stat">
+          <div class="sg-stat-val" id="sg-stat-needed">5.0h</div>
+          <div class="sg-stat-lbl">Next Unlock</div>
+        </div>
+        <div class="sg-stat">
+          <div class="sg-stat-val" id="sg-stat-cycles">0</div>
+          <div class="sg-stat-lbl">Cycles Done</div>
+        </div>
+      </div>
+
+      <div id="sg-msg">
+        Study <strong id="sg-msg-hours">4h</strong> to unlock
+        <strong>75 minutes</strong> of Procrastination Hub.<br>
+        Each 4h block = 1 unlock. Budget resets with each cycle.<br>
+      </div>
+
+      <a href="index.html" id="sg-back-btn">← BACK TO HUB</a>
+    </div>
+
+    <!-- unlocked flash banner -->
+    <div id="sg-unlocked-banner">
+      <div id="sub-unlock-title">🔓 UNLOCKED</div>
+      <div id="sub-unlock-sub">Procrastination budget activated</div>
+      <div id="sub-unlock-timer">Entering in <span id="sg-countdown">3</span>s...</div>
+      <div style="margin-top:12px;width:280px;text-align:center;">
+        <div style="font-size:9px;letter-spacing:0.3em;color:rgba(255,255,255,0.25);margin-bottom:8px;text-transform:uppercase;">Budget Remaining</div>
+        <div id="sg-budget-bar-wrap"><div id="sg-budget-bar-fill" style="width:100%"></div></div>
+        <div style="font-size:11px;color:rgba(74,222,128,0.6);margin-top:8px;" id="sg-budget-remaining-text">75m remaining</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pre-hide gate synchronously if user is already unlocked (prevents flash on refresh) -->
+  <script>(function(){
+    try {
+      var BUDGET_MINS = 75;
+      var today = new Date().toISOString().split('T')[0];
+      var lock = JSON.parse(localStorage.getItem('phub_lock_v1') || '{}');
+      var unlocked = false;
+      // Any earned cycle with budget remaining
+      if (lock.date === today) {
+        var pm = lock.procMinUsed || [];
+        for (var i = 0; i < pm.length; i++) { if ((pm[i] || 0) < BUDGET_MINS) { unlocked = true; break; } }
+      }
+      if (unlocked) { var g = document.getElementById('study-gate'); if (g) g.style.display = 'none'; }
+    } catch(e) {}
+  })();</script>
+
+  <script>
+  /* ═══════════════════════════════════════════════════════════════
+     STUDY GATE — LOCK ENGINE v1.0
+     localStorage key: phub_lock_v1
+     Schema: {
+       date: "YYYY-MM-DD",          // resets daily
+       cyclesDone: 0,               // how many 4hr blocks completed today
+       procMinUsed: [],             // array: minutes used per cycle [c0, c1, ...]
+       unlockedAt: null             // timestamp when last unlock happened
+     }
+     Constants:
+       STUDY_PER_CYCLE   = 5 * 3600 seconds  (5 hours)
+       PROC_BUDGET_MINS  = 75                 (1h 15m per cycle)
+  ═══════════════════════════════════════════════════════════════ */
+  ;(function() {
+    'use strict';
+
+    var LOCK_KEY          = 'phub_lock_v1';
+    var STUDY_SECS_CYCLE  = 4 * 3600;   // 4h in seconds
+    var BUDGET_MINS       = 75;          // 75 min per cycle
+var SYNC_INTERVAL_MS  = 5000;        // poll every 5s
+
+    /* ── helpers ── */
+    function todayStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0');
+    }
+
+    function loadLock() {
+      try {
+        var raw = localStorage.getItem(LOCK_KEY);
+        var s   = raw ? JSON.parse(raw) : {};
+        if (s.date !== todayStr()) {
+          // new day → full reset
+          s = { date: todayStr(), cyclesDone: 0, procMinUsed: [], unlockedAt: null };
+          saveLock(s);
+        }
+        return s;
+      } catch(e) {
+        return { date: todayStr(), cyclesDone: 0, procMinUsed: [], unlockedAt: null };
+      }
+    }
+
+    function saveLock(s) {
+      try { localStorage.setItem(LOCK_KEY, JSON.stringify(s)); } catch(e) {}
+    }
+
+    function getStudiedSeconds() {
+      try {
+        var raw = localStorage.getItem('todosState_v4');
+        if (!raw) return 0;
+        var d = JSON.parse(raw);
+        var ts = d.todayStats;
+        if (!ts) return 0;
+        // guard: if date mismatch, studied is 0 for today
+        if (ts.date && ts.date !== new Date().toDateString()) return 0;
+        return parseFloat(ts.studied) || 0;
+      } catch(e) { return 0; }
+    }
+
+    /* ── compute lock state ── */
+    function computeState() {
+      var lock        = loadLock();
+      var studiedSecs = getStudiedSeconds();
+
+      // How many complete 4hr cycles in today's studied time
+      var totalCycles = Math.floor(studiedSecs / STUDY_SECS_CYCLE);
+
+      // If new cycles completed since last save, register them
+      if (totalCycles > lock.cyclesDone) {
+        var newCycles = totalCycles - lock.cyclesDone;
+        for (var i = 0; i < newCycles; i++) {
+          lock.procMinUsed.push(0);  // new slot, 0 minutes used
+        }
+        lock.cyclesDone = totalCycles;
+        lock.unlockedAt = Date.now();
+        saveLock(lock);
+      }
+
+      // Track proc hub time usage
+      // We use the budget's usedMinutes from phub_budget, but only count
+      // minutes accumulated AFTER the last unlock timestamp
+      // Simpler: we track elapsed wall-clock time while gate is open
+      // (updated by the ticker below)
+
+      // Find the current active cycle (first one not exhausted)
+      var activeCycleIdx = -1;
+      var activeMinsLeft = 0;
+      for (var ci = 0; ci < lock.procMinUsed.length; ci++) {
+        var minsLeft = BUDGET_MINS - (lock.procMinUsed[ci] || 0);
+        if (minsLeft > 0) {
+          activeCycleIdx = ci;
+          activeMinsLeft = minsLeft;
+          break;
+        }
+      }
+
+      // Current cycle progress toward next unlock
+      var secsIntoCurrentCycle = studiedSecs - (totalCycles * STUDY_SECS_CYCLE);
+      var cycleProgressPct = Math.min(100, Math.round(secsIntoCurrentCycle / STUDY_SECS_CYCLE * 100));
+      var secsToNextUnlock  = STUDY_SECS_CYCLE - secsIntoCurrentCycle;
+
+      return {
+        lock:             lock,
+        studiedSecs:      studiedSecs,
+        totalCycles:      totalCycles,
+        activeCycleIdx:   activeCycleIdx,
+        activeMinsLeft:   activeMinsLeft,
+        isUnlocked:       activeCycleIdx >= 0,
+        cycleProgressPct: cycleProgressPct,
+        secsToNextUnlock: secsToNextUnlock
+      };
+    }
+
+    /* ── format helpers ── */
+    function fmtHM(secs) {
+      var h = Math.floor(secs / 3600);
+      var m = Math.floor((secs % 3600) / 60);
+      if (h > 0) return h + 'h ' + (m > 0 ? m + 'm' : '');
+      return m + 'm';
+    }
+    function fmtMinsLeft(mins) {
+      var h = Math.floor(mins / 60), m = Math.round(mins % 60);
+      if (h > 0) return h + 'h ' + m + 'm';
+      return m + 'm';
+    }
+
+    /* ── DOM refs ── */
+    var gate          = document.getElementById('study-gate');
+    var ringFill      = document.getElementById('sg-ring-fill');
+    var ringPct       = document.getElementById('sg-ring-pct');
+    var ringLabel     = document.getElementById('sg-ring-label');
+    var ringStudied   = document.getElementById('sg-ring-studied');
+    var statStudied   = document.getElementById('sg-stat-studied');
+    var statNeeded    = document.getElementById('sg-stat-needed');
+    var statCycles    = document.getElementById('sg-stat-cycles');
+    var msgHours      = document.getElementById('sg-msg-hours');
+    var cycleDotsWrap = document.getElementById('sg-cycles');
+    var unlockedBanner= document.getElementById('sg-unlocked-banner');
+    var sgCountdown   = document.getElementById('sg-countdown');
+    var sgBudgetFill  = document.getElementById('sg-budget-bar-fill');
+    var sgBudgetText  = document.getElementById('sg-budget-remaining-text');
+
+    var CIRC = 2 * Math.PI * 90; // 565.48
+
+    var wasUnlocked = false;
+    var lastTickTime = null;
+    var tickInterval = null;
+    var autoEnterTimer = null;
+    window.__mediaTimerRunning = false;  // true only while a media session timer is actively ticking
+
+    /* ── render cycle dots ── */
+    function renderDots(lock, totalCycles) {
+      var html = '';
+      // Show up to max(totalCycles+1, 3) dots
+      var shown = Math.max(totalCycles + 1, 3);
+      for (var i = 0; i < shown; i++) {
+        var mUsed = lock.procMinUsed[i] || 0;
+        if (i < totalCycles && mUsed >= BUDGET_MINS) {
+          html += '<div class="sg-cycle-dot done" title="Cycle '+(i+1)+': budget used"></div>';
+        } else if (i < totalCycles && mUsed < BUDGET_MINS) {
+          html += '<div class="sg-cycle-dot done active" title="Cycle '+(i+1)+': '+(BUDGET_MINS-mUsed)+'m left"></div>';
+        } else if (i === totalCycles) {
+          html += '<div class="sg-cycle-dot active" title="In progress"></div>';
+        } else {
+          html += '<div class="sg-cycle-dot" title="Locked"></div>';
+        }
+      }
+      cycleDotsWrap.innerHTML = html;
+    }
+
+    /* ── update gate UI ── */
+    function updateGateUI(st) {
+      var pct = st.cycleProgressPct;
+      var off = CIRC - (CIRC * pct / 100);
+      ringFill.style.strokeDashoffset = off;
+      // colour: green when close, cyan otherwise
+      ringFill.style.stroke = pct >= 80 ? '#4ade80' : '#00e5ff';
+
+      ringPct.textContent     = pct + '%';
+      ringStudied.textContent = (st.studiedSecs / 3600).toFixed(2) + 'h studied';
+
+      var studiedTotal = (st.studiedSecs / 3600).toFixed(1);
+      statStudied.textContent = studiedTotal + 'h';
+      statCycles.textContent  = st.totalCycles;
+
+      // needed for next unlock
+      var secsNeeded = Math.max(0, st.secsToNextUnlock);
+      statNeeded.textContent = fmtHM(secsNeeded) || '0m';
+      msgHours.textContent   = fmtHM(secsNeeded) || 'done';
+
+      renderDots(st.lock, st.totalCycles);
+    }
+
+    /* ── show unlocked banner then dismiss gate ── */
+    function showUnlockedBanner(minsLeft) {
+      unlockedBanner.classList.add('show');
+      var budgetCap = BUDGET_MINS;
+      var pct = Math.min(100, (minsLeft / budgetCap) * 100);
+      sgBudgetFill.style.width = pct + '%';
+      sgBudgetText.textContent = fmtMinsLeft(minsLeft) + ' remaining';
+
+      var subEl = document.getElementById('sub-unlock-sub');
+      if (subEl) subEl.textContent = 'Procrastination budget activated';
+
+      var count = 3;
+      sgCountdown.textContent = count;
+      autoEnterTimer = setInterval(function() {
+        count--;
+        sgCountdown.textContent = count;
+        if (count <= 0) {
+          clearInterval(autoEnterTimer);
+          dismissGate();
+        }
+      }, 1000);
+    }
+
+    /* ── budget expired: re-lock after 5-second countdown ── */
+    var graceExpiryTimer = null;
+    function startGraceExpiryCountdown() {
+      if (graceExpiryTimer) return; // already running
+      var count = 5;
+      graceExpiryTimer = setInterval(function() {
+        count--;
+        if (count <= 0) {
+          clearInterval(graceExpiryTimer);
+          graceExpiryTimer = null;
+          gate.style.display = '';
+          gate.style.opacity = '';
+          gate.classList.remove('gate-hidden');
+          unlockedBanner.classList.remove('show');
+          if (autoEnterTimer) { clearInterval(autoEnterTimer); autoEnterTimer = null; }
+          lastTickTime = null;
+          updateGateUI(computeState());
+        }
+      }, 1000);
+    }
+
+    /* ── dismiss gate ── */
+    function dismissGate() {
+      gate.classList.add('gate-hidden');
+      setTimeout(function() { gate.style.display = 'none'; }, 700);
+    }
+
+    /* ── tick: deduct proc time only while a media timer is actively running ── */
+    function tickProcTime() {
+      if (gate.style.display === 'none') {
+        // Only drain budget while user has an active media session timer
+        if (window.__mediaTimerRunning !== true) {
+          lastTickTime = null;  // reset so no burst deduction when timer starts
+          return;
+        }
+        var now = Date.now();
+        if (lastTickTime !== null) {
+          var elapsedMins = (now - lastTickTime) / 60000;
+          var lock = loadLock();
+          var deducted = false;
+          // Try to deduct from an earned study cycle first
+          if (lock.procMinUsed.length > 0) {
+            for (var ci = 0; ci < lock.procMinUsed.length; ci++) {
+              if ((lock.procMinUsed[ci] || 0) < BUDGET_MINS) {
+                lock.procMinUsed[ci] = (lock.procMinUsed[ci] || 0) + elapsedMins;
+                deducted = true;
+                break;
+              }
+            }
+          }
+          if (deducted) saveLock(lock);
+        }
+        lastTickTime = Date.now();
+      } else {
+        lastTickTime = null;
+      }
+    }
+
+    /* ── stop all running timers (called on relock) ── */
+    function stopAllActiveTimers() {
+      window.__mediaTimerRunning = false;
+      // 1. Stop any media/detail view timer (social timer, episode timer)
+      //    __detailCleanup saves elapsed time correctly before stopping
+      if (typeof window.__detailCleanup === 'function') {
+        try { window.__detailCleanup(); } catch(e) {}
+        window.__detailCleanup = null;
+      }
+      // 2. Stop session overlay if visible
+      var overlay = document.getElementById('session-overlay');
+      if (overlay) overlay.classList.remove('active');
+      // 3. Call any extra timers registered by other sections
+      if (Array.isArray(window.__gateStopHooks)) {
+        window.__gateStopHooks.forEach(function(fn) { try { fn(); } catch(e) {} });
+        window.__gateStopHooks = [];
+      }
+    }
+
+    // Expose hook so any section can register a stop callback
+    // Usage: window.__gateStopHooks = window.__gateStopHooks || []; window.__gateStopHooks.push(myStopFn);
+    window.__gateStopHooks = window.__gateStopHooks || [];
+
+    /* ── main sync loop ── */
+    function sync() {
+      tickProcTime();
+      var st = computeState();
+
+      if (st.isUnlocked) {
+        // Gate should be open (or opening)
+        if (!wasUnlocked) {
+          // just became unlocked
+          wasUnlocked = true;
+          showUnlockedBanner(st.activeMinsLeft);
+        } else if (gate.style.display === 'none') {
+          // already inside — do nothing, just keep tracking
+        }
+        // If banner is showing, update budget display
+        if (unlockedBanner.classList.contains('show')) {
+          var pct = Math.min(100, (st.activeMinsLeft / BUDGET_MINS) * 100);
+          sgBudgetFill.style.width = pct + '%';
+          sgBudgetText.textContent = fmtMinsLeft(st.activeMinsLeft) + ' remaining';
+        }
+      } else {
+        // Should be locked
+        wasUnlocked = false;
+        if (gate.style.display === 'none') {
+          // Budget ran out while user was inside — show 5s warning then re-lock
+          stopAllActiveTimers();
+          lastTickTime = null;
+          startGraceExpiryCountdown();
+        } else if (!graceExpiryTimer) {
+          updateGateUI(st);
+        }
+      }
+    }
+
+    /* ── boot ── */
+    function boot() {
+      var st = computeState();
+      if (st.isUnlocked) {
+        wasUnlocked = true;
+        showUnlockedBanner(st.activeMinsLeft);
+      } else {
+        stopAllActiveTimers();
+        updateGateUI(st);
+      }
+      tickInterval = setInterval(sync, SYNC_INTERVAL_MS);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+
+    // Expose for index.html sync reads
+    window.studyGateState = computeState;
+
+  })();
   </script>
   <script src="hub-nav.js"></script>
 </body>

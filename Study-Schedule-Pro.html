@@ -36,7 +36,7 @@
   • Subject stopwatch timers (click tag → starts timer)
   • Pause/Resume/Stop controls
   • commitStats() - tracks studied hours → updates allocation
-  • 9 subjects: MTH166, CSE101, PHY110, INT306, MEC136, PEL125, CSE320, CSE121, REAPPEAR
+  • 9 subjects: MATH101, CS101, PHYS101, ENG201, MECH101, PE101, CS302, CS201, RETAKE
   • Progress bars showing studied vs target
   • Real-time allocation tracking
   • Filter todos by priority/date
@@ -180,15 +180,15 @@ DATA MANAGEMENT:
 🎯 9 SUBJECTS WITH ALLOCATION:
 ═══════════════════════════════
 
-1. MTH166 (21%) - 12.3h/week
-2. CSE101 (19%) - 11.13h/week
-3. PHY110 (14%) - 8.2h/week
-4. INT306 (12%) - 7.03h/week
-5. MEC136 (10%) - 5.86h/week
-6. PEL125 (9%) - 5.27h/week
-7. CSE320 (9%) - 5.27h/week
-8. CSE121 (5%) - 2.93h/week
-9. REAPPEAR (0%) - 14.08h/week (reappear subjects)
+1. MATH101 (21%) - 12.3h/week
+2. CS101 (19%) - 11.13h/week
+3. PHYS101 (14%) - 8.2h/week
+4. ENG201 (12%) - 7.03h/week
+5. MECH101 (10%) - 5.86h/week
+6. PE101 (9%) - 5.27h/week
+7. CS302 (9%) - 5.27h/week
+8. CS201 (5%) - 2.93h/week
+9. RETAKE (0%) - 14.08h/week (reappear subjects)
 
 Total: 100% = 58.6 hours/week
 
@@ -340,7 +340,7 @@ All code is well-commented and organized by feature.
     <meta name="apple-mobile-web-app-title" content="Study Pro">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/knowledge-sharing.png">
 
-    <title>Study Schedule Pro v6.0 - Major Update 🚀</title>
+    <title>Study Schedule Pro v6.0</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -387,14 +387,14 @@ All code is well-commented and organized by feature.
             --buffer-bg: rgba(244, 114, 182, 0.1);
             
             /* Subject colors - distinct & vibrant */
-            --mth166: #5b8def;
-            --cse101: #4ecdc4;
-            --phy110: #f0a05a;
-            --int306: #ef6b6b;
-            --mec136: #ffd166;
-            --pel125: #f472b6;
-            --cse320: #38bdf8;
-            --cse121: #e0915a;
+            --math101: #5b8def;
+            --cs101: #4ecdc4;
+            --phys101: #f0a05a;
+            --eng201: #ef6b6b;
+            --mech101: #ffd166;
+            --pe101: #f472b6;
+            --cs302: #38bdf8;
+            --cs201: #e0915a;
             
             /* Status colors - clear signals */
             --status-success: #34d399;
@@ -1326,7 +1326,7 @@ All code is well-commented and organized by feature.
         }
         
         .focus-timer-display {
-            font-size: 96px;
+            font-size: clamp(48px, 10vw, 84px);
             font-weight: 800;
             font-family: var(--font-mono);
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -2211,9 +2211,11 @@ All code is well-commented and organized by feature.
             backdrop-filter: blur(20px);
             z-index: var(--z-modal);
             display: none;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: var(--space-6);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .focus-overlay.active {
@@ -2221,9 +2223,23 @@ All code is well-commented and organized by feature.
         }
 
         .focus-content {
-            max-width: 600px;
+            max-width: 680px;
             width: 100%;
             text-align: center;
+            margin: auto;
+            padding: 8px 0 32px;
+        }
+        .focus-timer-large {
+            margin: 12px 0 8px;
+        }
+        .focus-current-block {
+            margin-bottom: 8px;
+        }
+        .focus-next-block {
+            margin: 8px 0;
+        }
+        .focus-actions {
+            margin-top: 12px;
         }
 
         .focus-exit {
@@ -2249,7 +2265,7 @@ All code is well-commented and organized by feature.
         }
 
         .focus-current-block {
-            margin-bottom: var(--space-8);
+            margin-bottom: 4px;
         }
 
         .focus-label {
@@ -2261,33 +2277,33 @@ All code is well-commented and organized by feature.
         }
 
         .focus-title {
-            font-size: var(--text-4xl);
+            font-size: clamp(18px, 3vw, 28px);
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: var(--space-3);
+            margin-bottom: 2px;
         }
 
         .focus-time {
-            font-size: var(--text-xl);
+            font-size: var(--text-base);
             color: var(--accent-primary);
             font-weight: 600;
         }
 
         .focus-timer-large {
-            margin: var(--space-10) 0;
-            padding: var(--space-8);
+            margin: 6px 0;
+            padding: 12px 16px;
             background: linear-gradient(135deg, var(--surface-primary), var(--surface-secondary));
             border: 2px solid var(--accent-primary);
             border-radius: var(--radius-xl);
-            box-shadow: 0 0 40px rgba(91, 141, 239, 0.3);
+            box-shadow: 0 0 24px rgba(91, 141, 239, 0.25);
         }
 
         .focus-timer-display {
-            font-size: 72px;
+            font-size: clamp(36px, 8vw, 64px);
             font-weight: 700;
             color: var(--accent-primary);
             font-family: 'Courier New', monospace;
-            margin-bottom: var(--space-3);
+            margin-bottom: 2px;
         }
 
         .focus-timer-label {
@@ -2298,8 +2314,8 @@ All code is well-commented and organized by feature.
         }
 
         .focus-next-block {
-            margin-bottom: var(--space-8);
-            padding: var(--space-4);
+            margin: 4px 0;
+            padding: 8px 12px;
             background: var(--surface-secondary);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-subtle);
@@ -2314,10 +2330,10 @@ All code is well-commented and organized by feature.
         }
 
         .focus-next-title {
-            font-size: var(--text-xl);
+            font-size: var(--text-base);
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: var(--space-2);
+            margin-bottom: 2px;
         }
 
         .focus-next-time {
@@ -2329,7 +2345,7 @@ All code is well-commented and organized by feature.
             display: flex;
             gap: var(--space-4);
             justify-content: center;
-            margin-bottom: var(--space-6);
+            margin: 6px 0;
         }
 
         .focus-btn {
@@ -3644,15 +3660,15 @@ All code is well-commented and organized by feature.
         }
 
         /* Subject tag colors */
-        .subject-tag.tag-MTH166 { background: rgba(91, 141, 239, 0.2); color: var(--mth166); }
-        .subject-tag.tag-CSE101 { background: rgba(107, 184, 168, 0.2); color: var(--cse101); }
-        .subject-tag.tag-PHY110 { background: rgba(216, 155, 107, 0.2); color: var(--phy110); }
-        .subject-tag.tag-INT306 { background: rgba(216, 123, 123, 0.2); color: var(--int306); }
-        .subject-tag.tag-MEC136 { background: rgba(212, 184, 107, 0.2); color: var(--mec136); }
-        .subject-tag.tag-PEL125 { background: rgba(216, 139, 168, 0.2); color: var(--pel125); }
-        .subject-tag.tag-CSE320 { background: rgba(107, 184, 209, 0.2); color: var(--cse320); }
-        .subject-tag.tag-CSE121 { background: rgba(196, 155, 107, 0.2); color: var(--cse121); }
-        .subject-tag.tag-REAPPEAR { background: rgba(168, 155, 219, 0.2); color: var(--reappear); }
+        .subject-tag.tag-MATH101 { background: rgba(91, 141, 239, 0.2); color: var(--math101); }
+        .subject-tag.tag-CS101 { background: rgba(107, 184, 168, 0.2); color: var(--cs101); }
+        .subject-tag.tag-PHYS101 { background: rgba(216, 155, 107, 0.2); color: var(--phys101); }
+        .subject-tag.tag-ENG201 { background: rgba(216, 123, 123, 0.2); color: var(--eng201); }
+        .subject-tag.tag-MECH101 { background: rgba(212, 184, 107, 0.2); color: var(--mech101); }
+        .subject-tag.tag-PE101 { background: rgba(216, 139, 168, 0.2); color: var(--pe101); }
+        .subject-tag.tag-CS302 { background: rgba(107, 184, 209, 0.2); color: var(--cs302); }
+        .subject-tag.tag-CS201 { background: rgba(196, 155, 107, 0.2); color: var(--cs201); }
+        .subject-tag.tag-RETAKE { background: rgba(168, 155, 219, 0.2); color: var(--reappear); }
         .subject-tag.tag-Other { background: rgba(138, 148, 166, 0.2); color: var(--text-secondary); }
 
         .todo-time-info {
@@ -6052,20 +6068,38 @@ All code is well-commented and organized by feature.
         }
         
         .subject-switch-btn {
-            padding: 4px 10px;
+            padding: 5px 12px;
             background: transparent;
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-subtle);
+            border-radius: var(--radius-full);
             font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             cursor: pointer;
             transition: all var(--duration-fast);
+            color: var(--text-secondary);
         }
-        
-        .subject-switch-btn:hover,
-        .subject-switch-btn.active {
-            background: var(--accent-primary);
-            color: white;
-            border-color: var(--accent-primary);
+        .subject-switch-btn[data-subj="MATH101"] { color: var(--math101); border-color: rgba(91,141,239,0.35); background: rgba(91,141,239,0.07); }
+        .subject-switch-btn[data-subj="CS101"] { color: var(--cs101); border-color: rgba(78,205,196,0.35); background: rgba(78,205,196,0.07); }
+        .subject-switch-btn[data-subj="PHYS101"] { color: var(--phys101); border-color: rgba(240,160,90,0.35);  background: rgba(240,160,90,0.07); }
+        .subject-switch-btn[data-subj="ENG201"] { color: var(--eng201); border-color: rgba(239,107,107,0.35); background: rgba(239,107,107,0.07); }
+        .subject-switch-btn[data-subj="MECH101"] { color: var(--mech101); border-color: rgba(255,209,102,0.35); background: rgba(255,209,102,0.07); }
+        .subject-switch-btn[data-subj="PE101"] { color: var(--pe101); border-color: rgba(244,114,182,0.35); background: rgba(244,114,182,0.07); }
+        .subject-switch-btn[data-subj="CS302"] { color: var(--cs302); border-color: rgba(56,189,248,0.35);  background: rgba(56,189,248,0.07); }
+        .subject-switch-btn[data-subj="CS201"] { color: var(--cs201); border-color: rgba(224,145,90,0.35);  background: rgba(224,145,90,0.07); }
+        .subject-switch-btn:hover { filter: brightness(1.15); border-color: currentColor; }
+        .subject-switch-btn.active { color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .subject-switch-btn.active[data-subj="MATH101"] { background: var(--math101); }
+        .subject-switch-btn.active[data-subj="CS101"] { background: var(--cs101); }
+        .subject-switch-btn.active[data-subj="PHYS101"] { background: var(--phys101); }
+        .subject-switch-btn.active[data-subj="ENG201"] { background: var(--eng201); }
+        .subject-switch-btn.active[data-subj="MECH101"] { background: var(--mech101); color: #111; }
+        .subject-switch-btn.active[data-subj="PE101"] { background: var(--pe101); }
+        .subject-switch-btn.active[data-subj="CS302"] { background: var(--cs302); }
+        .subject-switch-btn.active[data-subj="CS201"] { background: var(--cs201); }
+        .subject-switch-btn:not([data-subj]):hover,
+        .subject-switch-btn:not([data-subj]).active {
+            background: var(--accent-primary); color: white; border-color: var(--accent-primary);
         }
         
         /* Todo Bulk Actions */
@@ -7636,6 +7670,238 @@ All code is well-commented and organized by feature.
             background: linear-gradient(145deg, rgba(11, 14, 19, 0.99), rgba(15, 20, 30, 0.99));
         }
 
+        /* ==================== MINIMAL FOCUS MODE ==================== */
+        .focus-content-minimal {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0 32px;
+            gap: 0;
+        }
+
+        /* BLOCK NAME — top anchor */
+        .fm-now {
+            text-align: center;
+            margin-bottom: 0;
+        }
+        .fm-now-label {
+            font-size: clamp(22px, 3.5vw, 36px);
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+        .fm-block-time {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            margin-top: 6px;
+            letter-spacing: 0.04em;
+        }
+
+        /* BIG COUNTDOWN — the centrepiece */
+        .fm-block-countdown {
+            font-size: clamp(96px, 22vw, 180px);
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            line-height: 0.9;
+            letter-spacing: -4px;
+            text-shadow: 0 0 80px rgba(91,141,239,0.35), 0 0 160px rgba(91,141,239,0.12);
+            margin: 20px 0 8px;
+        }
+        .fm-block-countdown-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            margin-bottom: 40px;
+        }
+
+        /* TASK STRIP — thin, inline, unobtrusive */
+        .fm-task {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 40px;
+            padding: 10px 20px 10px 16px;
+            margin-bottom: 32px;
+            max-width: 460px;
+            width: 100%;
+        }
+        .fm-task-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-glow);
+            flex-shrink: 0;
+            animation: fm-pulse 2s ease-in-out infinite;
+        }
+        .fm-task-dot.idle {
+            background: var(--text-tertiary);
+            box-shadow: none;
+            animation: none;
+        }
+        @keyframes fm-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .fm-task-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .fm-task-subject {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .fm-task-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+        .fm-task-elapsed {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .fm-task-controls {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .fm-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .fm-btn-start { background: rgba(91,141,239,0.15); border-color: rgba(91,141,239,0.35); color: var(--accent-primary); }
+        .fm-btn-pause { background: rgba(251,191,36,0.12);  border-color: rgba(251,191,36,0.35);  color: #fbbf24; }
+        .fm-btn-stop  { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.35); color: #f87171; }
+        .fm-btn:hover { filter: brightness(1.25); transform: scale(1.1); }
+
+        /* NEXT — slim footer line */
+        .fm-next {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .fm-next-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            opacity: 0.5;
+        }
+        .fm-next-sep { color: var(--text-tertiary); opacity: 0.25; }
+        .fm-next-title { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+        .fm-next-time  { font-size: 12px; font-family: var(--font-mono); color: var(--text-tertiary); }
+
+        /* EXIT button — subtle top-right */
+        #focusOverlay .focus-exit {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-tertiary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+        #focusOverlay .focus-exit:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        /* HINT */
+        .fm-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-tertiary);
+            opacity: 0.3;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+
+        /* ==================== LAYOUT MANAGER ==================== */
+        .section-layout-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: grab;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .section-layout-item:active { cursor: grabbing; }
+        .section-layout-item.dragging { opacity: 0.5; border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .section-layout-item.drag-over { border-color: var(--accent-primary); transform: translateY(-2px); background: var(--surface-hover); }
+        .section-layout-drag-handle { color: var(--text-tertiary); font-size: 18px; cursor: grab; flex-shrink: 0; }
+        .section-layout-icon { font-size: 18px; flex-shrink: 0; }
+        .section-layout-name { flex: 1; font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+        .section-layout-toggle {
+            width: 38px; height: 22px;
+            background: var(--surface-hover);
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid var(--border-primary);
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .section-layout-toggle.on { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .section-layout-toggle::after {
+            content: '';
+            position: absolute;
+            width: 16px; height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .section-layout-toggle.on::after { transform: translateX(16px); }
+
     </style>
 </head>
 <body>
@@ -7780,7 +8046,7 @@ All code is well-commented and organized by feature.
             <div class="current-block-content">
                 <div class="current-block-info">
                     <div class="current-block-label" id="currentBlockLabel">Current Activity</div>
-                    <div class="current-block-title" id="currentBlockTitle" aria-live="polite">MTH166 Study</div>
+                    <div class="current-block-title" id="currentBlockTitle" aria-live="polite">MATH101 Study</div>
                     <div class="current-task-status" id="currentTaskStatus" style="font-size: 13px; color: #64b5f6; margin-top: 2px; font-weight: 500;">NOT WORKING</div>
                     <div class="current-block-time" id="currentBlockTime">7:00 - 8:30</div>
                 </div>
@@ -7880,7 +8146,7 @@ All code is well-commented and organized by feature.
                 </div>
                 <div class="focus-todo-task" id="focusTodoTask">No focus task set</div>
                 <div class="focus-todo-meta">
-                    <span class="subject-tag" id="focusTodoSubject" style="background: var(--mth166); color: white;">MTH166</span>
+                    <span class="subject-tag" id="focusTodoSubject" style="background: var(--math101); color: white;">MATH101</span>
                     <button class="btn btn-primary btn-sm" onclick="startFocusTodoTimer()">▶️ Start Timer</button>
                     <button class="btn btn-secondary btn-sm" onclick="clearFocusTodo()">✕ Clear</button>
                 </div>
@@ -8084,7 +8350,7 @@ All code is well-commented and organized by feature.
                     <span class="collapse-icon" id="todosIcon">▼</span>
                     <div>
                         <h2 class="section-title">✅ Tasks & Timers</h2>
-                        <p class="section-subtitle">Track time per subject with stopwatch</p>
+                        <p class="section-subtitle">Track tasks · run timers · launch focus timer ↓</p>
                     </div>
                 </div>
                 <div class="section-header-actions">
@@ -8102,15 +8368,15 @@ All code is well-commented and organized by feature.
                            onkeypress="if(event.key === 'Enter') addTodo()">
                     <div class="todo-form-row">
                         <select id="todoSubject" class="todo-select">
-                            <option value="MTH166">MTH166</option>
-                            <option value="CSE101">CSE101</option>
-                            <option value="PHY110">PHY110</option>
-                            <option value="INT306">INT306</option>
-                            <option value="MEC136">MEC136</option>
-                            <option value="PEL125">PEL125</option>
-                            <option value="CSE320">CSE320</option>
-                            <option value="CSE121">CSE121</option>
-                            <option value="REAPPEAR">REAPPEAR</option>
+                            <option value="MATH101">MATH101</option>
+                            <option value="CS101">CS101</option>
+                            <option value="PHYS101">PHYS101</option>
+                            <option value="ENG201">ENG201</option>
+                            <option value="MECH101">MECH101</option>
+                            <option value="PE101">PE101</option>
+                            <option value="CS302">CS302</option>
+                            <option value="CS201">CS201</option>
+                            <option value="RETAKE">RETAKE</option>
                             <option value="Other">Other</option>
                         </select>
                         <select id="todoPriority" class="todo-select">
@@ -8172,12 +8438,15 @@ All code is well-commented and organized by feature.
                 </div>
                 <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); margin: var(--space-3) 0 var(--space-2);">📚 Quick Subject Switch</div>
                 <div class="subject-quick-switch" id="subjectQuickSwitch">
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('all')">All</button>
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('MTH166')">MTH166</button>
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('CSE101')">CSE101</button>
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('PHY110')">PHY110</button>
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('INT306')">INT306</button>
-                    <button class="subject-switch-btn" onclick="switchSubjectFilter('MEC136')">MEC136</button>
+                    <button class="subject-switch-btn active" onclick="switchSubjectFilter('all')">All</button>
+                    <button class="subject-switch-btn" data-subj="MATH101" onclick="switchSubjectFilter('MATH101')">MATH101</button>
+                    <button class="subject-switch-btn" data-subj="CS101" onclick="switchSubjectFilter('CS101')">CS101</button>
+                    <button class="subject-switch-btn" data-subj="PHYS101" onclick="switchSubjectFilter('PHYS101')">PHYS101</button>
+                    <button class="subject-switch-btn" data-subj="ENG201" onclick="switchSubjectFilter('ENG201')">ENG201</button>
+                    <button class="subject-switch-btn" data-subj="MECH101" onclick="switchSubjectFilter('MECH101')">MECH101</button>
+                    <button class="subject-switch-btn" data-subj="PE101" onclick="switchSubjectFilter('PE101')">PE101</button>
+                    <button class="subject-switch-btn" data-subj="CS302" onclick="switchSubjectFilter('CS302')">CS302</button>
+                    <button class="subject-switch-btn" data-subj="CS201" onclick="switchSubjectFilter('CS201')">CS201</button>
                 </div>
             </div>
 
@@ -8186,7 +8455,7 @@ All code is well-commented and organized by feature.
                 <div class="active-timer-display">
                     <div class="active-timer-info">
                         <div class="active-timer-label">⏱️ Running Timer</div>
-                        <div class="active-timer-subject" id="activeTimerSubject">MTH166</div>
+                        <div class="active-timer-subject" id="activeTimerSubject">MATH101</div>
                         <div class="active-timer-task" id="activeTimerTask">Complete Assignment 1</div>
                     </div>
                     <div class="active-timer-controls">
@@ -8195,6 +8464,7 @@ All code is well-commented and organized by feature.
                             <button class="btn btn-secondary btn-icon" onclick="pauseTimer()" id="pauseBtn" title="Pause">⏸</button>
                             <button class="btn btn-secondary btn-icon" onclick="resumeTimer()" id="resumeBtn" style="display: none;" title="Resume">▶</button>
                             <button class="btn btn-secondary btn-icon" onclick="stopTimer()" title="Stop">⏹</button>
+                            <button class="btn btn-secondary btn-icon" onclick="scrollToSection('lobdellSection')" title="Open Focus Timer">⏲️</button>
                         </div>
                     </div>
                 </div>
@@ -8686,15 +8956,15 @@ All code is well-commented and organized by feature.
                     <h3 class="quick-notes-title">📝 Quick Notes</h3>
                     <select id="notesSubjectFilter" class="notes-subject-select" onchange="filterNotesBySubject(this.value)">
                         <option value="all">All Subjects</option>
-                        <option value="MTH166">MTH166</option>
-                        <option value="CSE101">CSE101</option>
-                        <option value="PHY110">PHY110</option>
-                        <option value="INT306">INT306</option>
-                        <option value="MEC136">MEC136</option>
-                        <option value="PEL125">PEL125</option>
-                        <option value="CSE320">CSE320</option>
-                        <option value="CSE121">CSE121</option>
-                        <option value="REAPPEAR">REAPPEAR</option>
+                        <option value="MATH101">MATH101</option>
+                        <option value="CS101">CS101</option>
+                        <option value="PHYS101">PHYS101</option>
+                        <option value="ENG201">ENG201</option>
+                        <option value="MECH101">MECH101</option>
+                        <option value="PE101">PE101</option>
+                        <option value="CS302">CS302</option>
+                        <option value="CS201">CS201</option>
+                        <option value="RETAKE">RETAKE</option>
                         <option value="General">General</option>
                     </select>
                 </div>
@@ -8708,15 +8978,15 @@ All code is well-commented and organized by feature.
                     <div style="display: flex; gap: var(--space-2);">
                         <select id="quickNoteSubject" class="notes-subject-select">
                             <option value="General">General</option>
-                            <option value="MTH166">MTH166</option>
-                            <option value="CSE101">CSE101</option>
-                            <option value="PHY110">PHY110</option>
-                            <option value="INT306">INT306</option>
-                            <option value="MEC136">MEC136</option>
-                            <option value="PEL125">PEL125</option>
-                            <option value="CSE320">CSE320</option>
-                            <option value="CSE121">CSE121</option>
-                            <option value="REAPPEAR">REAPPEAR</option>
+                            <option value="MATH101">MATH101</option>
+                            <option value="CS101">CS101</option>
+                            <option value="PHYS101">PHYS101</option>
+                            <option value="ENG201">ENG201</option>
+                            <option value="MECH101">MECH101</option>
+                            <option value="PE101">PE101</option>
+                            <option value="CS302">CS302</option>
+                            <option value="CS201">CS201</option>
+                            <option value="RETAKE">RETAKE</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="saveQuickNote()">💾 Save Note</button>
                     </div>
@@ -8787,17 +9057,41 @@ All code is well-commented and organized by feature.
                     🎯 Study Targets
                 </h3>
                 <div class="settings-grid">
-                    <div class="setting-item">
-                        <label class="setting-label">Daily Study Goal (hours)</label>
-                        <input type="number" 
-                               id="dailyGoal" 
-                               class="setting-input" 
-                               min="1" 
-                               max="16" 
-                               step="0.5"
-                               value="8"
-                               onchange="saveSettings()">
-                        <small class="setting-hint">Recommended: 6-10 hours per day</small>
+                    <div class="setting-item" style="grid-column: 1 / -1;">
+                        <label class="setting-label">Daily Study Goal (hours per day)</label>
+                        <small class="setting-hint" style="display:block;margin-bottom:10px;">Set a different goal for each day — e.g. more on heavy class days</small>
+                        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">MON</span>
+                                <input type="number" id="dailyGoal_1" class="setting-input" min="0" max="16" step="0.5" value="8" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">TUE</span>
+                                <input type="number" id="dailyGoal_2" class="setting-input" min="0" max="16" step="0.5" value="8" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">WED</span>
+                                <input type="number" id="dailyGoal_3" class="setting-input" min="0" max="16" step="0.5" value="8" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">THU</span>
+                                <input type="number" id="dailyGoal_4" class="setting-input" min="0" max="16" step="0.5" value="8" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">FRI</span>
+                                <input type="number" id="dailyGoal_5" class="setting-input" min="0" max="16" step="0.5" value="8" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">SAT</span>
+                                <input type="number" id="dailyGoal_6" class="setting-input" min="0" max="16" step="0.5" value="6" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">SUN</span>
+                                <input type="number" id="dailyGoal_0" class="setting-input" min="0" max="16" step="0.5" value="4" onchange="saveSettings()" style="text-align:center;padding:6px 4px;">
+                            </div>
+                        </div>
+                        <!-- hidden fallback for any old code still reading #dailyGoal -->
+                        <input type="hidden" id="dailyGoal" value="8">
                     </div>
                     <div class="setting-item">
                         <label class="setting-label">Weekly Study Goal (hours)</label>
@@ -9165,6 +9459,21 @@ All code is well-commented and organized by feature.
                 </div>
             </div>
 
+            <!-- Layout & Sections -->
+            <div class="card" style="margin-bottom: var(--space-4);" id="layoutSettingsCard">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4); color: var(--text-primary);">
+                    🧩 Layout & Sections
+                </h3>
+                <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4);">
+                    Show or hide any section, and drag rows to reorder them on the page.
+                </p>
+                <div id="sectionLayoutList" style="display:flex;flex-direction:column;gap:10px;">
+                    <!-- populated by renderSectionLayoutManager() -->
+                </div>
+                <button class="btn btn-secondary" onclick="renderSectionLayoutManager()" style="margin-top:12px;font-size:13px;">🔄 Refresh List</button>
+                <small class="setting-hint" style="display:block;margin-top:8px;">Toggle to show/hide. Drag ⠿ handle to reorder. Saved automatically.</small>
+            </div>
+
             <!-- Data Management -->
             <div class="card">
                 <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4); color: var(--text-primary);">
@@ -9225,103 +9534,57 @@ All code is well-commented and organized by feature.
 
     <!-- Focus Mode Overlay -->
     <div class="focus-overlay" id="focusOverlay">
-        <button class="focus-exit" onclick="toggleFocusMode()" title="Exit Focus Mode (F)">×</button>
-        <div class="focus-content">
-            <!-- Current Schedule Block -->
-            <div class="focus-current-block" id="focusScheduleBlock">
-                <div class="focus-label">CURRENT SCHEDULE BLOCK</div>
-                <div class="focus-title" id="focusBlockTitle">No Current Activity</div>
-                <div class="focus-time" id="focusBlockTime">--:-- - --:--</div>
+        <button class="focus-exit" onclick="toggleFocusMode()" title="Exit (F)">×</button>
+        <div class="focus-content focus-content-minimal">
+
+            <!-- BLOCK NAME + TIME -->
+            <div class="fm-now">
+                <div class="fm-now-label" id="focusBlockTitle">No Current Block</div>
+                <div class="fm-block-time" id="focusBlockTime"></div>
             </div>
-            
-            <!-- Main Timer Display (Schedule Countdown) -->
-            <div class="focus-timer-large">
-                <div class="focus-timer-display" id="focusTimerDisplay">00:00:00</div>
-                <div class="focus-timer-label">Time Remaining</div>
-            </div>
-            
-            <!-- Active Timers Row (Compact) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 32px 0 24px 0; max-width: 800px; margin-left: auto; margin-right: auto;">
-                <!-- Todo Timer Card -->
-                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(147, 197, 253, 0.2); border-radius: 12px; padding: 16px;">
-                    <div style="font-size: 11px; color: rgba(147, 197, 253, 0.6); margin-bottom: 8px; text-align: center; letter-spacing: 1px;">⏱️ TODO TIMER</div>
-                    <div style="font-size: 28px; font-weight: 700; text-align: center; color: var(--accent-primary); font-family: 'SF Mono', 'Monaco', monospace; letter-spacing: 1px; margin-bottom: 6px;" id="focusTodoTimerDisplay">00:00:00</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); text-align: center; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="focusTimerTask">No active task</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; color: rgba(147, 197, 253, 0.7); margin-bottom: 10px;">
-                        <span id="focusTimerStatusIcon">⏹</span>
-                        <span style="font-size: 11px; font-weight: 600;" id="focusTimerSubject">-</span>
-                        <span>•</span>
-                        <span id="focusTimerStatusText">Stopped</span>
-                    </div>
-                    <!-- Todo Timer Controls -->
-                    <div id="focusTodoControls" style="display: flex; gap: 6px; justify-content: center;">
-                        <button onclick="focusStartTodoTimer()" id="focusTodoStartBtn" class="focus-timer-control-btn" style="flex: 1; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: var(--accent-primary); font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ▶ Start
-                        </button>
-                        <button onclick="pauseTimer()" id="focusTodoPauseBtn" class="focus-timer-control-btn" style="display: none; flex: 1; padding: 6px 12px; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; color: #fbbf24; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ⏸ Pause
-                        </button>
-                        <button onclick="resumeTimer()" id="focusTodoResumeBtn" class="focus-timer-control-btn" style="display: none; flex: 1; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: var(--accent-primary); font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ▶ Resume
-                        </button>
-                        <button onclick="stopTimer()" id="focusTodoStopBtn" class="focus-timer-control-btn" style="display: none; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; color: #ef4444; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ⏹ Stop
-                        </button>
-                    </div>
+
+            <!-- BIG COUNTDOWN -->
+            <div class="fm-block-countdown" id="focusTimerDisplay">--:--</div>
+            <div class="fm-block-countdown-label">left in block</div>
+
+            <!-- TASK STRIP -->
+            <div class="fm-task" id="fmTaskRow">
+                <div class="fm-task-dot idle" id="fmTaskDot"></div>
+                <div class="fm-task-info">
+                    <div class="fm-task-subject" id="focusTimerSubject">NO TASK</div>
+                    <div class="fm-task-name" id="focusTimerTask">Start a task timer to track time</div>
                 </div>
-                
-                <!-- Lobdell Timer Card -->
-                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(147, 197, 253, 0.2); border-radius: 12px; padding: 16px;">
-                    <div style="font-size: 11px; color: rgba(147, 197, 253, 0.6); margin-bottom: 8px; text-align: center; letter-spacing: 1px;">📖 LOBDELL SESSION</div>
-                    <div style="font-size: 28px; font-weight: 700; text-align: center; color: var(--accent-primary); font-family: 'SF Mono', 'Monaco', monospace; letter-spacing: 1px; margin-bottom: 6px;" id="focusLobdellTimerDisplay">00:00</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); text-align: center; margin-bottom: 4px;" id="focusLobdellPhase">Not started</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; color: rgba(147, 197, 253, 0.7); margin-bottom: 10px;">
-                        <span id="focusLobdellStatusIcon">⏹</span>
-                        <span>Session</span>
-                        <span>•</span>
-                        <span id="focusLobdellSessionCount">0</span>
-                    </div>
-                    <!-- Lobdell Timer Controls -->
-                    <div id="focusLobdellControls" style="display: flex; gap: 6px; justify-content: center;">
-                        <button onclick="lobdellStart()" id="focusLobdellStartBtn" class="focus-timer-control-btn" style="flex: 1; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: var(--accent-primary); font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ▶ Start
-                        </button>
-                        <button onclick="lobdellPause()" id="focusLobdellPauseBtn" class="focus-timer-control-btn" style="display: none; flex: 1; padding: 6px 12px; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; color: #fbbf24; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ⏸ Pause
-                        </button>
-                        <button onclick="lobdellResume()" id="focusLobdellResumeBtn" class="focus-timer-control-btn" style="display: none; flex: 1; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: var(--accent-primary); font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ▶ Resume
-                        </button>
-                        <button onclick="lobdellStop()" id="focusLobdellStopBtn" class="focus-timer-control-btn" style="display: none; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; color: #ef4444; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ⏹ Stop
-                        </button>
-                    </div>
+                <div class="fm-task-elapsed" id="focusTodoTimerDisplay">00:00:00</div>
+                <div class="fm-task-controls">
+                    <button onclick="focusStartTodoTimer()" id="focusTodoStartBtn" class="fm-btn fm-btn-start" title="Start">▶</button>
+                    <button onclick="pauseTimer()"   id="focusTodoPauseBtn"  class="fm-btn fm-btn-pause" title="Pause"  style="display:none">⏸</button>
+                    <button onclick="resumeTimer()"  id="focusTodoResumeBtn" class="fm-btn fm-btn-start" title="Resume" style="display:none">▶</button>
+                    <button onclick="stopTimer()"    id="focusTodoStopBtn"   class="fm-btn fm-btn-stop"  title="Stop"   style="display:none">⏹</button>
                 </div>
             </div>
-            
-            <div class="focus-next-block">
-                <div class="focus-next-label">UP NEXT</div>
-                <div class="focus-next-title" id="focusNextTitle">Snack Break</div>
-                <div class="focus-next-time" id="focusNextTime">17:50 - 18:05</div>
+
+            <!-- NEXT BLOCK -->
+            <div class="fm-next">
+                <span class="fm-next-label">UP NEXT</span>
+                <span class="fm-next-sep">·</span>
+                <span class="fm-next-title" id="focusNextTitle">—</span>
+                <span class="fm-next-time" id="focusNextTime"></span>
             </div>
-            
-            <div class="focus-actions">
-                <button class="focus-btn" onclick="toggleFocusMode()" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3);">
-                    ↩️ Back to App
-                </button>
-            </div>
-            
-            <!-- PART 7: Focus Mode Mini Todos -->
-            <div class="focus-mini-todos" id="focusMiniTodos">
-                <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.8;">📝 Today's Tasks</div>
-                <div id="focusMiniTodoList">
-                    <!-- Will be populated by JS -->
-                </div>
-            </div>
-            
-            <div class="focus-hint">
-                Press <kbd>F</kbd> to toggle Focus Mode • <kbd>?</kbd> for keyboard shortcuts
-            </div>
+
+            <!-- hidden IDs kept so existing JS doesn't break -->
+            <span id="focusTimerStatusIcon" style="display:none"></span>
+            <span id="focusTimerStatusText" style="display:none"></span>
+            <span id="focusLobdellTimerDisplay" style="display:none"></span>
+            <span id="focusLobdellPhase" style="display:none"></span>
+            <span id="focusLobdellStatusIcon" style="display:none"></span>
+            <span id="focusLobdellSessionCount" style="display:none"></span>
+            <span id="focusLobdellStartBtn" style="display:none"></span>
+            <span id="focusLobdellPauseBtn" style="display:none"></span>
+            <span id="focusLobdellResumeBtn" style="display:none"></span>
+            <span id="focusLobdellStopBtn" style="display:none"></span>
+            <div id="focusMiniTodos" style="display:none"><div id="focusMiniTodoList"></div></div>
+
+            <div class="fm-hint">F · exit focus</div>
         </div>
     </div>
 
@@ -9492,15 +9755,15 @@ All code is well-commented and organized by feature.
         // ==================== ALLOCATION DATA (From Original) ====================
         
         const allocation = {
-            'MTH166': { percent: 21, weeklyHours: 12.3, studied: 0 },
-            'CSE101': { percent: 19, weeklyHours: 11.13, studied: 0 },
-            'PHY110': { percent: 14, weeklyHours: 8.2, studied: 0 },
-            'INT306': { percent: 12, weeklyHours: 7.03, studied: 0 },
-            'MEC136': { percent: 10, weeklyHours: 5.86, studied: 0 },
-            'PEL125': { percent: 9, weeklyHours: 5.27, studied: 0 },
-            'CSE320': { percent: 9, weeklyHours: 5.27, studied: 0 },
-            'CSE121': { percent: 5, weeklyHours: 2.93, studied: 0 },
-            'REAPPEAR': { percent: 0, weeklyHours: 14.08, studied: 0, isReappear: true },
+            'MATH101': { percent: 21, weeklyHours: 12.3, studied: 0 },
+            'CS101': { percent: 19, weeklyHours: 11.13, studied: 0 },
+            'PHYS101': { percent: 14, weeklyHours: 8.2, studied: 0 },
+            'ENG201': { percent: 12, weeklyHours: 7.03, studied: 0 },
+            'MECH101': { percent: 10, weeklyHours: 5.86, studied: 0 },
+            'PE101': { percent: 9, weeklyHours: 5.27, studied: 0 },
+            'CS302': { percent: 9, weeklyHours: 5.27, studied: 0 },
+            'CS201': { percent: 5, weeklyHours: 2.93, studied: 0 },
+            'RETAKE': { percent: 0, weeklyHours: 14.08, studied: 0, isReappear: true },
             'Other': { percent: 0, weeklyHours: 0, studied: 0 }
         };
 
@@ -9736,45 +9999,45 @@ All code is well-commented and organized by feature.
                     { time: "7:00-8:34", activity: "Study", type: "study", adjustable: true, sessions: 2 },
                     { time: "8:34-8:45", activity: "Breakfast", type: "break", adjustable: true },
                     { time: "8:45-9:00", activity: "Travel", type: "routine" },
-                    { time: "9:00-10:00", activity: "PHY110", type: "class", skippable: true },
-                    { time: "10:00-11:00", activity: "MEC136", type: "class", skippable: true },
-                    { time: "11:00-12:00", activity: "INT306", type: "class", skippable: true },
-                    { time: "12:00-13:00", activity: "INT306", type: "class", skippable: true },
+                    { time: "9:00-10:00", activity: "PHYS101", type: "class", skippable: true },
+                    { time: "10:00-11:00", activity: "MECH101", type: "class", skippable: true },
+                    { time: "11:00-12:00", activity: "ENG201", type: "class", skippable: true },
+                    { time: "12:00-13:00", activity: "ENG201", type: "class", skippable: true },
                     { time: "13:00-13:20", activity: "Lunch", type: "break", adjustable: true },
                     { time: "13:20-14:07", activity: "Study", type: "study", adjustable: true, sessions: 1 },
-                    { time: "14:07-15:00", activity: "CSE101", type: "class", skippable: true },
-                    { time: "15:00-16:00", activity: "CSE101", type: "class", skippable: true },
-                    { time: "16:00-17:00", activity: "MTH166 Tutorial", type: "class", skippable: true },
+                    { time: "14:07-15:00", activity: "CS101", type: "class", skippable: true },
+                    { time: "15:00-16:00", activity: "CS101", type: "class", skippable: true },
+                    { time: "16:00-17:00", activity: "MATH101 Tutorial", type: "class", skippable: true },
                     { time: "17:00-17:15", activity: "Travel back", type: "routine" },
                     { time: "17:15-17:30", activity: "Snack", type: "break", adjustable: true },
                     { time: "17:30-19:51", activity: "Study", type: "study", adjustable: true, sessions: 3 },
                     { time: "19:51-20:00", activity: "Dinner", type: "break", adjustable: true },
-                    { time: "20:00-22:21", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 3 },
+                    { time: "20:00-22:21", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 3 },
                     { time: "22:21-23:08", activity: "Study", type: "study", adjustable: true, sessions: 1 },
                     { time: "23:08-23:35", activity: "Hygiene + Todo", type: "routine" },
                     { time: "23:35", activity: "Sleep", type: "routine" }
                 ]
             },
             tuesday: {
-                title: "Tuesday", subtitle: "7 classes - Reappear Earlier",
+                title: "Tuesday", subtitle: "7 classes - Heavy Day",
                 stats: { study: 5.17, reappear: 2.33, classes: 7, breaks: 1.25 },
                 slots: [
                     { time: "6:30-7:00", activity: "Wake + Hygiene", type: "routine" },
                     { time: "7:00-8:34", activity: "Study", type: "study", adjustable: true, sessions: 2 },
                     { time: "8:34-8:45", activity: "Breakfast", type: "break", adjustable: true },
                     { time: "8:45-9:00", activity: "Travel", type: "routine" },
-                    { time: "9:00-10:00", activity: "INT306", type: "class", skippable: true },
-                    { time: "10:00-11:00", activity: "MTH166", type: "class", skippable: true },
-                    { time: "11:00-12:00", activity: "CSE320", type: "class", skippable: true },
-                    { time: "12:00-13:00", activity: "CSE121", type: "class", skippable: true },
+                    { time: "9:00-10:00", activity: "ENG201", type: "class", skippable: true },
+                    { time: "10:00-11:00", activity: "MATH101", type: "class", skippable: true },
+                    { time: "11:00-12:00", activity: "CS302", type: "class", skippable: true },
+                    { time: "12:00-13:00", activity: "CS201", type: "class", skippable: true },
                     { time: "13:00-13:20", activity: "Lunch", type: "break", adjustable: true },
                     { time: "13:20-14:07", activity: "Study", type: "study", adjustable: true, sessions: 1 },
-                    { time: "14:07-15:00", activity: "CSE101", type: "class", skippable: true },
-                    { time: "15:00-16:00", activity: "MEC136 Tutorial", type: "class", skippable: true },
-                    { time: "16:00-17:00", activity: "MEC136 Tutorial", type: "class", skippable: true },
+                    { time: "14:07-15:00", activity: "CS101", type: "class", skippable: true },
+                    { time: "15:00-16:00", activity: "MECH101 Tutorial", type: "class", skippable: true },
+                    { time: "16:00-17:00", activity: "MECH101 Tutorial", type: "class", skippable: true },
                     { time: "17:00-17:15", activity: "Travel back", type: "routine" },
                     { time: "17:15-17:30", activity: "Snack", type: "break", adjustable: true },
-                    { time: "17:30-19:51", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 3 },
+                    { time: "17:30-19:51", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 3 },
                     { time: "19:51-20:05", activity: "Dinner", type: "break", adjustable: true },
                     { time: "20:05-22:26", activity: "Study", type: "study", adjustable: true, sessions: 3 },
                     { time: "22:26-22:35", activity: "🎁 Buffer", type: "buffer" },
@@ -9784,21 +10047,21 @@ All code is well-commented and organized by feature.
                 ]
             },
             wednesday: {
-                title: "Wednesday", subtitle: "4 classes - Morning Reappear",
+                title: "Wednesday", subtitle: "4 classes - Lighter Day",
                 stats: { study: 8.83, reappear: 1.58, classes: 4, breaks: 0.75 },
                 slots: [
                     { time: "6:30-7:00", activity: "Wake + Hygiene", type: "routine" },
-                    { time: "7:00-8:34", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 2 },
+                    { time: "7:00-8:34", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 2 },
                     { time: "8:34-8:50", activity: "Breakfast", type: "break", adjustable: true },
                     { time: "8:50-11:11", activity: "Study", type: "study", adjustable: true, sessions: 3 },
                     { time: "11:11-11:25", activity: "🎁 Buffer", type: "buffer" },
                     { time: "11:25-12:12", activity: "Study", type: "study", adjustable: true, sessions: 1 },
                     { time: "12:12-12:45", activity: "Lunch", type: "break", adjustable: true },
                     { time: "12:45-13:00", activity: "Travel", type: "routine" },
-                    { time: "13:00-14:00", activity: "CSE101 Practical", type: "class", skippable: true },
-                    { time: "14:00-15:00", activity: "CSE101 Practical", type: "class", skippable: true },
-                    { time: "15:00-16:00", activity: "PHY110", type: "class", skippable: true },
-                    { time: "16:00-17:00", activity: "CSE320", type: "class", skippable: true },
+                    { time: "13:00-14:00", activity: "CS101 Practical", type: "class", skippable: true },
+                    { time: "14:00-15:00", activity: "CS101 Practical", type: "class", skippable: true },
+                    { time: "15:00-16:00", activity: "PHYS101", type: "class", skippable: true },
+                    { time: "16:00-17:00", activity: "CS302", type: "class", skippable: true },
                     { time: "17:00-17:15", activity: "Travel back", type: "routine" },
                     { time: "17:15-17:30", activity: "Snack", type: "break", adjustable: true },
                     { time: "17:30-19:51", activity: "Study", type: "study", adjustable: true, sessions: 3 },
@@ -9816,20 +10079,20 @@ All code is well-commented and organized by feature.
                     { time: "7:00-8:34", activity: "Study", type: "study", adjustable: true, sessions: 2 },
                     { time: "8:34-8:45", activity: "Breakfast", type: "break", adjustable: true },
                     { time: "8:45-9:00", activity: "Travel", type: "routine" },
-                    { time: "9:00-10:00", activity: "PEL125", type: "class", skippable: true },
-                    { time: "10:00-11:00", activity: "MTH166", type: "class", skippable: true },
-                    { time: "11:00-12:00", activity: "INT306 Practical", type: "class", skippable: true },
-                    { time: "12:00-13:00", activity: "INT306 Practical", type: "class", skippable: true },
+                    { time: "9:00-10:00", activity: "PE101", type: "class", skippable: true },
+                    { time: "10:00-11:00", activity: "MATH101", type: "class", skippable: true },
+                    { time: "11:00-12:00", activity: "ENG201 Practical", type: "class", skippable: true },
+                    { time: "12:00-13:00", activity: "ENG201 Practical", type: "class", skippable: true },
                     { time: "13:00-13:20", activity: "Lunch", type: "break", adjustable: true },
                     { time: "13:20-14:07", activity: "Study", type: "study", adjustable: true, sessions: 1 },
-                    { time: "14:07-15:00", activity: "PHY110", type: "class", skippable: true },
-                    { time: "15:00-16:00", activity: "PEL125 Practical", type: "class", skippable: true },
-                    { time: "16:00-17:00", activity: "CSE320", type: "class", skippable: true },
+                    { time: "14:07-15:00", activity: "PHYS101", type: "class", skippable: true },
+                    { time: "15:00-16:00", activity: "PE101 Practical", type: "class", skippable: true },
+                    { time: "16:00-17:00", activity: "CS302", type: "class", skippable: true },
                     { time: "17:00-17:15", activity: "Travel back", type: "routine" },
                     { time: "17:15-17:30", activity: "Snack", type: "break", adjustable: true },
                     { time: "17:30-19:51", activity: "Study", type: "study", adjustable: true, sessions: 3 },
                     { time: "19:51-20:00", activity: "🎁 Buffer", type: "buffer" },
-                    { time: "20:00-22:21", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 3 },
+                    { time: "20:00-22:21", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 3 },
                     { time: "22:21-23:08", activity: "Study", type: "study", adjustable: true, sessions: 1 },
                     { time: "23:08-23:45", activity: "Hygiene + Todo", type: "routine" },
                     { time: "23:45", activity: "Sleep", type: "routine" }
@@ -9847,13 +10110,13 @@ All code is well-commented and organized by feature.
                     { time: "10:35-12:09", activity: "Study", type: "study", adjustable: true, sessions: 2 },
                     { time: "12:09-12:45", activity: "Lunch", type: "break", adjustable: true },
                     { time: "12:45-13:00", activity: "Travel", type: "routine" },
-                    { time: "13:00-14:00", activity: "CSE121", type: "class", skippable: true },
-                    { time: "14:00-15:00", activity: "MTH166", type: "class", skippable: true },
-                    { time: "15:00-16:00", activity: "PEL125 Practical", type: "class", skippable: true },
-                    { time: "16:00-17:00", activity: "PEL125 Practical", type: "class", skippable: true },
+                    { time: "13:00-14:00", activity: "CS201", type: "class", skippable: true },
+                    { time: "14:00-15:00", activity: "MATH101", type: "class", skippable: true },
+                    { time: "15:00-16:00", activity: "PE101 Practical", type: "class", skippable: true },
+                    { time: "16:00-17:00", activity: "PE101 Practical", type: "class", skippable: true },
                     { time: "17:00-17:15", activity: "Travel back", type: "routine" },
                     { time: "17:15-17:30", activity: "Snack", type: "break", adjustable: true },
-                    { time: "17:30-19:04", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 2 },
+                    { time: "17:30-19:04", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 2 },
                     { time: "19:04-19:20", activity: "Dinner", type: "break", adjustable: true },
                     { time: "19:20-23:15", activity: "Study", type: "study", adjustable: true, sessions: 5 },
                     { time: "23:15-23:35", activity: "Hygiene + Todo", type: "routine" },
@@ -9861,7 +10124,7 @@ All code is well-commented and organized by feature.
                 ]
             },
             saturday: {
-                title: "Saturday", subtitle: "Off Day - Mid Reappear",
+                title: "Saturday", subtitle: "Off Day - Study Focus",
                 stats: { study: 13.08, reappear: 1.58, classes: 0, breaks: 1 },
                 slots: [
                     { time: "6:30-7:00", activity: "Wake + Hygiene", type: "routine" },
@@ -9869,7 +10132,7 @@ All code is well-commented and organized by feature.
                     { time: "8:34-8:45", activity: "Breakfast", type: "break", adjustable: true },
                     { time: "8:45-11:53", activity: "Study", type: "study", adjustable: true, sessions: 4 },
                     { time: "11:53-12:00", activity: "🎁 Buffer", type: "buffer" },
-                    { time: "12:00-13:34", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 2 },
+                    { time: "12:00-13:34", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 2 },
                     { time: "13:34-14:05", activity: "Lunch", type: "break", adjustable: true },
                     { time: "14:05-18:00", activity: "Study", type: "study", adjustable: true, sessions: 5 },
                     { time: "18:00-18:05", activity: "Snack", type: "break", adjustable: true },
@@ -9880,7 +10143,7 @@ All code is well-commented and organized by feature.
                 ]
             },
             sunday: {
-                title: "Sunday", subtitle: "Off Day - Evening Reappear",
+                title: "Sunday", subtitle: "Off Day - Study Focus",
                 stats: { study: 12.58, reappear: 2.33, classes: 0, breaks: 1 },
                 slots: [
                     { time: "6:30-7:00", activity: "Wake + Hygiene", type: "routine" },
@@ -9892,7 +10155,7 @@ All code is well-commented and organized by feature.
                     { time: "13:39-14:05", activity: "Lunch", type: "break", adjustable: true },
                     { time: "14:05-18:00", activity: "Study", type: "study", adjustable: true, sessions: 5 },
                     { time: "18:00-18:05", activity: "Snack", type: "break", adjustable: true },
-                    { time: "18:05-20:26", activity: "Reappear prep", type: "reappear", skippable: true, sessions: 3 },
+                    { time: "18:05-20:26", activity: "RETAKE prep", type: "reappear", skippable: true, sessions: 3 },
                     { time: "20:26-20:40", activity: "Dinner", type: "break", adjustable: true },
                     { time: "20:40-23:28", activity: "Study", type: "study", adjustable: true, sessions: 4 },
                     { time: "23:28-23:50", activity: "Hygiene + Todo", type: "routine" },
@@ -11408,7 +11671,8 @@ All code is well-commented and organized by feature.
                 if (pauseBtn) pauseBtn.style.display = 'inline-flex';
                 if (resumeBtn) resumeBtn.style.display = 'none';
             }
-            
+            if (typeof updateLobdellContext === 'function') updateLobdellContext();
+
             // Start interval
             startTimerInterval();
             
@@ -11647,6 +11911,7 @@ All code is well-commented and organized by feature.
             // Hide active timer card
             const timerCard = document.getElementById('activeTimerCard'); // [FIX 9] Null-safe
             if (timerCard) timerCard.style.display = 'none';
+            if (typeof updateLobdellContext === 'function') updateLobdellContext();
             
             // Clear interval
             if (timerInterval) {
@@ -11807,8 +12072,8 @@ All code is well-commented and organized by feature.
             
             // Show progress towards daily goal for streak
             const studiedHours = (todayStats.studied / 3600).toFixed(1); // BUG FIX: Already in seconds
-            const dailyGoalHours = settings.dailyGoal;
-            const goalMet = todayStats.studied >= (settings.dailyGoal * 3600); // BUG FIX: Compare seconds to seconds
+            const dailyGoalHours = getTodayGoal();
+            const goalMet = todayStats.studied >= (getTodayGoal() * 3600); // BUG FIX: Compare seconds to seconds
             const goalIndicator = goalMet ? ' ✓' : ` / ${dailyGoalHours}h`;
             
             if (hoursEl) hoursEl.textContent = studiedHours + 'h' + goalIndicator;
@@ -11819,7 +12084,7 @@ All code is well-commented and organized by feature.
             let totalStudied = 0;
             let totalTarget = 0;
             Object.keys(allocation).forEach(subject => {
-                if (subject !== 'REAPPEAR') {
+                if (subject !== 'RETAKE') {
                     totalStudied += allocation[subject].studied;
                     totalTarget += allocation[subject].weeklyHours * 3600;
                 }
@@ -11832,7 +12097,7 @@ All code is well-commented and organized by feature.
             const today = new Date().toDateString();
             
             // Only update streak if daily goal is met
-            const dailyGoalSeconds = settings.dailyGoal * 3600; // Convert hours to seconds
+            const dailyGoalSeconds = getTodayGoal() * 3600; // Convert hours to seconds
             const dailyGoalMet = todayStats.studied >= dailyGoalSeconds;
             
             if (dailyGoalMet) {
@@ -11868,7 +12133,7 @@ All code is well-commented and organized by feature.
 
         function calculateStreakOnLoad() {
             // Recalculate current streak based on daily history and daily goal
-            const dailyGoalHours = settings.dailyGoal || 7;
+            const dailyGoalHours = getTodayGoal();
             let streak = 0;
             const today = new Date();
             
@@ -12320,7 +12585,7 @@ All code is well-commented and organized by feature.
             // Subject Progress Chart
             const subjectCtx = document.getElementById('subjectChart');
             if (subjectCtx) {
-                const subjects = Object.keys(allocation).filter(s => s !== 'REAPPEAR');
+                const subjects = Object.keys(allocation).filter(s => s !== 'RETAKE');
                 const studiedData = subjects.map(s => (allocation[s].studied / 3600).toFixed(1));
                 const targetData = subjects.map(s => allocation[s].weeklyHours.toFixed(1));
                 
@@ -12440,7 +12705,7 @@ All code is well-commented and organized by feature.
 
         function updateCharts() {
             if (subjectChart) {
-                const subjects = Object.keys(allocation).filter(s => s !== 'REAPPEAR');
+                const subjects = Object.keys(allocation).filter(s => s !== 'RETAKE');
                 const studiedData = subjects.map(s => (allocation[s].studied / 3600).toFixed(1));
                 
                 subjectChart.data.datasets[0].data = studiedData;
@@ -12779,19 +13044,16 @@ All code is well-commented and organized by feature.
                 const todo = todos.find(t => t.id === activeTimerId);
                 if (todo) {
                     // Update timer info
-                    document.getElementById('focusTimerSubject').textContent = todo.subject || 'Study';
+                    document.getElementById('focusTimerSubject').textContent = todo.subject || 'STUDY';
                     document.getElementById('focusTimerTask').textContent = todo.task || 'Untitled Task';
-                    
-                    // Update status
+                    // Dot state
+                    const dot = document.getElementById('fmTaskDot');
+                    if (dot) { dot.classList.remove('idle'); }
+                    // Update status (legacy hidden elements)
                     const statusIcon = document.getElementById('focusTimerStatusIcon');
                     const statusText = document.getElementById('focusTimerStatusText');
-                    if (isPaused) {
-                        statusIcon.textContent = '⏸';
-                        statusText.textContent = 'Paused';
-                    } else {
-                        statusIcon.textContent = '▶';
-                        statusText.textContent = 'Running';
-                    }
+                    if (statusIcon) statusIcon.textContent = isPaused ? '⏸' : '▶';
+                    if (statusText) statusText.textContent = isPaused ? 'Paused' : 'Running';
                     
                     // Calculate and display elapsed time
                     let totalSeconds = todo.accumulatedSeconds || 0;
@@ -12820,11 +13082,15 @@ All code is well-commented and organized by feature.
                 }
             } else {
                 // No active timer - show default state
-                document.getElementById('focusTimerSubject').textContent = '-';
-                document.getElementById('focusTimerTask').textContent = 'No active task';
-                document.getElementById('focusTimerStatusIcon').textContent = '⏹';
-                document.getElementById('focusTimerStatusText').textContent = 'Stopped';
+                document.getElementById('focusTimerSubject').textContent = 'NO TASK';
+                document.getElementById('focusTimerTask').textContent = 'Start a task timer to track time';
                 document.getElementById('focusTodoTimerDisplay').textContent = '00:00:00';
+                const dotIdle = document.getElementById('fmTaskDot');
+                if (dotIdle) dotIdle.classList.add('idle');
+                const si = document.getElementById('focusTimerStatusIcon');
+                const st = document.getElementById('focusTimerStatusText');
+                if (si) si.textContent = '⏹';
+                if (st) st.textContent = 'Stopped';
                 
                 // Update button visibility
                 document.getElementById('focusTodoStartBtn').style.display = 'block';
@@ -12947,8 +13213,11 @@ All code is well-commented and organized by feature.
                     const hours = Math.floor(totalRemainingSeconds / 3600);
                     const mins = Math.floor((totalRemainingSeconds % 3600) / 60);
                     const secs = totalRemainingSeconds % 60;
-                    
-                    const display = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+                    // Minimal format: MM:SS under 1h, H:MM:SS otherwise
+                    const display = hours > 0
+                        ? `${hours}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`
+                        : `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
                     document.getElementById('focusTimerDisplay').textContent = display;
                     break;
                 }
@@ -12956,9 +13225,9 @@ All code is well-commented and organized by feature.
             
             // No current block found
             if (!foundCurrentBlock) {
-                document.getElementById('focusTimerDisplay').textContent = '00:00:00';
-                document.getElementById('focusBlockTitle').textContent = 'No Current Activity';
-                document.getElementById('focusBlockTime').textContent = '--:-- - --:--';
+                document.getElementById('focusTimerDisplay').textContent = '--:--';
+                document.getElementById('focusBlockTitle').textContent = 'No Current Block';
+                document.getElementById('focusBlockTime').textContent = '';
             }
         }
 
@@ -13428,11 +13697,11 @@ All code is well-commented and organized by feature.
                     <h3 style="margin-bottom: 20px; color: var(--accent-primary);">📅 Add Exam</h3>
                     <div style="display: flex; flex-direction: column; gap: 16px;">
                         <select id="examSubject" class="todo-select" style="width: 100%;">
-                            <option value="MTH166">MTH166</option><option value="CSE101">CSE101</option>
-                            <option value="PHY110">PHY110</option><option value="INT306">INT306</option>
-                            <option value="MEC136">MEC136</option><option value="PEL125">PEL125</option>
-                            <option value="CSE320">CSE320</option><option value="CSE121">CSE121</option>
-                            <option value="REAPPEAR">REAPPEAR</option>
+                            <option value="MATH101">MATH101</option><option value="CS101">CS101</option>
+                            <option value="PHYS101">PHYS101</option><option value="ENG201">ENG201</option>
+                            <option value="MECH101">MECH101</option><option value="PE101">PE101</option>
+                            <option value="CS302">CS302</option><option value="CS201">CS201</option>
+                            <option value="RETAKE">RETAKE</option>
                         </select>
                         <input type="text" id="examName" class="todo-input" placeholder="Exam name (e.g., Mid-Term)">
                         <input type="date" id="examDate" class="todo-select" style="width: 100%;" required>
@@ -13504,7 +13773,7 @@ All code is well-commented and organized by feature.
 
         // ==================== PART 1: DAILY GOAL PROGRESS ====================
         function updateDailyGoalProgress() {
-            const dailyGoalHours = settings.dailyGoal || 6;
+            const dailyGoalHours = getTodayGoal();
             const today = localDate();
             let todayHours = 0;
             const todayData = dailyHistory.find(d => d.date === today);
@@ -13524,7 +13793,7 @@ All code is well-commented and organized by feature.
         function updateSubjectDeficit() {
             const grid = document.getElementById('subjectDeficitGrid');
             if (!grid) return;
-            const subjects = Object.keys(allocation).filter(s => s !== 'REAPPEAR');
+            const subjects = Object.keys(allocation).filter(s => s !== 'RETAKE');
             grid.innerHTML = subjects.slice(0, 6).map(subject => {
                 const alloc = allocation[subject];
                 const studied = (alloc.studied / 3600);
@@ -13728,7 +13997,7 @@ All code is well-commented and organized by feature.
             const suggestionEl = document.getElementById('recoverySuggestion');
             if (!planEl || !suggestionEl) return;
             
-            const weeklyGoal = (settings.dailyGoal || 6) * 7;
+            const weeklyGoal = settings.weeklyGoal || ([0,1,2,3,4,5,6].reduce((s,d) => s + getTodayGoal(undefined, d), 0));
             const deficit = weeklyGoal - thisWeek;
             
             if (deficit > 5) {
@@ -13999,23 +14268,23 @@ All code is well-commented and organized by feature.
         // ==================== PART 3: TODO TEMPLATES ====================
         const todoTemplates = [
             { name: 'Daily Math Practice', tasks: [
-                { task: 'Review yesterday\'s notes', subject: 'MTH166', priority: 'Medium', category: 'revision' },
-                { task: 'Practice problems (30 mins)', subject: 'MTH166', priority: 'High', category: 'practice' },
-                { task: 'Read next chapter', subject: 'MTH166', priority: 'Medium', category: 'reading' }
+                { task: 'Review yesterday\'s notes', subject: 'MATH101', priority: 'Medium', category: 'revision' },
+                { task: 'Practice problems (30 mins)', subject: 'MATH101', priority: 'High', category: 'practice' },
+                { task: 'Read next chapter', subject: 'MATH101', priority: 'Medium', category: 'reading' }
             ]},
             { name: 'Exam Prep Day', tasks: [
-                { task: 'Review all formulas', subject: 'MTH166', priority: 'High', category: 'exam-prep' },
-                { task: 'Practice past papers', subject: 'MTH166', priority: 'High', category: 'exam-prep' },
-                { task: 'Create summary sheet', subject: 'MTH166', priority: 'Medium', category: 'revision' }
+                { task: 'Review all formulas', subject: 'MATH101', priority: 'High', category: 'exam-prep' },
+                { task: 'Practice past papers', subject: 'MATH101', priority: 'High', category: 'exam-prep' },
+                { task: 'Create summary sheet', subject: 'MATH101', priority: 'Medium', category: 'revision' }
             ]},
             { name: 'Assignment Day', tasks: [
-                { task: 'Complete coding assignment', subject: 'CSE101', priority: 'High', category: 'assignment' },
-                { task: 'Review and test code', subject: 'CSE101', priority: 'Medium', category: 'revision' },
-                { task: 'Write documentation', subject: 'CSE101', priority: 'Low', category: 'assignment' }
+                { task: 'Complete coding assignment', subject: 'CS101', priority: 'High', category: 'assignment' },
+                { task: 'Review and test code', subject: 'CS101', priority: 'Medium', category: 'revision' },
+                { task: 'Write documentation', subject: 'CS101', priority: 'Low', category: 'assignment' }
             ]},
             { name: 'Light Study Day', tasks: [
-                { task: 'Review lecture notes', subject: 'PHY110', priority: 'Low', category: 'reading' },
-                { task: 'Watch related videos', subject: 'PHY110', priority: 'Low', category: 'reading' }
+                { task: 'Review lecture notes', subject: 'PHYS101', priority: 'Low', category: 'reading' },
+                { task: 'Watch related videos', subject: 'PHYS101', priority: 'Low', category: 'reading' }
             ]}
         ];
         
@@ -14153,7 +14422,7 @@ All code is well-commented and organized by feature.
         function calculateStreak() {
             let streak = 0;
             const today = new Date();
-            const dailyGoalHours = settings.dailyGoal || 7; // Get daily goal from settings
+            const dailyGoalHours = getTodayGoal(); // Get daily goal from settings
             
             for (let i = 0; i < 30; i++) {
                 const date = new Date(today);
@@ -14550,7 +14819,7 @@ All code is well-commented and organized by feature.
             const presetTodo = {
                 id: Date.now(),
                 task: `${minutes}-minute focused session`,
-                subject: document.getElementById('todoSubject')?.value || 'MTH166',
+                subject: document.getElementById('todoSubject')?.value || 'MATH101',
                 priority: 'Medium',
                 completed: false,
                 accumulatedSeconds: 0,
@@ -14914,7 +15183,7 @@ All code is well-commented and organized by feature.
             const container = document.getElementById('timeReport');
             if (!container) return;
             
-            const subjects = Object.keys(allocation).filter(s => s !== 'REAPPEAR');
+            const subjects = Object.keys(allocation).filter(s => s !== 'RETAKE');
             const maxHours = Math.max(...subjects.map(s => allocation[s].studied / 3600), 1);
             
             container.innerHTML = subjects.map(subject => {
@@ -15837,6 +16106,10 @@ All code is well-commented and organized by feature.
             // Initialize smart features (Part 10)
             loadSmartFeatures();
             startSmartFeaturesLoop();
+
+            // Initialize layout manager
+            applyLayoutState();
+            renderSectionLayoutManager();
             
             // Initialize accessibility (Part 11)
             loadAccessibilitySettings();
@@ -16666,6 +16939,20 @@ All code is well-commented and organized by feature.
 
         function initializeSettings() {
             loadSettings();
+
+        // Highlight today's day column in daily goal grid
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                var today = new Date().getDay(); // 0=Sun
+                var el = document.getElementById('dailyGoal_' + today);
+                if (el) {
+                    el.style.borderColor = 'var(--accent-color, #4f8ef7)';
+                    el.style.boxShadow = '0 0 0 2px rgba(79,142,247,0.25)';
+                    var label = el.previousElementSibling;
+                    if (label) { label.style.color = 'var(--accent-color, #4f8ef7)'; label.style.fontWeight = '700'; }
+                }
+            }, 500);
+        });
             applyTheme();
         }
 
@@ -16680,17 +16967,25 @@ All code is well-commented and organized by feature.
             if (saved) {
                 try {
                     settings = { ...settings, ...JSON.parse(saved) };
+                    // Back-compat: if no dailyGoalByDay, seed from old dailyGoal
+                    if (!settings.dailyGoalByDay) {
+                        const g = settings.dailyGoal || 8;
+                        settings.dailyGoalByDay = { 0:4, 1:g, 2:g, 3:g, 4:g, 5:g, 6:6 };
+                    }
                     updateSettingsUI();
                 } catch (e) {
                     console.error('Failed to load settings:', e);
                 }
+            } else {
+                // First run defaults
+                settings.dailyGoalByDay = { 0:4, 1:8, 2:8, 3:8, 4:8, 5:8, 6:6 };
             }
         }
 
         function updateSettingsUI() {
             // Update all input fields with saved settings
             const fields = [
-                'dailyGoal', 'weeklyGoal', 'pomodoroDuration', 'breakDuration',
+                'weeklyGoal', 'pomodoroDuration', 'breakDuration',
                 'defaultBuffer', 'weekStart', 'reminderBefore', 'themeMode',
                 'accentColor', 'fontSize'
             ];
@@ -16701,6 +16996,16 @@ All code is well-commented and organized by feature.
                     el.value = settings[field];
                 }
             });
+
+            // Populate per-day goal inputs (0=Sun, 1=Mon ... 6=Sat)
+            const byDay = settings.dailyGoalByDay || { 0:4, 1:8, 2:8, 3:8, 4:8, 5:8, 6:6 };
+            [0,1,2,3,4,5,6].forEach(d => {
+                const el = document.getElementById('dailyGoal_' + d);
+                if (el) el.value = byDay[d] !== undefined ? byDay[d] : 8;
+            });
+            // Keep hidden #dailyGoal in sync with today's value
+            const todayHidden = document.getElementById('dailyGoal');
+            if (todayHidden) todayHidden.value = getTodayGoal();
 
             // Update checkboxes
             const checkboxes = [
@@ -16716,14 +17021,235 @@ All code is well-commented and organized by feature.
             });
         }
 
+        // Returns the study goal (hours) for a given day-of-week (0=Sun...6=Sat)
+        // Pass optional byDay object to use during save (before settings object is updated)
+        function getTodayGoal(byDay, dayOfWeek) {
+            const d = dayOfWeek !== undefined ? dayOfWeek : new Date().getDay();
+            const map = byDay || settings.dailyGoalByDay || { 0:4, 1:8, 2:8, 3:8, 4:8, 5:8, 6:6 };
+            return parseFloat(map[d]) || settings.dailyGoal || 8;
+        }
+
+        // ==================== LAYOUT MANAGER ====================
+        const SECTION_DEFS = [
+            { id: 'scheduleSection',   key: 'schedule',   icon: '📅', name: 'Schedule' },
+            { id: 'todosSection',      key: 'todos',      icon: '✅', name: 'Tasks & Focus Timer' },
+            { id: 'lobdellSection',    key: 'lobdell',    icon: '⏱️', name: 'Lobdell Timer (standalone)' },
+            { id: 'attendanceSection', key: 'attendance', icon: '📋', name: 'Attendance' },
+            { id: 'analyticsSection',  key: 'analytics',  icon: '📊', name: 'Analytics' },
+            { id: 'examSection',       key: 'exam',       icon: '📆', name: 'Exam Countdown' },
+        ];
+
+        function getLayoutState() {
+            try {
+                const saved = localStorage.getItem('sectionLayout_v1');
+                if (saved) return JSON.parse(saved);
+            } catch(e) {}
+            return { order: SECTION_DEFS.map(s => s.key), hidden: [] };
+        }
+
+        function saveLayoutState(state) {
+            localStorage.setItem('sectionLayout_v1', JSON.stringify(state));
+        }
+
+        function applyLayoutState() {
+            const state = getLayoutState();
+            // Show/hide
+            SECTION_DEFS.forEach(def => {
+                const el = document.getElementById(def.id);
+                if (!el) return;
+                el.style.display = state.hidden.includes(def.key) ? 'none' : '';
+            });
+            // Reorder — insert sections in order, but keep everything BEFORE the
+            // settings section (which is always last and not reorderable).
+            // We use settingsSection as the fixed anchor: insertBefore(el, settingsSection).
+            const settingsEl = document.getElementById('settingsSection');
+            if (!settingsEl) return;
+            const parent = settingsEl.parentElement;
+            // Walk in desired order, inserting each before settingsSection
+            state.order.forEach(key => {
+                const def = SECTION_DEFS.find(d => d.key === key);
+                if (!def) return;
+                const el = document.getElementById(def.id);
+                if (el) parent.insertBefore(el, settingsEl);
+            });
+            // ── NAV BAR: reorder + show/hide ──
+            const bottomNav = document.getElementById('bottomNav');
+            if (bottomNav) {
+                // Fixed anchors that never move
+                const navLogo    = bottomNav.querySelector('.nav-logo');
+                const navHome    = bottomNav.querySelector('.nav-item[data-section="dashboard"]');
+                const navSettings = bottomNav.querySelector('.nav-item[data-section="settings"]');
+
+                // Reorder reorderable nav items in desired order
+                state.order.forEach(key => {
+                    const def = SECTION_DEFS.find(d => d.key === key);
+                    if (!def) return;
+                    const navItem = bottomNav.querySelector(`.nav-item[data-section="${def.key}"]`);
+                    if (!navItem) return;
+                    // Insert before settings (keeping settings last)
+                    if (navSettings) {
+                        bottomNav.insertBefore(navItem, navSettings);
+                    } else {
+                        bottomNav.appendChild(navItem);
+                    }
+                });
+
+                // Show/hide nav items
+                SECTION_DEFS.forEach(def => {
+                    const navItem = bottomNav.querySelector(`.nav-item[data-section="${def.key}"]`);
+                    if (!navItem) return;
+                    navItem.style.display = state.hidden.includes(def.key) ? 'none' : '';
+                });
+            }
+
+            // ── QUICK-NAV GRID: reorder + show/hide ──
+            const quickNavGrid = document.querySelector('.quick-nav-grid');
+            if (quickNavGrid) {
+                // Find the settings button (always stays last)
+                const settingsBtn = Array.from(quickNavGrid.querySelectorAll('.quick-nav-btn'))
+                    .find(b => (b.getAttribute('onclick') || '').includes('settingsSection'));
+
+                // Reorder in desired section order
+                state.order.forEach(key => {
+                    const def = SECTION_DEFS.find(d => d.key === key);
+                    if (!def) return;
+                    const btn = Array.from(quickNavGrid.querySelectorAll('.quick-nav-btn'))
+                        .find(b => (b.getAttribute('onclick') || '').includes(def.id));
+                    if (!btn) return;
+                    if (settingsBtn) {
+                        quickNavGrid.insertBefore(btn, settingsBtn);
+                    } else {
+                        quickNavGrid.appendChild(btn);
+                    }
+                });
+
+                // Show/hide quick-nav buttons
+                quickNavGrid.querySelectorAll('.quick-nav-btn').forEach(btn => {
+                    const onclick = btn.getAttribute('onclick') || '';
+                    const match = onclick.match(/scrollToSection\('(\w+)'\)/);
+                    if (!match) return;
+                    const sectionId = match[1];
+                    const def = SECTION_DEFS.find(d => d.id === sectionId);
+                    if (!def) return;
+                    btn.style.display = state.hidden.includes(def.key) ? 'none' : '';
+                });
+            }
+
+            // ── [data-jumpto] elements (future-proof) ──
+            document.querySelectorAll('[data-jumpto]').forEach(el => {
+                const key = el.dataset.jumpto;
+                if (!key) return;
+                el.style.display = state.hidden.includes(key) ? 'none' : '';
+            });
+        }
+
+        function renderSectionLayoutManager() {
+            const container = document.getElementById('sectionLayoutList');
+            if (!container) return;
+            const state = getLayoutState();
+            const ordered = state.order
+                .map(key => SECTION_DEFS.find(d => d.key === key))
+                .filter(Boolean)
+                .concat(SECTION_DEFS.filter(d => !state.order.includes(d.key)));
+            container.innerHTML = '';
+            ordered.forEach(def => {
+                const isHidden = state.hidden.includes(def.key);
+                const item = document.createElement('div');
+                item.className = 'section-layout-item';
+                item.dataset.key = def.key;
+                item.draggable = true;
+                item.innerHTML = `
+                    <span class="section-layout-drag-handle">⠿</span>
+                    <span class="section-layout-icon">${def.icon}</span>
+                    <span class="section-layout-name">${def.name}</span>
+                    <div class="section-layout-toggle ${isHidden ? '' : 'on'}"
+                         onclick="toggleSectionVisibility('${def.key}', this)"
+                         title="${isHidden ? 'Show' : 'Hide'} section"></div>
+                `;
+                item.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', def.key);
+                    item.classList.add('dragging');
+                });
+                item.addEventListener('dragend', () => item.classList.remove('dragging'));
+                item.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    document.querySelectorAll('.section-layout-item').forEach(i => i.classList.remove('drag-over'));
+                    item.classList.add('drag-over');
+                });
+                item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+                item.addEventListener('drop', e => {
+                    e.preventDefault();
+                    item.classList.remove('drag-over');
+                    const fromKey = e.dataTransfer.getData('text/plain');
+                    if (fromKey === def.key) return;
+                    const st = getLayoutState();
+                    let fi = st.order.indexOf(fromKey);
+                    let ti = st.order.indexOf(def.key);
+                    if (fi === -1) { st.order.push(fromKey); fi = st.order.length - 1; }
+                    if (ti === -1) { st.order.push(def.key); ti = st.order.length - 1; }
+                    st.order.splice(fi, 1);
+                    st.order.splice(ti, 0, fromKey);
+                    saveLayoutState(st);
+                    applyLayoutState();
+                    renderSectionLayoutManager();
+                    showToast('Section order updated', 'success');
+                });
+                container.appendChild(item);
+            });
+        }
+
+        function toggleSectionVisibility(key, toggleEl) {
+            const state = getLayoutState();
+            const idx = state.hidden.indexOf(key);
+            if (idx === -1) { state.hidden.push(key); toggleEl.classList.remove('on'); }
+            else { state.hidden.splice(idx, 1); toggleEl.classList.add('on'); }
+            saveLayoutState(state);
+            applyLayoutState();
+            showToast(idx === -1 ? 'Section hidden' : 'Section shown', 'info');
+        }
+
+        function updateLobdellContext() {
+            const subj = document.getElementById('activeTimerSubject');
+            const task = document.getElementById('activeTimerTask');
+            const lobdellSec = document.getElementById('lobdellSection');
+            if (!lobdellSec) return;
+            const subtitle = lobdellSec.querySelector('.section-subtitle');
+            if (!subtitle) return;
+            const subText = subj ? subj.textContent.trim() : '';
+            const taskText = task ? task.textContent.trim() : '';
+            if (subText) {
+                subtitle.innerHTML = `⏱️ 47-min method &nbsp;·&nbsp; <span style="color:var(--accent-primary);font-weight:600;">Studying: ${subText}</span>${taskText ? ' — ' + taskText : ''}`;
+                const navItem = document.querySelector('.nav-item[data-section="lobdell"]');
+                if (navItem && !navItem.querySelector('.lobdell-active-dot')) {
+                    const dot = document.createElement('span');
+                    dot.className = 'lobdell-active-dot';
+                    dot.style.cssText = 'position:absolute;top:2px;right:8px;width:8px;height:8px;background:var(--status-success);border-radius:50%;border:2px solid var(--bg-primary);box-shadow:0 0 6px rgba(52,211,153,0.5);';
+                    navItem.appendChild(dot);
+                }
+            } else {
+                subtitle.textContent = '47-minute study method (30 session, 12 process, 5 break)';
+                const navItem = document.querySelector('.nav-item[data-section="lobdell"]');
+                const dot = navItem && navItem.querySelector('.lobdell-active-dot');
+                if (dot) dot.remove();
+            }
+        }
+        // ==================== END LAYOUT MANAGER ====================
+
         function saveSettings() {
             // Save old daily goal to check if it changed
             const oldDailyGoal = settings.dailyGoal;
                         
             // Read all values from UI
+            // Read per-day goals
+            const dailyGoalByDay = {};
+            [0,1,2,3,4,5,6].forEach(d => {
+                const el = document.getElementById('dailyGoal_' + d);
+                dailyGoalByDay[d] = el ? (parseFloat(el.value) || 8) : 8;
+            });
             const nextSettings = {
                 ...settings,
-                dailyGoal: parseFloat(document.getElementById('dailyGoal').value),
+                dailyGoalByDay,
+                dailyGoal: getTodayGoal(dailyGoalByDay), // keep dailyGoal as today's value for back-compat
                 weeklyGoal: parseFloat(document.getElementById('weeklyGoal').value),
                 pomodoroDuration: parseInt(document.getElementById('pomodoroDuration').value),
                 breakDuration: parseInt(document.getElementById('breakDuration').value),
@@ -17155,8 +17681,7 @@ All code is well-commented and organized by feature.
                     subject.currentPresent--;
                     subject.currentTotal--;
                 } else if (lastAction.type === 'duty') {
-                    subject.present--;
-                    subject.currentPresent--;
+                    // nothing to revert on present/total — duty only records in history
                 } else if (lastAction.type === 'absent') {
                     subject.total--;
                     subject.currentTotal--;
@@ -17378,9 +17903,7 @@ All code is well-commented and organized by feature.
                     timestamp: Date.now()
                 };
 
-                // Duty leave: replaces a missed class, counts as present (doesn't add to total)
-                subject.present++;
-                subject.currentPresent++;
+                // Duty leave: counts toward attendance % but shown separately, not in attended count
                 subject.history.push({ date: new Date().toISOString(), type: 'duty' });
                 saveAttendanceState();
                 renderTrackedSubjects();
@@ -17822,16 +18345,18 @@ All code is well-commented and organized by feature.
                 aggregateData.currentPresent += subject.currentPresent || 0;
                 aggregateData.currentTotal += subject.currentTotal || 0;
                 aggregateData.futureTotal += subject.futureTotal || 0;
+                aggregateData.dutyCount = (aggregateData.dutyCount || 0) + (subject.history || []).filter(h => h.type === 'duty').length;
             });
-            
+
             // Render aggregate card if there are multiple subjects
             let aggregateHTML = '';
             if (activeSubjects.length > 1) {
-                const aggCurrentPercentage = calculateAttendancePercentage(aggregateData.currentPresent, aggregateData.currentTotal);
+                const aggEffectivePresent = aggregateData.currentPresent + (aggregateData.dutyCount || 0);
+                const aggCurrentPercentage = calculateAttendancePercentage(aggEffectivePresent, aggregateData.currentTotal);
                 const aggCurrentStatus = getAttendanceStatus(aggCurrentPercentage, aggregateData.goal);
-                
+
                 const aggSkipPredictions = calculateMultiThresholdSkips(
-                    aggregateData.currentPresent,
+                    aggEffectivePresent,
                     aggregateData.currentTotal,
                     aggregateData.futureTotal,
                     aggregateData.goal
@@ -17866,7 +18391,7 @@ All code is well-commented and organized by feature.
                             </div>
                         </div>
                         
-                        ${renderMilestoneSection(aggregateData.currentPresent, aggregateData.currentTotal, aggregateData.futureTotal)}
+                        ${renderMilestoneSection(aggEffectivePresent, aggregateData.currentTotal, aggregateData.futureTotal)}
                         
                         ${aggregateData.futureTotal > 0 ? `
                         <div style="margin-top: 16px; padding: 14px; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid rgba(91, 141, 239, 0.2);">
@@ -17962,12 +18487,14 @@ All code is well-commented and organized by feature.
                     subject.futureTotal = 0;
                 }
                 
-                const currentPercentage = calculateAttendancePercentage(subject.currentPresent, subject.currentTotal);
+                const dutyCount = (subject.history || []).filter(h => h.type === 'duty').length;
+                const effectivePresent = subject.currentPresent + dutyCount;
+                const currentPercentage = calculateAttendancePercentage(effectivePresent, subject.currentTotal);
                 const currentStatus = getAttendanceStatus(currentPercentage, subject.goal);
-                
+
                 // Calculate skip predictions for all thresholds
                 const skipPredictions = calculateMultiThresholdSkips(
-                    subject.currentPresent,
+                    effectivePresent,
                     subject.currentTotal,
                     subject.futureTotal,
                     subject.goal
@@ -17985,7 +18512,7 @@ All code is well-commented and organized by feature.
                             
                             <div class="subject-stat">
                                 <div class="subject-stat-label">Missed</div>
-                                <div class="subject-stat-value" style="color: #d87b7b;">${subject.currentTotal - subject.currentPresent}</div>
+                                <div class="subject-stat-value" style="color: #d87b7b;">${subject.currentTotal - effectivePresent}</div>
                             </div>
                             
                             <div class="subject-stat">
@@ -18012,7 +18539,7 @@ All code is well-commented and organized by feature.
                             </div>
                         </div>
                         
-                        ${renderMilestoneSection(subject.currentPresent, subject.currentTotal, subject.futureTotal)}
+                        ${renderMilestoneSection(effectivePresent, subject.currentTotal, subject.futureTotal)}
                         
                         ${subject.futureTotal > 0 ? `
                         <div style="margin-top: 16px;">
@@ -18645,7 +19172,7 @@ All code is well-commented and organized by feature.
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
             <div>
               <label style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:4px;">Activity Name</label>
-              <input type="text" id="newSlotActivity" placeholder="e.g. MTH166, Study, Lunch" style="width:100%; padding:8px; background:var(--surface-primary); border:1px solid var(--border-primary); border-radius:var(--radius-sm); color:var(--text-primary); font-size:var(--text-sm);">
+              <input type="text" id="newSlotActivity" placeholder="e.g. MATH101, Study, Lunch" style="width:100%; padding:8px; background:var(--surface-primary); border:1px solid var(--border-primary); border-radius:var(--radius-sm); color:var(--text-primary); font-size:var(--text-sm);">
             </div>
             <div>
               <label style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:4px;">Type</label>

@@ -802,6 +802,17 @@ setTimeout(function() {
 
 function syncHubData() {
     try {
+        /* ── SHARED HELPERS ── */
+        function todayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        function fmtMinsLeft(mins) {
+            const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+            if (h > 0) return h + 'h ' + m + 'm';
+            return m + 'm';
+        }
+
         // --- 1. STUDY TRACKER (Academics) ---
         const sSettings = JSON.parse(localStorage.getItem('settings_v4') || '{"dailyGoal": 8}');
         const sData = JSON.parse(localStorage.getItem('todosState_v4') || '{"todayStats":{"studied":0}}');
@@ -809,37 +820,38 @@ function syncHubData() {
         const sExams = JSON.parse(localStorage.getItem('exams_v1') || '[]');
         const sCard = document.querySelector('.card-study');
 
-        if(sCard) {
-            // Daily Goal Logic
-            const actualHrs = (sData.todayStats?.studied || 0) / 3600;
-            const goalHrs = parseFloat(sSettings.dailyGoal) || 8;
-            const sPct = Math.min(100, Math.round((actualHrs / goalHrs) * 100));
+        // Get studied seconds with date guard
+        let studiedSecs = 0;
+        if (sData.todayStats) {
+            const ts = sData.todayStats;
+            if (!ts.date || ts.date === new Date().toDateString()) {
+                studiedSecs = parseFloat(ts.studied) || 0;
+            }
+        }
+        const studiedHrs = studiedSecs / 3600;
 
-            // Aggregate Attendance Logic
+        if(sCard) {
+            const goalHrs = parseFloat(sSettings.dailyGoal) || 8;
+            const sPct = Math.min(100, Math.round((studiedHrs / goalHrs) * 100));
+
             let totalP = 0, totalHeld = 0;
-            sAtt.subjects.forEach(s => { 
-                if(!s.archived){ 
-                    totalP += (parseInt(s.currentPresent || s.present || 0)); 
-                    totalHeld += (parseInt(s.currentTotal || s.total || 0)); 
+            sAtt.subjects.forEach(s => {
+                if(!s.archived){
+                    totalP += (parseInt(s.currentPresent || s.present || 0));
+                    totalHeld += (parseInt(s.currentTotal || s.total || 0));
                 }
             });
             const attPct = totalHeld > 0 ? Math.round((totalP / totalHeld) * 100) : 0;
 
-            // EXAM COUNTDOWN LOGIC (Verified)
             let examText = "No Exams";
             if (sExams.length > 0) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // Reset time to midnight for clean day counting
-                
+                const today = new Date(); today.setHours(0,0,0,0);
                 const upcoming = sExams
                     .map(e => ({...e, ts: new Date(e.date + 'T00:00:00').getTime()}))
                     .filter(e => e.ts >= today.getTime())
                     .sort((a, b) => a.ts - b.ts);
-                
                 if (upcoming.length > 0) {
-                    const diffTime = upcoming[0].ts - today.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
+                    const diffDays = Math.ceil((upcoming[0].ts - today.getTime()) / 86400000);
                     if (diffDays === 0) examText = "TODAY";
                     else if (diffDays === 1) examText = "Tomorrow";
                     else examText = `${diffDays} Days`;
@@ -849,43 +861,50 @@ function syncHubData() {
             sCard.querySelector('.c-fill').style.width = sPct + '%';
             sCard.querySelector('.c-pct').textContent = sPct + '% OF DAILY GOAL';
             const sVals = sCard.querySelectorAll('.s-val');
-            sVals[0].textContent = `${actualHrs.toFixed(1)} / ${goalHrs}h`;
+            sVals[0].textContent = `${studiedHrs.toFixed(1)} / ${goalHrs}h`;
             sVals[1].textContent = `${attPct}%`;
             sVals[2].textContent = examText;
         }
 
-        // --- 2. PROCRASTINATION TRACKER (Productivity) ---
-        const pBudgetRaw = JSON.parse(localStorage.getItem('phub_budget') || '{"dailyHours":4, "usedMinutes":0}');
-        // Migrate weeklyHours → dailyHours if needed
-        if (pBudgetRaw.weeklyHours !== undefined && pBudgetRaw.dailyHours === undefined) {
-            pBudgetRaw.dailyHours = pBudgetRaw.weeklyHours;
-            delete pBudgetRaw.weeklyHours;
-            localStorage.setItem('phub_budget', JSON.stringify(pBudgetRaw));
+        // --- 2. PROCRASTINATION TRACKER — Study Gate lock aware ---
+        const STUDY_SECS_CYCLE = 4 * 3600;  // 4h per cycle
+        const BUDGET_MINS      = 75;         // 75 min per unlock
+
+        // Load gate lock state
+        let lockState = { date: todayStr(), cyclesDone: 0, procMinUsed: [], unlockedAt: null };
+        try {
+            const lRaw = localStorage.getItem('phub_lock_v1');
+            if (lRaw) {
+                const l = JSON.parse(lRaw);
+                if (l.date === todayStr()) lockState = l;
+            }
+        } catch(e) {}
+
+        const totalCycles      = Math.floor(studiedSecs / STUDY_SECS_CYCLE);
+        const secsIntoCycle    = studiedSecs - (totalCycles * STUDY_SECS_CYCLE);
+        const cycleProgressPct = Math.min(100, Math.round(secsIntoCycle / STUDY_SECS_CYCLE * 100));
+
+        // Find active budget slot (earned study cycles)
+        let activeMinsLeft = 0;
+        let isGateUnlocked = false;
+        for (let ci = 0; ci < lockState.procMinUsed.length; ci++) {
+            const mLeft = BUDGET_MINS - (lockState.procMinUsed[ci] || 0);
+            if (mLeft > 0) { activeMinsLeft = mLeft; isGateUnlocked = true; break; }
         }
-        // Daily reset check — if the stored resetDate isn't today, zero out usedMinutes
-        const _todayStr = (function() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
-        if (pBudgetRaw.resetDate && pBudgetRaw.resetDate !== _todayStr) {
-            pBudgetRaw.usedMinutes = 0;
-            pBudgetRaw.resetDate = _todayStr;
-            localStorage.setItem('phub_budget', JSON.stringify(pBudgetRaw));
-        }
-        const pBudget = pBudgetRaw;
-        const pLib = JSON.parse(localStorage.getItem('phub_library') || '[]');
+
+        const pLib   = JSON.parse(localStorage.getItem('phub_library') || '[]');
         const pTasks = JSON.parse(localStorage.getItem('phub_tasks') || '[]');
-        const pCard = document.querySelector('.card-proc');
+        const pCard  = document.querySelector('.card-proc');
 
         if(pCard) {
-            // Daily budget must reflect today's tracked minutes only.
-            const usedMins = parseFloat(pBudget.usedMinutes) || 0;
-            const usedHrs = usedMins / 60;
-            const totalBudget = parseFloat(pBudget.dailyHours) || 4;
-            const pPct = Math.min(100, Math.round((usedHrs / totalBudget) * 100));
-            
-            const seriesCount = pLib.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length;
-            const completedSeries = pLib.filter(i => i.status === 'completed' || (i.totalEpisodes > 0 && i.watchedEpisodes?.length >= i.totalEpisodes)).length;
+            const fill     = pCard.querySelector('.c-fill');
+            const pctLabel = pCard.querySelector('.c-pct');
+            const pVals    = pCard.querySelectorAll('.s-val');
+            const pLbls    = pCard.querySelectorAll('.s-lbl');
 
-            let totalEntries = 0;
-            let watchedEntries = 0;
+            const seriesCount     = pLib.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length;
+            const completedSeries = pLib.filter(i => i.status === 'completed').length;
+            let totalEntries = 0, watchedEntries = 0;
             pLib.forEach(item => {
                 if (item.status === 'graveyard' || item.status === 'on-hold') return;
                 if (item.type === 'social') {
@@ -897,24 +916,60 @@ function syncHubData() {
                     if (Array.isArray(item.watchedEpisodes)) watchedEntries += item.watchedEpisodes.length;
                 }
             });
-            
-            // Add Process Queue tasks to entries count
             const taskDoneCount = pTasks.filter(t => t.completed).length;
 
-            const fill = pCard.querySelector('.c-fill');
-            fill.style.width = pPct + '%';
-            fill.style.background = usedHrs >= totalBudget ? '#ff3b6b' : 'var(--proc)';
+            if (isGateUnlocked) {
+                const budgetPct = Math.min(100, Math.round((activeMinsLeft / BUDGET_MINS) * 100));
+                fill.style.width      = budgetPct + '%';
+                fill.style.background = activeMinsLeft < 15 ? '#ff3b6b' : 'linear-gradient(90deg, #4ade80, #00e5ff)';
+                if (pctLabel) pctLabel.textContent = '🔓 ' + fmtMinsLeft(activeMinsLeft) + ' BUDGET LEFT';
+                pVals[0].textContent = fmtMinsLeft(activeMinsLeft);
+                pLbls[0].textContent = 'Budget Left';
+            } else if (totalCycles === 0) {
+                fill.style.width      = cycleProgressPct + '%';
+                fill.style.background = 'linear-gradient(90deg, #4f8ef7, #00d9f5)';
+                const secsNeeded = Math.max(0, STUDY_SECS_CYCLE - secsIntoCycle);
+                const hN = Math.floor(secsNeeded/3600), mN = Math.floor((secsNeeded%3600)/60);
+                const neededStr = hN > 0 ? hN + 'h ' + mN + 'm' : mN + 'm';
+                if (pctLabel) pctLabel.textContent = '🔒 LOCKED · STUDY ' + neededStr + ' MORE';
+                pVals[0].textContent = studiedHrs.toFixed(1) + 'h / 4h';
+                pLbls[0].textContent = 'Study Progress';
+            } else {
+                fill.style.width      = cycleProgressPct + '%';
+                fill.style.background = 'linear-gradient(90deg, #4f8ef7, #00d9f5)';
+                const secsNeeded = Math.max(0, STUDY_SECS_CYCLE - secsIntoCycle);
+                const hN = Math.floor(secsNeeded/3600), mN = Math.floor((secsNeeded%3600)/60);
+                const neededStr = hN > 0 ? hN + 'h ' + mN + 'm' : mN + 'm';
+                if (pctLabel) pctLabel.textContent = '🔒 NEXT UNLOCK IN ' + neededStr;
+                pVals[0].textContent = totalCycles + ' done · ' + neededStr + ' left';
+                pLbls[0].textContent = 'Cycles / Next Unlock';
+            }
 
-            const pctLabel = pCard.querySelector('.c-pct');
-            if (pctLabel) pctLabel.textContent = pPct + '% OF DAILY BUDGET';
-            
-            const pVals = pCard.querySelectorAll('.s-val');
-            const pLbls = pCard.querySelectorAll('.s-lbl');
-            pVals[0].textContent = `${usedHrs.toFixed(1)} / ${totalBudget}h`;
             pVals[1].textContent = seriesCount + pTasks.length;
             pLbls[1].textContent = `${totalEntries + pTasks.length} Entries Total`;
             pVals[2].textContent = completedSeries + taskDoneCount;
             pLbls[2].textContent = `${watchedEntries + taskDoneCount} Entries Done`;
+
+            // Lock badge on card
+            const existingBadge = pCard.querySelector('.gate-lock-badge');
+            if (!isGateUnlocked) {
+                // Fully locked — badge stays
+                if (!existingBadge) {
+                    const badge = document.createElement('div');
+                    badge.className = 'gate-lock-badge';
+                    badge.style.cssText = "position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid rgba(0,229,255,0.3);border-radius:100px;padding:3px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.25em;color:rgba(0,229,255,0.7);text-transform:uppercase;pointer-events:none;z-index:5;backdrop-filter:blur(8px);white-space:nowrap;";
+                    badge.textContent = '🔒 STUDY GATE ACTIVE';
+                    pCard.style.position = 'relative';
+                    pCard.appendChild(badge);
+                } else {
+                    existingBadge.textContent = '🔒 STUDY GATE ACTIVE';
+                    existingBadge.style.color = 'rgba(0,229,255,0.7)';
+                    existingBadge.style.borderColor = 'rgba(0,229,255,0.3)';
+                }
+            } else {
+                // Fully unlocked — remove badge
+                if (existingBadge) existingBadge.remove();
+            }
         }
 
         // --- 3. ZEN GARDEN TRACKER (Wellness) ---

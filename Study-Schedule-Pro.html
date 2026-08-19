@@ -1856,18 +1856,6 @@
             background-color: var(--surface-secondary);
         }
 
-        /* Swipe hint for todos */
-        .swipe-hint {
-            position: absolute;
-            right: var(--space-3);
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            font-size: var(--text-xs);
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
         /* Touch-optimized buttons (larger hit areas on mobile) */
         @media (max-width: 767px) {
             .btn {
@@ -12708,6 +12696,19 @@
             <div class="card" style="margin-bottom: var(--space-4);">
                 <div class="add-todo-form">
                     <input type="text" id="todoInput" class="todo-input" placeholder="What needs to be done?" onkeypress="if(event.key === 'Enter') addTodo()">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: var(--text-tertiary); margin: 6px 0; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="todoMultiSubjectToggle" onchange="toggleMultiSubjectMode()">
+                        Add this task to multiple subjects
+                    </label>
+                    <div id="todoMultiSubjectChips" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                        <button type="button" class="subject-switch-btn" data-subj="MTH401" onclick="toggleTodoMultiSubjectChip(this)">MTH401</button>
+                        <button type="button" class="subject-switch-btn" data-subj="CSE202" onclick="toggleTodoMultiSubjectChip(this)">CSE202</button>
+                        <button type="button" class="subject-switch-btn" data-subj="CSE423" onclick="toggleTodoMultiSubjectChip(this)">CSE423</button>
+                        <button type="button" class="subject-switch-btn" data-subj="INT335" onclick="toggleTodoMultiSubjectChip(this)">INT335</button>
+                        <button type="button" class="subject-switch-btn" data-subj="PEL136" onclick="toggleTodoMultiSubjectChip(this)">PEL136</button>
+                        <button type="button" class="subject-switch-btn" data-subj="CSE205" onclick="toggleTodoMultiSubjectChip(this)">CSE205</button>
+                        <button type="button" class="subject-switch-btn" data-subj="CSE306" onclick="toggleTodoMultiSubjectChip(this)">CSE306</button>
+                    </div>
                     <div class="todo-form-row">
                         <select id="todoSubject" class="todo-select">
                             <option value="MTH401">MTH401</option>
@@ -12814,7 +12815,7 @@
                     <button class="filter-btn" onclick="filterTodos('overdue', this)">Overdue</button>
                     <button class="filter-btn" onclick="showTodoTemplates()" style="margin-left: auto;">📋 Templates</button>
                     <button class="filter-btn" onclick="showArchive()">📦 Archive</button>
-                    <button class="filter-btn" onclick="toggleBulkMode()">☑️ Select</button>
+                    <button class="filter-btn" id="bulkSelectBtn" onclick="toggleBulkMode()">☑️ Select</button>
                     <button class="filter-btn" onclick="autoSortTodos()">🔄 Sort</button>
                 </div>
                 <div class="tag-filters" id="tagFilters" style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
@@ -17396,18 +17397,6 @@
             settings: false
         };
 
-        // Gesture controls state
-        let gestureState = {
-            touchStartX: 0,
-            touchStartY: 0,
-            touchEndX: 0,
-            touchEndY: 0,
-            swipeThreshold: 100, // pixels
-            swipeVelocityThreshold: 0.5,
-            isSwipeActive: false,
-            swipedTodoId: null
-        };
-
         // Pull-to-refresh state
         let pullToRefreshState = {
             startY: 0,
@@ -18218,56 +18207,78 @@
             processRecurringTodos(); // Check for recurring todos
         }
 
+        function toggleMultiSubjectMode() {
+            const isMulti = document.getElementById('todoMultiSubjectToggle').checked;
+            document.getElementById('todoMultiSubjectChips').style.display = isMulti ? 'flex' : 'none';
+            document.getElementById('todoSubject').disabled = isMulti;
+            document.getElementById('todoSubject').style.opacity = isMulti ? '0.5' : '1';
+        }
+
+        function toggleTodoMultiSubjectChip(btn) {
+            btn.classList.toggle('active');
+        }
+
         function addTodo() {
             const input = document.getElementById('todoInput');
-            const subject = document.getElementById('todoSubject').value;
+            const isMulti = document.getElementById('todoMultiSubjectToggle')?.checked;
+            const subjects = isMulti
+                ? Array.from(document.querySelectorAll('#todoMultiSubjectChips .subject-switch-btn.active')).map(b => b.dataset.subj)
+                : [document.getElementById('todoSubject').value];
             const priority = document.getElementById('todoPriority').value;
             const dueDate = document.getElementById('todoDueDate').value;
             const dueTime = document.getElementById('todoDueTime')?.value || null;
             const estimatedTime = document.getElementById('todoEstimatedTime')?.value || null;
             const recurring = document.getElementById('todoRecurring')?.value || null;
             const category = document.getElementById('todoCategory')?.value || null;
-            
+
             const task = input.value.trim();
             if (!task) {
                 showToast('Please enter a task', 'warning');
                 return;
             }
-            
-            const todo = {
-                id: Date.now(),
-                task,
-                subject,
-                priority,
-                dueDate: dueDate || null,
-                dueTime: dueTime || null,
-                estimatedMinutes: estimatedTime ? parseInt(estimatedTime) : null,
-                recurring: recurring || null,
-                category: category || null,
-                completed: false,
-                accumulatedSeconds: 0,
-                lastStartTime: null,
-                createdAt: new Date().toISOString(),
-                subtasks: [],
-                sessionNotes: [],
-                sessionRatings: [],
-                isFocusTodo: false
-            };
-            
-            todos.unshift(todo);
+            if (isMulti && subjects.length === 0) {
+                showToast('Select at least one subject', 'warning');
+                return;
+            }
+
+            subjects.forEach((subject, i) => {
+                todos.unshift({
+                    id: Date.now() + i,
+                    task,
+                    subject,
+                    priority,
+                    dueDate: dueDate || null,
+                    dueTime: dueTime || null,
+                    estimatedMinutes: estimatedTime ? parseInt(estimatedTime) : null,
+                    recurring: recurring || null,
+                    category: category || null,
+                    completed: false,
+                    accumulatedSeconds: 0,
+                    lastStartTime: null,
+                    createdAt: new Date().toISOString(),
+                    subtasks: [],
+                    sessionNotes: [],
+                    sessionRatings: [],
+                    isFocusTodo: false
+                });
+            });
+
             input.value = '';
-            
+
             // Reset optional fields
             if (document.getElementById('todoDueTime')) document.getElementById('todoDueTime').value = '';
             if (document.getElementById('todoEstimatedTime')) document.getElementById('todoEstimatedTime').value = '';
             if (document.getElementById('todoRecurring')) document.getElementById('todoRecurring').value = '';
             if (document.getElementById('todoCategory')) document.getElementById('todoCategory').value = '';
-            
+            if (isMulti) {
+                document.querySelectorAll('#todoMultiSubjectChips .subject-switch-btn.active').forEach(b => b.classList.remove('active'));
+            }
+
             hapticFeedback('light');
             renderTodos();
             saveTodosState();
             updateDailyGoalProgress();
-            showToast('Task added', 'success');
+            showToast(subjects.length > 1 ? `Task added to ${subjects.length} subjects` : 'Task added', 'success');
         }
 
         // Process recurring todos - creates new instances if needed
@@ -18952,14 +18963,15 @@
                 const focusIndicator = isFocusTodo ? '<span style="color: var(--accent-primary); margin-right: 4px;">🎯</span>' : '';
                 const isBlocked = todo.dependsOn && !canCompleteTodo(todo);
                 
+                const isSelected = bulkMode && selectedTodos.has(todo.id);
                 return `
-                    <div class="todo-item priority-${todo.priority.toLowerCase()} ${todo.completed ? 'completed' : ''} ${isRunning ? 'running' : ''} ${isOverdue ? 'overdue' : ''} ${todo.pinned ? 'pinned' : ''} ${isBlocked ? 'blocked' : ''}" data-todo-id="${todo.id}" draggable="true">
+                    <div class="todo-item priority-${todo.priority.toLowerCase()} ${todo.completed ? 'completed' : ''} ${isRunning ? 'running' : ''} ${isOverdue ? 'overdue' : ''} ${todo.pinned ? 'pinned' : ''} ${isBlocked ? 'blocked' : ''}" data-todo-id="${todo.id}" draggable="true" onclick="handleTodoRowClick(event, ${todo.id})" style="cursor: pointer; ${isSelected ? 'outline: 2px solid var(--accent-primary); background: rgba(91, 141, 239, 0.08);' : ''}">
                         <span class="todo-drag-handle" title="Drag to reorder">⋮⋮</span>
-                        <input type="checkbox" 
-                               class="todo-checkbox" 
-                               ${todo.completed ? 'checked' : ''}
-                               ${isBlocked ? 'disabled title="Complete dependency first"' : ''}
-                               onchange="toggleComplete(${todo.id})">
+                        <input type="checkbox"
+                               class="todo-checkbox"
+                               ${bulkMode ? (isSelected ? 'checked' : '') : (todo.completed ? 'checked' : '')}
+                               ${isBlocked && !bulkMode ? 'disabled title="Complete dependency first"' : ''}
+                               onchange="${bulkMode ? `toggleTodoSelection(${todo.id})` : `toggleComplete(${todo.id})`}">
                         <div class="todo-content">
                             <div class="todo-text">${focusIndicator}${todo.pinned ? '📌 ' : ''}${todo.task}</div>
                             <div class="todo-meta">
@@ -18993,7 +19005,6 @@
                             ${subtasksHtml}
                             ${linksHtml}
                         </div>
-                        ${!todo.completed ? '<span class="swipe-hint">→ swipe</span>' : ''}
                         <div class="todo-actions">
                             <button class="todo-action-btn pin-btn ${todo.pinned ? 'active' : ''}" onclick="togglePinTodo(${todo.id})" title="${todo.pinned ? 'Unpin' : 'Pin to top'}">📌</button>
                             <button class="todo-action-btn" onclick="addSubtask(${todo.id})" title="Add Subtask">📋</button>
@@ -19055,15 +19066,17 @@
         
         // Focus Todo functions
         function setAsFocusTodo(todoId) {
+            const todo = todos.find(t => t.id === todoId);
+            const wasFocus = todo && todo.isFocusTodo;
+
             // Clear previous focus todo
             todos.forEach(t => t.isFocusTodo = false);
-            
-            const todo = todos.find(t => t.id === todoId);
+
             if (todo) {
-                todo.isFocusTodo = true;
-                showToast('Set as today\'s main focus!', 'success');
+                todo.isFocusTodo = !wasFocus;
+                showToast(todo.isFocusTodo ? 'Set as today\'s main focus!' : 'Removed from focus', 'success');
             }
-            
+
             renderTodos();
             saveTodosState();
             updateFocusTodoSection();
@@ -22301,12 +22314,15 @@
                     <h3 style="margin-bottom: 20px; color: var(--accent-primary);">📋 Todo Templates</h3>
                     <div class="template-list">
                         ${todoTemplates.map((t, idx) => `
-                            <div class="template-item" onclick="applyTemplate(${idx})">
-                                <div>
+                            <div class="template-item" style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="flex: 1; cursor: pointer;" onclick="applyTemplate(${idx})">
                                     <div class="template-name">${t.name}</div>
                                     <div class="template-desc">${t.tasks.length} tasks</div>
                                 </div>
-                                <span style="color: var(--accent-primary);">➕</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: var(--accent-primary); cursor: pointer;" onclick="applyTemplate(${idx})">➕</span>
+                                    ${t.custom ? `<span style="color: var(--text-tertiary); cursor: pointer;" onclick="deleteCustomTemplate(${idx})" title="Delete template">🗑️</span>` : ''}
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -22348,24 +22364,50 @@
         function createCustomTemplate() {
             const name = prompt('Template name:');
             if (!name) return;
-            
+
             // Get incomplete todos as template
             const incompleteTodos = todos.filter(t => !t.completed).slice(0, 5);
             if (incompleteTodos.length === 0) {
                 showToast('No incomplete todos to save as template', 'warning');
                 return;
             }
-            
-            const customTemplates = JSON.parse(localStorage.getItem('customTemplates_v1') || '[]');
-            customTemplates.push({
+
+            const newTemplate = {
                 name,
                 tasks: incompleteTodos.map(t => ({
                     task: t.task, subject: t.subject, priority: t.priority, category: t.category
-                }))
-            });
+                })),
+                custom: true
+            };
+
+            const customTemplates = JSON.parse(localStorage.getItem('customTemplates_v1') || '[]');
+            customTemplates.push(newTemplate);
             localStorage.setItem('customTemplates_v1', JSON.stringify(customTemplates));
+
+            todoTemplates.push(newTemplate);
+
             showToast('Template saved!', 'success');
             document.getElementById('templateModal')?.remove();
+            showTodoTemplates();
+        }
+
+        function loadCustomTemplates() {
+            const customTemplates = JSON.parse(localStorage.getItem('customTemplates_v1') || '[]');
+            customTemplates.forEach(t => todoTemplates.push(t));
+        }
+
+        function deleteCustomTemplate(idx) {
+            const template = todoTemplates[idx];
+            if (!template || !template.custom) return;
+            if (!confirm(`Delete template "${template.name}"?`)) return;
+
+            todoTemplates.splice(idx, 1);
+            const customTemplates = JSON.parse(localStorage.getItem('customTemplates_v1') || '[]');
+            const savedIdx = customTemplates.findIndex(t => t.name === template.name);
+            if (savedIdx !== -1) customTemplates.splice(savedIdx, 1);
+            localStorage.setItem('customTemplates_v1', JSON.stringify(customTemplates));
+
+            showTodoTemplates();
         }
 
         // ==================== PART 3: STUDY MILESTONES ====================
@@ -22970,9 +23012,13 @@
             bulkMode = !bulkMode;
             selectedTodos.clear();
             renderTodos();
-            
+            renderBulkActionsBar();
+
+            const btn = document.getElementById('bulkSelectBtn');
+            if (btn) btn.classList.toggle('active', bulkMode);
+
             if (bulkMode) {
-                showToast('Select multiple todos', 'info');
+                showToast('Tap tasks to select them', 'info');
             }
         }
         
@@ -22984,6 +23030,15 @@
             }
             renderBulkActionsBar();
             renderTodos();
+        }
+
+        function handleTodoRowClick(e, todoId) {
+            if (e.target.closest('.todo-actions, .subject-tag, .subtasks-container, .todo-links, .todo-drag-handle, input')) return;
+            if (bulkMode) {
+                toggleTodoSelection(todoId);
+            } else {
+                toggleComplete(todoId);
+            }
         }
         
         function renderBulkActionsBar() {
@@ -24202,7 +24257,6 @@
             loadCollapsedState();
             
             // Initialize mobile gestures and UX (Part 9)
-            initSwipeGestures();
             initPullToRefresh();
             
             // Load haptics setting
@@ -24265,7 +24319,10 @@
             
             // Render milestones
             renderMilestones();
-            
+
+            // Load previously saved custom todo templates
+            loadCustomTemplates();
+
             // Update pomodoro stats
             updatePomodoroStats();
             
@@ -24479,109 +24536,6 @@
                         navigator.vibrate(10);
                 }
             }
-        }
-
-        // ==================== SWIPE GESTURES ====================
-        
-        function initSwipeGestures() {
-            const todoList = document.getElementById('todoList');
-            if (!todoList) return;
-            
-            // Add touch event listeners to todo list
-            todoList.addEventListener('touchstart', handleTouchStart, { passive: false });
-            todoList.addEventListener('touchmove', handleTouchMove, { passive: false });
-            todoList.addEventListener('touchend', handleTouchEnd, { passive: false });
-        }
-
-        function handleTouchStart(e) {
-            const todoItem = e.target.closest('.todo-item');
-            if (!todoItem) return;
-            
-            gestureState.touchStartX = e.touches[0].clientX;
-            gestureState.touchStartY = e.touches[0].clientY;
-            gestureState.isSwipeActive = true;
-            gestureState.swipedTodoId = todoItem.dataset.todoId;
-            todoItem.dataset.touchStartTime = Date.now();
-        }
-
-        function handleTouchMove(e) {
-            if (!gestureState.isSwipeActive) return;
-            
-            const todoItem = document.querySelector(`[data-todo-id="${gestureState.swipedTodoId}"]`);
-            if (!todoItem) return;
-            
-            gestureState.touchEndX = e.touches[0].clientX;
-            gestureState.touchEndY = e.touches[0].clientY;
-            
-            const deltaX = gestureState.touchEndX - gestureState.touchStartX;
-            const deltaY = Math.abs(gestureState.touchEndY - gestureState.touchStartY);
-            
-            // Only swipe horizontally if vertical movement is small
-            if (deltaY < 30 && Math.abs(deltaX) > 10) {
-                e.preventDefault();
-                
-                // Apply transform to show swipe
-                if (deltaX > 0) { // Swipe right
-                    todoItem.style.transform = `translateX(${Math.min(deltaX, 100)}px)`;
-                    todoItem.style.opacity = 1 - (Math.min(deltaX, 100) / 200);
-                    
-                    // Add visual feedback at threshold
-                    if (deltaX > gestureState.swipeThreshold) {
-                        todoItem.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
-                        hapticFeedback('selection');
-                    }
-                }
-            }
-        }
-
-        function handleTouchEnd(e) {
-            if (!gestureState.isSwipeActive) return;
-            
-            const todoItem = document.querySelector(`[data-todo-id="${gestureState.swipedTodoId}"]`);
-            if (!todoItem) {
-                gestureState.isSwipeActive = false;
-                return;
-            }
-            
-            const deltaX = gestureState.touchEndX - gestureState.touchStartX;
-            const deltaY = Math.abs(gestureState.touchEndY - gestureState.touchStartY);
-            const touchDuration = Date.now() - parseInt(todoItem.dataset.touchStartTime || 0);
-            const velocity = Math.abs(deltaX) / touchDuration;
-            
-            // Determine if swipe was successful
-            const isSwipeRight = deltaX > gestureState.swipeThreshold || velocity > gestureState.swipeVelocityThreshold;
-            const isHorizontalSwipe = deltaY < 30;
-            
-            if (isSwipeRight && isHorizontalSwipe) {
-                // Swipe successful - complete todo
-                hapticFeedback('success');
-                todoItem.style.transform = 'translateX(100%)';
-                todoItem.style.opacity = '0';
-                
-                setTimeout(() => {
-                    const todoId = gestureState.swipedTodoId;
-                    const todo = todos.find(t => t.id == todoId);
-                    if (todo && !todo.completed) {
-                        toggleComplete(parseInt(todoId));
-                    }
-                    todoItem.style.transform = '';
-                    todoItem.style.opacity = '';
-                    todoItem.style.backgroundColor = '';
-                }, 300);
-            } else {
-                // Swipe cancelled - reset
-                todoItem.style.transition = 'transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease';
-                todoItem.style.transform = '';
-                todoItem.style.opacity = '';
-                todoItem.style.backgroundColor = '';
-                
-                setTimeout(() => {
-                    todoItem.style.transition = '';
-                }, 300);
-            }
-            
-            gestureState.isSwipeActive = false;
-            gestureState.swipedTodoId = null;
         }
 
         // ==================== PULL TO REFRESH ====================
@@ -27265,7 +27219,7 @@
         console.log('  • Real-time analytics & charts');
         console.log('  • Focus mode for distraction-free studying');
         console.log('  • 20+ keyboard shortcuts');
-        console.log('  • Gesture controls (swipe, pull-to-refresh)');
+        console.log('  • Gesture controls (pull-to-refresh)');
         console.log('  • Smart break reminders');
         console.log('  • Full accessibility (WCAG 2.1 AA)');
         console.log('  • Fully offline - localStorage persistence');
@@ -27316,7 +27270,6 @@
                 console.log('   • Import to restore on another device');
         console.log('');
         console.log('4. MOBILE GESTURES:');
-        console.log('   • Swipe right on todo → Mark complete');
         console.log('   • Pull down → Refresh data');
         console.log('   • Works on iPhone, iPad, Android');
         console.log('');

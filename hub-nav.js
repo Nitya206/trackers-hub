@@ -47,15 +47,6 @@
       color: '#4ade80',
       rgb: '74,222,128',
     },
-    {
-      id: 'orv',
-      file: 'ORV-Tracker.html',
-      label: 'ORV — Omniscient',
-      short: 'ORV',
-      icon: '✦',
-      color: '#f5b800',
-      rgb: '245,184,0',
-    },
   ];
 
   /* ─────────────────────────────────────────
@@ -66,8 +57,6 @@
     if (/Procrastination/i.test(f)) return 'proc';
     if (/Study/i.test(f)) return 'study';
     if (/zen/i.test(f)) return 'zen';
-    // FIXED: Removed |Tracker to prevent 'index.html' from triggering as ORV
-    if (/ORV/i.test(f)) return 'orv';
     if (/Hub/i.test(f)) return 'hub';
     return 'hub';
   }
@@ -85,7 +74,6 @@
    * Handles patterns across all tracker apps:
    *  • onclick="scrollToSection('scheduleSection')"  — Study-Schedule-Pro
    *  • data-section="library" + window.navigateTo   — Procrastination-Hub
-   *  • onclick="M('novel')"                         — ORV-Tracker tabs
    */
   function getNavAction(el) {
     // Explicit onclick with a single-argument nav call
@@ -125,45 +113,60 @@
      MANIFEST_VERSION: bump this number whenever manifests change so stale
      localStorage caches are automatically cleared on next visit.
   ───────────────────────────────────────── */
-  const MANIFEST_VERSION = 3; // ← bump to bust old cached indices
+  const MANIFEST_VERSION = 8; // ← bump to bust old cached indices (Zen has no sub-sections)
 
   const APP_NAV_MANIFEST = {
     proc: [
-      { label: '📊 Dashboard',    navFunc: 'navigateTo', navArg: 'dashboard'   },
-      { label: '📚 Library',      navFunc: 'navigateTo', navArg: 'library'     },
-      { label: '🌀 Mood Queue',   navFunc: 'navigateTo', navArg: 'moodqueue'   },
-      { label: '✅ Tasks',        navFunc: 'navigateTo', navArg: 'tasks'       },
-      { label: '🗺️ Overview',    navFunc: 'navigateTo', navArg: 'overview'    },
-      { label: '⚰️ Graveyard',   navFunc: 'navigateTo', navArg: 'graveyard'   },
-      { label: '📋 Session Log',  navFunc: 'navigateTo', navArg: 'sessionlog'  },
-      { label: '⚙️ Settings',    navFunc: 'navigateTo', navArg: 'settings'    },
+      { label: '📊 Dashboard',    navFunc: 'navigateTo', navArg: 'dashboard',   kind: 'section' },
+      { label: '📚 Library',      navFunc: 'navigateTo', navArg: 'library',     kind: 'section' },
+      { label: '🌀 Mood Queue',   navFunc: 'navigateTo', navArg: 'moodqueue',   kind: 'section' },
+      { label: '🗺️ Overview',    navFunc: 'navigateTo', navArg: 'overview',    kind: 'section' },
+      { label: '⚰️ Graveyard',   navFunc: 'navigateTo', navArg: 'graveyard',   kind: 'section' },
+      { label: '📋 Session Log',  navFunc: 'navigateTo', navArg: 'sessionlog',  kind: 'section' },
+      { label: '⚙️ Settings',    navFunc: 'navigateTo', navArg: 'settings',    kind: 'section' },
+      // Direct jump to Settings sub-sections (skips scrolling manually)
+      { label: '⚙️ Settings — Behaviour', navFunc: 'navigateToSub', navArg: 'settings~settings-behaviour', kind: 'sub' },
+      { label: '⚙️ Settings — Library',   navFunc: 'navigateToSub', navArg: 'settings~settings-library',   kind: 'sub' },
+      { label: '⚙️ Settings — Tasks',     navFunc: 'navigateToSub', navArg: 'settings~settings-tasks',     kind: 'sub' },
+      { label: '⚙️ Settings — Budget',    navFunc: 'navigateToSub', navArg: 'settings~settings-budget',    kind: 'sub' },
+      { label: '⚙️ Settings — Audio',     navFunc: 'navigateToSub', navArg: 'settings~settings-audio',     kind: 'sub' },
+      { label: '⚙️ Settings — Data Export/Import', navFunc: 'navigateToSub', navArg: 'settings~settings-data', kind: 'sub' },
     ],
-    orv: [
-      { label: '📕 Novel Mode',        navFunc: 'M', navArg: 'novel'  },
-      { label: '📺 Manhwa Mode',        navFunc: 'M', navArg: 'manhwa' },
-      { label: '📖 Session 1 — Intro (Ch 1–15)',    navFunc: 'E', navArg: '0' },
-      { label: '📖 Session 2 — Geumho Station',     navFunc: 'E', navArg: '1' },
-      { label: '📖 Session 3 — Dark Keeper',        navFunc: 'E', navArg: '2' },
-      { label: '📖 Session 4 — Green Zone',         navFunc: 'E', navArg: '3' },
-      { label: '📖 Session 5 — Theatre Dungeon',    navFunc: 'E', navArg: '4' },
-      { label: '📖 Session 6 — War of Kings P1',    navFunc: 'E', navArg: '5' },
-    ],
-    zen: [
-      { label: '🌿 Growth Calendar',    navFunc: null, navArg: null },
-      { label: '📝 Reflections',        navFunc: null, navArg: null },
-      { label: '📅 This Week\'s Rhythm', navFunc: null, navArg: null },
-      { label: '🏆 Milestones',         navFunc: null, navArg: null },
-      { label: '💡 Today\'s Wisdom',    navFunc: null, navArg: null },
-    ],
+    // Zen Garden is a single scrollable page — no sub-sections to list,
+    // so it's intentionally left out of APP_NAV_MANIFEST. The app picker
+    // navigates straight to it instead of drilling into a fake list.
     study: [
-      // Fallback entries for when Study hasn't been visited yet
-      { label: '🏠 Dashboard',    navFunc: 'scrollToSection', navArg: 'currentBlockBar' },
-      { label: '📅 Schedule',     navFunc: 'scrollToSection', navArg: 'scheduleSection'  },
-      { label: '✅ Todos',        navFunc: 'scrollToSection', navArg: 'todosSection'     },
-      { label: '⏱️ Timer',       navFunc: 'scrollToSection', navArg: 'lobdellSection'   },
-      { label: '📋 Attendance',   navFunc: 'scrollToSection', navArg: 'attendanceSection'},
-      { label: '📊 Analytics',    navFunc: 'scrollToSection', navArg: 'analyticsSection' },
-      { label: '⚙️ Settings',    navFunc: 'scrollToSection', navArg: 'settingsSection'  },
+      // v8 tabs (primary navigation)
+      { label: '🏠 Today',          navFunc: 'v8GoTo', navArg: 'today',  kind: 'section' },
+      { label: '📋 Plan (Schedule + Todos)', navFunc: 'v8GoTo', navArg: 'plan',   kind: 'section' },
+      { label: '🧠 Review (SRS + Stats)',    navFunc: 'v8GoTo', navArg: 'review', kind: 'section' },
+      { label: '⋯ More (Attendance + Settings)', navFunc: 'v8GoTo', navArg: 'more', kind: 'section' },
+      // Direct jump to sub-sections (skips the parent tab)
+      { label: '📅 Schedule',    navFunc: 'v8GoToSub', navArg: 'plan~schedule',   kind: 'sub' },
+      { label: '✅ Todos',       navFunc: 'v8GoToSub', navArg: 'plan~todos',      kind: 'sub' },
+      { label: '⏱️ Timer',       navFunc: 'v8GoToSub', navArg: 'plan~timer',      kind: 'sub' },
+      { label: '🎯 Exams',       navFunc: 'v8GoToSub', navArg: 'plan~exams',      kind: 'sub' },
+      { label: '📋 Attendance',  navFunc: 'v8GoToSub', navArg: 'plan~attendance', kind: 'sub' },
+      { label: '🃏 SRS',         navFunc: 'v8GoToSub', navArg: 'review~srs',      kind: 'sub' },
+      { label: '📊 Analytics',   navFunc: 'v8GoToSub', navArg: 'review~analytics',kind: 'sub' },
+      { label: '📜 Logs',        navFunc: 'v8GoToSub', navArg: 'review~logs',     kind: 'sub' },
+      { label: '⚙️ Settings',    navFunc: 'v8GoToSub', navArg: 'more~settings',   kind: 'sub' },
+      // v8 quick actions
+      { label: '▶ Start Top Suggestion',     navFunc: 'v8StartNow', navArg: null },
+      { label: '⚡ Quick 25-min Session',    navFunc: 'v8Quick25',  navArg: null },
+      { label: '🎯 Open Quick-Capture (/)',  navFunc: '__hub_focus_capture__', navArg: null },
+      { label: '🃏 Review Due Cards',        navFunc: 'v7OpenReviewQueue', navArg: null },
+      { label: '📅 Add Deadline',            navFunc: '__hub_add_deadline__', navArg: null },
+      { label: '🔄 Refresh Smart Engine',    navFunc: 'v7Refresh', navArg: null },
+      // Per-subject deck shortcuts
+      { label: '📚 MTH166 Deck', navFunc: 'v7OpenDeck', navArg: 'MTH166' },
+      { label: '📚 CSE101 Deck', navFunc: 'v7OpenDeck', navArg: 'CSE101' },
+      { label: '📚 PHY110 Deck', navFunc: 'v7OpenDeck', navArg: 'PHY110' },
+      { label: '📚 INT306 Deck', navFunc: 'v7OpenDeck', navArg: 'INT306' },
+      { label: '📚 MEC136 Deck', navFunc: 'v7OpenDeck', navArg: 'MEC136' },
+      { label: '📚 PEL125 Deck', navFunc: 'v7OpenDeck', navArg: 'PEL125' },
+      { label: '📚 CSE320 Deck', navFunc: 'v7OpenDeck', navArg: 'CSE320' },
+      { label: '📚 CSE121 Deck', navFunc: 'v7OpenDeck', navArg: 'CSE121' },
     ],
   };
 
@@ -173,48 +176,13 @@
     // ── Apps with a static manifest: return curated list immediately ──
     if (appManifest && appManifest.length > 0) {
       const sections = appManifest.map((entry, i) => {
-        const id = 'hn-manifest-' + i;
+        // Entries with no navFunc rely on scrolling to a real DOM id — use
+        // the manifest's own id when given, since 'hn-manifest-N' matches
+        // nothing on the page.
+        const id = entry.id || ('hn-manifest-' + i);
         const navAction = entry.navFunc ? { func: entry.navFunc, arg: entry.navArg } : null;
-        return { label: entry.label, id, navAction };
+        return { label: entry.label, id, navAction, kind: entry.kind };
       });
-
-      // For ORV: also index session cards using the SESSIONS/A data arrays
-      if (currentId === 'orv') {
-        const sessions = window.SESSIONS;
-        const arcs = window.A;
-        if (Array.isArray(sessions) && Array.isArray(arcs)) {
-          sessions.forEach((sess, si) => {
-            // Build label from arc names referenced by this session
-            const sessArcs = sess.arcIds.map(id => arcs.find(x => x.id === id)).filter(Boolean);
-            if (!sessArcs.length) return;
-            // Use arc label (e.g. "Arc 10 Part 2") + arc name (e.g. "Dark Castle")
-            const arcLabel = sessArcs[0].al;
-            const arcName = sessArcs[0].a;
-            const label = arcLabel === arcName ? arcName : arcLabel + ' — ' + arcName;
-            const chRange = sessArcs[0].n; // e.g. "Ch 162–169"
-            const fullLabel = '📖 ' + label + (chRange ? ' (' + chRange + ')' : '');
-            // Find the card element with onclick="E(si)"
-            const card = document.querySelector(`.cd[onclick="E(${si})"]`);
-            const id = card ? (card.id || (card.id = 'hn-orv-card-' + si)) : 'hn-orv-card-' + si;
-            sections.push({ label: fullLabel, id, navAction: { func: 'E', arg: String(si) } });
-          });
-        } else {
-          // Fallback: scrape cards from DOM
-          document.querySelectorAll('.cd').forEach((el, i) => {
-            const onclick = el.getAttribute('onclick') || '';
-            const eMatch = onclick.match(/^E\((\d+)\)/);
-            const navAction = eMatch ? { func: 'E', arg: eMatch[1] } : null;
-            if (!el.id) el.id = 'hn-orv-card-' + i;
-            // Get text from .ci (title) element inside card
-            const titleEl = el.querySelector('.ci');
-            const text = titleEl
-              ? titleEl.textContent.trim().replace(/\s+/g, ' ').slice(0, 80)
-              : '';
-            if (!text || text.length < 2) return;
-            sections.push({ label: '📖 ' + text, id: el.id, navAction });
-          });
-        }
-      }
 
       return sections.slice(0, 200);
     }
@@ -326,7 +294,7 @@
         if (manifest && manifest.length > 0) {
           manifest.forEach((entry) => {
             const navAction = entry.navFunc ? { func: entry.navFunc, arg: entry.navArg } : null;
-            out.push({ label: entry.label, id: '', app, navAction });
+            out.push({ label: entry.label, id: entry.id || '', app, navAction, kind: entry.kind });
           });
         } else {
           out.push({ label: app.label, id: '', app, navAction: null });
@@ -446,57 +414,6 @@
   }
   .hn-bn-item:hover .hn-bn-tip{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  /* ── SIDEBAR INJECTED ITEMS (Study / ORV) ── */
-  .hn-sb-sep{
-    height:1px;width:80%;
-    background:linear-gradient(90deg,transparent,rgba(56,189,248,.12),rgba(212,168,67,.08),transparent);
-    margin:10px auto 4px;flex-shrink:0;
-  }
-  .hn-sb-item{
-    position:relative;
-    width:40px;height:40px;
-    border-radius:12px;
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
-    transition:background .15s ease,color .15s ease,transform .2s cubic-bezier(.34,1.56,.64,1);
-    color:rgba(255,255,255,.4);
-    margin:0 auto;
-  }
-  .hn-sb-item:hover{
-    background:rgba(${ACCENT_RGB},.12);color:rgba(${ACCENT_RGB},1);
-    transform:scale(1.08);
-  }
-  .hn-sb-item:active{transform:scale(.93);}
-  .hn-sb-tip{
-  position:absolute;
-  left:calc(100% + 10px);
-  top:50%;
-  transform:translateY(-50%) translateX(-4px);
-
-  background:rgba(8,10,20,.92);
-  border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.8);
-
-  font-size:10px;              /* original size */
-  font-weight:500;
-  letter-spacing:.04em;
-
-  padding:4px 9px;             /* original padding */
-  border-radius:7px;
-
-  white-space:nowrap;
-  pointer-events:none;
-  opacity:0;
-
-  transition:opacity .15s ease,transform .15s ease;
-  font-family:'Space Grotesk','Inter',sans-serif;
-  z-index:9999;
-}
-  .hn-sb-item:hover .hn-sb-tip{
-  opacity:1;
-  transform:translateY(-50%) translateX(0);
-}
-
   .hn-sw-divider{height:1px;background:rgba(255,255,255,.06);margin:5px 4px;}
   .hn-sw-section-label{
     font-size:9px;letter-spacing:.18em;color:rgba(255,255,255,.25);
@@ -586,12 +503,30 @@
   }
   .hn-result:hover,.hn-result.hn-focused{background:rgba(255,255,255,.06);}
   .hn-r-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+  .hn-r-kind{
+    font-size:8px;font-weight:700;letter-spacing:.02em;
+    font-family:'JetBrains Mono',monospace;flex-shrink:0;
+    border-radius:4px;padding:1px 4px;line-height:1.4;
+  }
+  .hn-r-kind-s{color:rgba(255,255,255,.55);background:rgba(255,255,255,.08);}
+  .hn-r-kind-ss{color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);}
   .hn-r-label{flex:1;font-size:13px;color:rgba(255,255,255,.8);font-weight:400;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .hn-r-app{
     font-size:9px;letter-spacing:.14em;text-transform:uppercase;
     font-family:'JetBrains Mono',monospace;opacity:.4;flex-shrink:0;
   }
+
+  .hn-picker-card{padding:13px;}
+  .hn-picker-card .hn-r-dot{width:7px;height:7px;}
+  .hn-picker-card .hn-r-label{font-size:14px;color:rgba(255,255,255,.88);}
+
+  .hn-back-row{color:rgba(255,255,255,.5);margin-bottom:2px;}
+  .hn-back-row .hn-r-label{color:rgba(255,255,255,.5);font-size:12px;}
+  .hn-r-back-arrow{font-size:13px;flex-shrink:0;}
+
+  .hn-r-indent{padding-left:34px;}
+  .hn-r-indent .hn-r-label{font-size:12px;color:rgba(255,255,255,.65);}
 
   .hn-s-empty{
     text-align:center;padding:36px 20px;
@@ -712,32 +647,29 @@
         swPopup.style.maxWidth = 'calc(100vw - 20px)';
       } else {
         swPopup.style.transform = '';
-        // Position popup relative to the trigger element
+        // Position popup relative to the trigger element — pick whichever
+        // side (left/right, above/below) actually has room, instead of
+        // assuming the trigger always sits near a screen edge.
         const trigger = e && e.currentTarget ? e.currentTarget : swPill;
         const r = trigger.getBoundingClientRect();
         const popupW = 220;
+        const estPopupH = 260; // rough max height, used only to pick a direction
         const isLeftSide = r.left < window.innerWidth / 2;
 
-        if (isLeftSide) {
-          // Sidebar trigger — open to the RIGHT of the item
-          swPopup.style.left = (r.right + 12) + 'px';
-          swPopup.style.right = 'auto';
-          
-          // Handle vertical overflow: flip upwards if in bottom half of screen
-          if (r.top > window.innerHeight / 2) {
-            swPopup.style.bottom = (window.innerHeight - r.bottom) + 'px';
-            swPopup.style.top = 'auto';
-          } else {
-            swPopup.style.top = Math.max(10, r.top - 20) + 'px';
-            swPopup.style.bottom = 'auto';
-          }
+        // Horizontal: open toward the side with more room
+        let left = isLeftSide ? (r.right + 12) : (r.right - popupW);
+        left = Math.max(10, Math.min(left, window.innerWidth - popupW - 10));
+        swPopup.style.left = left + 'px';
+        swPopup.style.right = 'auto';
+
+        // Vertical: open downward unless there's clearly more room above
+        const spaceBelow = window.innerHeight - r.bottom;
+        const spaceAbove = r.top;
+        if (spaceBelow >= estPopupH || spaceBelow >= spaceAbove) {
+          swPopup.style.top = (r.bottom + 8) + 'px';
+          swPopup.style.bottom = 'auto';
         } else {
-          // Bottom-right trigger — open ABOVE centered
-          let left = r.left + r.width / 2 - popupW / 2;
-          left = Math.max(10, Math.min(left, window.innerWidth - popupW - 10));
-          swPopup.style.left = left + 'px';
-          swPopup.style.bottom = (window.innerHeight - r.top + 10) + 'px';
-          swPopup.style.right = 'auto';
+          swPopup.style.bottom = (window.innerHeight - r.top + 8) + 'px';
           swPopup.style.top = 'auto';
         }
       }
@@ -791,6 +723,108 @@
   const sResults = overlay.querySelector('#hn-s-results');
   let allSections = [];
   let focusIdx = -1;
+  // null = showing the 3-app picker; an app id = drilled into that app's
+  // sections/sub-sections. Typing a query always exits drill mode and
+  // searches everything flat, regardless of this state.
+  let drillApp = null;
+
+  function wireResultClicks() {
+    sResults.querySelectorAll('.hn-result').forEach((r) => {
+      r.addEventListener('click', () => {
+        if (r.dataset.drillApp) { drillApp = r.dataset.drillApp; focusIdx = -1; renderResults(''); return; }
+        if (r.dataset.back !== undefined) { drillApp = null; focusIdx = -1; renderResults(''); return; }
+        activateResult(r);
+      });
+    });
+  }
+
+  function renderAppPicker() {
+    const apps = APPS.filter((a) => a.id !== 'hub');
+    let html = `<div class="hn-r-group-label">CHOOSE AN APP</div>`;
+    let idx = 0;
+    apps.forEach((app) => {
+      const count = allSections.filter((s) => s.app.id === app.id && s.kind).length;
+      // Apps with no drillable sections (e.g. Zen Garden — a single
+      // scrollable page) just navigate straight there instead of opening
+      // an empty/pointless drill-down.
+      const attrs = count > 0
+        ? `data-drill-app="${app.id}"`
+        : `data-href="${app.file}" data-appid="${app.id}"`;
+      const countLbl = count ? `${count} section${count === 1 ? '' : 's'}` : 'open';
+      html += `<div class="hn-result hn-picker-card" ${attrs} data-idx="${idx++}">
+        <span class="hn-r-dot" style="background:${app.color}"></span>
+        <span class="hn-r-label">${app.icon} ${app.label}</span>
+        <span class="hn-r-app" style="color:${app.color}">${countLbl}</span>
+      </div>`;
+    });
+    sResults.innerHTML = html;
+    wireResultClicks();
+  }
+
+  function renderAppDrill(appId) {
+    const app = APPS.find((a) => a.id === appId);
+    const items = allSections.filter((s) => s.app.id === appId && s.kind);
+
+    if (!items.length) {
+      sResults.innerHTML = `<div class="hn-result hn-back-row" data-back data-idx="0">
+        <span class="hn-r-back-arrow">←</span>
+        <span class="hn-r-label">Back to apps</span>
+      </div>
+      <div class="hn-s-empty">No indexed sections yet for ${app.label} — visit it once first.</div>`;
+      wireResultClicks();
+      return;
+    }
+
+    // Sections first, each immediately followed by its own sub-sections —
+    // parent is derived from the sub's arg ("plan~timer" belongs under
+    // whichever section entry has navArg "plan").
+    const sections = items.filter((s) => s.kind === 'section');
+    const subs = items.filter((s) => s.kind === 'sub');
+    const subsByParent = {};
+    const looseSubs = [];
+    subs.forEach((s) => {
+      const parentArg = s.navAction && s.navAction.arg && s.navAction.arg.includes('~')
+        ? s.navAction.arg.split('~')[0] : null;
+      const parent = parentArg && sections.find((sec) => sec.navAction && sec.navAction.arg === parentArg);
+      if (parent) { (subsByParent[parent.label] = subsByParent[parent.label] || []).push(s); }
+      else looseSubs.push(s);
+    });
+
+    let html = `<div class="hn-result hn-back-row" data-back data-idx="0">
+      <span class="hn-r-back-arrow">←</span>
+      <span class="hn-r-label">Back to apps</span>
+    </div>
+    <div class="hn-r-group-label" style="color:${app.color}88">${app.icon} ${app.label}</div>`;
+
+    let idx = 1;
+    function row(s) {
+      const na = s.navAction;
+      const hrefTarget = na
+        ? `${s.app.file}#hn-call~${na.func}~${encodeURIComponent(na.arg)}`
+        : `${s.app.file}${s.id ? '#' + s.id : ''}`;
+      const naAttr = na
+        ? `data-navcall="${na.func}~${encodeURIComponent(na.arg)}" data-appid="${s.app.id}"`
+        : `data-appid="${s.app.id}"`;
+      const kindBadge = s.kind === 'section'
+        ? '<span class="hn-r-kind hn-r-kind-s" title="Top-level section">S</span>'
+        : '<span class="hn-r-kind hn-r-kind-ss" title="Sub-section">SS</span>';
+      const indent = s.kind === 'sub' ? ' hn-r-indent' : '';
+      return `<div class="hn-result${indent}" data-href="${hrefTarget}" ${naAttr} data-idx="${idx++}">
+        <span class="hn-r-dot" style="background:${s.app.color}"></span>
+        ${kindBadge}
+        <span class="hn-r-label">${s.label}</span>
+      </div>`;
+    }
+
+    sections.forEach((sec) => {
+      html += row(sec);
+      (subsByParent[sec.label] || []).forEach((sub) => { html += row(sub); });
+    });
+    looseSubs.forEach((sub) => { html += row(sub); });
+
+    sResults.innerHTML = html;
+    wireResultClicks();
+  }
 
   function renderResults(q) {
     q = q.toLowerCase().trim();
@@ -805,9 +839,14 @@
       return;
     }
 
-    const filtered = q
-      ? pool.filter((s) => s.label.toLowerCase().includes(q) || s.app.short.toLowerCase().includes(q))
-      : pool.slice(0, 24);
+    if (!q) {
+      if (drillApp) { renderAppDrill(drillApp); } else { renderAppPicker(); }
+      return;
+    }
+    // Typing always exits drill mode and searches everything flat.
+    drillApp = null;
+
+    const filtered = pool.filter((s) => s.label.toLowerCase().includes(q) || s.app.short.toLowerCase().includes(q));
 
     if (!filtered.length) {
       sResults.innerHTML = `<div class="hn-s-empty">No results for <strong style="color:rgba(255,255,255,.6)">"${q}"</strong></div>`;
@@ -836,22 +875,27 @@
         const naAttr = na
           ? `data-navcall="${na.func}~${encodeURIComponent(na.arg)}" data-appid="${s.app.id}"`
           : `data-appid="${s.app.id}"`;
+        const kindBadge = s.kind === 'section'
+          ? '<span class="hn-r-kind hn-r-kind-s" title="Top-level section">S</span>'
+          : s.kind === 'sub'
+            ? '<span class="hn-r-kind hn-r-kind-ss" title="Sub-section">SS</span>'
+            : '';
         html += `<div class="hn-result" data-href="${hrefTarget}" ${naAttr} data-idx="${globalIdx++}">
           <span class="hn-r-dot" style="background:${s.app.color}"></span>
+          ${kindBadge}
           <span class="hn-r-label">${s.label}</span>
           <span class="hn-r-app" style="color:${s.app.color}">${s.app.short}</span>
         </div>`;
       });
     });
     sResults.innerHTML = html;
-    sResults.querySelectorAll('.hn-result').forEach((r) => {
-      r.addEventListener('click', () => activateResult(r));
-    });
+    wireResultClicks();
   }
 
   function openSearch() {
     allSections = loadAllIndices();
     focusIdx = -1;
+    drillApp = null;
     sInput.value = '';
     overlay.classList.add('hn-open');
     setTimeout(() => sInput.focus(), 40);
@@ -861,6 +905,7 @@
   function closeSearch() {
     overlay.classList.remove('hn-open');
     focusIdx = -1;
+    drillApp = null;
   }
 
   /**
@@ -951,9 +996,14 @@
       items[focusIdx]?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       const f = items[focusIdx];
-      if (f) activateResult(f);
+      if (f) {
+        if (f.dataset.drillApp) { drillApp = f.dataset.drillApp; focusIdx = -1; renderResults(''); }
+        else if (f.dataset.back !== undefined) { drillApp = null; focusIdx = -1; renderResults(''); }
+        else activateResult(f);
+      }
     } else if (e.key === 'Escape') {
-      closeSearch();
+      if (drillApp && !sInput.value) { drillApp = null; focusIdx = -1; renderResults(''); }
+      else closeSearch();
     }
   });
 
@@ -965,6 +1015,12 @@
   });
 
   searchPill.addEventListener('click', openSearch);
+
+  // Exposed so pages can bake their own nav buttons into a template
+  // (e.g. Zen Garden's re-rendered side panel) instead of relying on
+  // fragile post-hoc DOM injection that gets wiped on re-render.
+  window.hubNavSwitch = toggleSwitcher;
+  window.hubNavSearch = openSearch;
 
   // Always populate root with the floating pills — mount functions decide whether to show it
   root.appendChild(swWrap);
@@ -1069,64 +1125,50 @@ return btn;
 
   function showMobileNavOverlay() { /* no-op — kept for safety */ }
 
-  function mountInSidebar(sidebarEl) {
-    // Study / ORV: inject two icon buttons at bottom of sidebar
+  // v8: mount inside the new compact .v8-nav pill
+  function mountInStudyV8Nav(navEl) {
+    document.body.appendChild(root);
     root.style.display = 'none';
-    document.body.appendChild(root);
 
-    // For ORV: .sidebar > .hdr contains all content; inject after .fw-quote if present
-    const hdr = sidebarEl.querySelector('.hdr');
-    const target = hdr || sidebarEl;
-
-    const sep = document.createElement('div');
-    sep.className = 'hn-sb-sep';
-    target.appendChild(sep);
-
-    const btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:center;padding:4px 0 8px;';
-
-    const swBtn = makeNavBtn('hn-sb-item', 'hn-sb-tip', 'Switch App', SW_SVG, toggleSwitcher);
-    const srBtn = makeNavBtn('hn-sb-item', 'hn-sb-tip', 'Search ⌘K', SR_SVG, openSearch);
-    btnRow.appendChild(swBtn);
-    btnRow.appendChild(srBtn);
-    target.appendChild(btnRow);
+    const makeItem = (emoji, label, clickFn) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'v8-nav-item hn-injected';
+      b.setAttribute('aria-label', label);
+      b.dataset.tab = 'hub-' + label.toLowerCase();
+      const ic = document.createElement('span');
+      ic.className = 'v8-nav-icon';
+      ic.textContent = emoji;
+      const lb = document.createElement('span');
+      lb.className = 'v8-nav-label';
+      lb.textContent = label;
+      b.appendChild(ic); b.appendChild(lb);
+      b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); clickFn(e); });
+      return b;
+    };
+    navEl.appendChild(makeItem('⬡', 'Apps',   toggleSwitcher));
+    navEl.appendChild(makeItem('🔍', 'Search', openSearch));
   }
 
-  /* ── ZEN GARDEN SIDEBAR INTEGRATION ── */
-  function mountInZenPanel(panelEl) {
-    root.style.display = 'none'; 
-    document.body.appendChild(root);
-
-    const navCard = document.createElement('div');
-    navCard.className = 'card';
-    navCard.innerHTML = `
-      <div class="card-title">System Navigation</div>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="zen-sw-btn" style="background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); width: 100%; padding: 12px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-          <span style="font-size: 16px; opacity: 0.7;">⬡</span> Switch App
-        </button>
-        <button id="zen-sr-btn" style="background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); width: 100%; padding: 12px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
-          <span style="font-size: 16px; opacity: 0.7;">🔍</span> Search Hub <span style="font-size: 9px; opacity: 0.3; margin-left: auto; letter-spacing: 0.1em;">⌘K</span>
-        </button>
-      </div>
-    `;
-
-    const btns = navCard.querySelectorAll('button');
-    btns.forEach(b => {
-      b.onmouseover = () => { 
-        b.style.borderColor = 'var(--accent-dim)'; b.style.color = 'var(--text)'; b.style.background = 'rgba(124, 184, 124, 0.05)'; 
-      };
-      b.onmouseout = () => { 
-        b.style.borderColor = 'var(--border)'; b.style.color = 'var(--text-dim)'; b.style.background = 'var(--surface2)'; 
-      };
-    });
-
-    if (panelEl.children.length >= 1) { panelEl.insertBefore(navCard, panelEl.children[1]); } 
-    else { panelEl.appendChild(navCard); }
-
-    document.getElementById('zen-sw-btn').onclick = (e) => { e.stopPropagation(); toggleSwitcher(e); };
-    document.getElementById('zen-sr-btn').onclick = openSearch;
-  }
+  // ── Helpers exposed for hub-nav navFunc indirection ──
+  // Used by APP_NAV_MANIFEST.study entries
+  window.__hub_focus_capture__ = function() {
+    if (typeof window.v8GoTo === 'function') window.v8GoTo('today');
+    setTimeout(() => {
+      const i = document.getElementById('v8CaptureInput');
+      if (i) i.focus();
+    }, 200);
+  };
+  window.__hub_add_deadline__ = function() {
+    if (typeof window.v8GoTo === 'function') window.v8GoTo('review');
+    setTimeout(() => {
+      const el = document.getElementById('deadlineLabel');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => el.focus(), 350);
+      }
+    }, 200);
+  };
 
   /* ── TRACKER HUB INTEGRATION (Search Pill) ── */
   function mountInHubHeader() {
@@ -1174,20 +1216,22 @@ return btn;
     }
 
     if (currentId === 'study') {
+      // v8: prefer the new .v8-nav, fall back to legacy #bottomNav
+      const v8nav = document.getElementById('v8Nav');
+      if (v8nav) { mountInStudyV8Nav(v8nav); return; }
       const nav = document.getElementById('bottomNav');
       if (nav) { mountInStudyNav(nav); return; }
     }
 
-    if (currentId === 'orv') {
-      const sidebar = document.querySelector('.sidebar');
-      if (sidebar) { mountInSidebar(sidebar); return; }
+    if (currentId === 'zen') {
+      // Zen Garden bakes its own "System Navigation" card into the
+      // re-rendered side panel template (see zen-garden-tracker.html),
+      // using window.hubNavSwitch / window.hubNavSearch exposed above.
+      root.style.display = 'none';
+      document.body.appendChild(root);
+      return;
     }
 
-    if (currentId === 'zen') {
-      const panel = document.querySelector('.side-panel');
-      if (panel) { mountInZenPanel(panel); return; }
-    }
-    
     // Fallback: show floating pills
     root.style.display = 'flex';
     document.body.appendChild(root);

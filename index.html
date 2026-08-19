@@ -27,9 +27,6 @@
   --zen:   #4ade80;
   --zen-g: rgba(74,222,128,0.12);
   --zen-rgb: 74,222,128;
-  --orv:   #f5b800;
-  --orv-g: rgba(245,184,0,0.12);
-  --orv-rgb: 245,184,0;
 
   --snap: cubic-bezier(.16,1,.3,1);
   --spring: cubic-bezier(.34,1.56,.64,1);
@@ -63,7 +60,6 @@ html,body {
 #cursor.hov-study { color:var(--study); }
 #cursor.hov-proc  { color:var(--proc); }
 #cursor.hov-zen   { color:var(--zen); }
-#cursor.hov-orv   { color:var(--orv); }
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;}
@@ -165,9 +161,15 @@ header {
 .cards-grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
+  grid-template-areas:
+    "top   top"
+    "left  right";
   gap:14px;
-  width:100%;max-width:1160px;
+  width:100%;max-width:1100px;
 }
+.cards-grid .card-wrap:nth-child(1) { grid-area: top; max-width:640px; width:100%; margin:0 auto; }
+.cards-grid .card-wrap:nth-child(2) { grid-area: left; }
+.cards-grid .card-wrap:nth-child(3) { grid-area: right; }
 
 /* ── CARD WRAP — each gets its own perspective ── */
 /* ── CARD WRAP — Higher perspective for better depth ── */
@@ -179,6 +181,8 @@ header {
 /* ── CARD — Critical 3D Fixes ── */
 .card {
   position:relative;
+  height:100%;
+  box-sizing:border-box;
   border-radius:26px;
   padding:20px 22px 34px;
   text-decoration:none;
@@ -205,13 +209,11 @@ header {
 .card-wrap:nth-child(1) .card{animation-delay:.05s;}
 .card-wrap:nth-child(2) .card{animation-delay:.15s;}
 .card-wrap:nth-child(3) .card{animation-delay:.25s;}
-.card-wrap:nth-child(4) .card{animation-delay:.35s;}
 
 /* Card type accent vars */
 .card-study{--cc:var(--study);--cg:var(--study-g);--cr:var(--study-rgb);}
 .card-proc {--cc:var(--proc); --cg:var(--proc-g); --cr:var(--proc-rgb);}
 .card-zen  {--cc:var(--zen);  --cg:var(--zen-g);  --cr:var(--zen-rgb);}
-.card-orv  {--cc:var(--orv);  --cg:var(--orv-g);  --cr:var(--orv-rgb);}
 
 /* Mouse-tracking glow */
 .card::before {
@@ -244,10 +246,6 @@ header {
 .card-zen.is-tilting {
   border-color:rgba(74,222,128,.5);
   box-shadow:0 28px 70px rgba(74,222,128,.22),0 0 0 1px rgba(74,222,128,.3),inset 0 1px 0 rgba(74,222,128,.15);
-}
-.card-orv.is-tilting {
-  border-color:rgba(245,184,0,.5);
-  box-shadow:0 28px 70px rgba(245,184,0,.22),0 0 0 1px rgba(245,184,0,.3),inset 0 1px 0 rgba(245,184,0,.15);
 }
 
 /* Clip mask — wraps visual-only elements so they don't bleed out */
@@ -299,12 +297,10 @@ header {
 .card-study .c-icon{background:rgba(79,142,247,.1);box-shadow:0 0 0 1px rgba(79,142,247,.2),0 6px 20px rgba(79,142,247,.1);}
 .card-proc  .c-icon{background:rgba(0,217,245,.1); box-shadow:0 0 0 1px rgba(0,217,245,.2), 0 6px 20px rgba(0,217,245,.1);}
 .card-zen   .c-icon{background:rgba(74,222,128,.1);box-shadow:0 0 0 1px rgba(74,222,128,.2),0 6px 20px rgba(74,222,128,.1);}
-.card-orv   .c-icon{background:rgba(245,184,0,.1); box-shadow:0 0 0 1px rgba(245,184,0,.2), 0 6px 20px rgba(245,184,0,.1);}
 .card:hover .c-icon { transform:scale(1.08) rotate(-4deg); }
 .card-study:hover .c-icon{box-shadow:0 0 0 1px rgba(79,142,247,.4),0 10px 30px rgba(79,142,247,.25);}
 .card-proc:hover  .c-icon{box-shadow:0 0 0 1px rgba(0,217,245,.4), 0 10px 30px rgba(0,217,245,.25);}
 .card-zen:hover   .c-icon{box-shadow:0 0 0 1px rgba(74,222,128,.4),0 10px 30px rgba(74,222,128,.25);}
-.card-orv:hover   .c-icon{box-shadow:0 0 0 1px rgba(245,184,0,.4), 0 10px 30px rgba(245,184,0,.25);}
 
 .c-badge {
   font-family:'JetBrains Mono',monospace;font-size:9px;
@@ -314,7 +310,6 @@ header {
 .card-study .c-badge{color:var(--study);background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.28);}
 .card-proc  .c-badge{color:var(--proc); background:rgba(0,217,245,.08); border-color:rgba(0,217,245,.28);}
 .card-zen   .c-badge{color:var(--zen);  background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.28);}
-.card-orv   .c-badge{color:var(--orv);  background:rgba(245,184,0,.08); border-color:rgba(245,184,0,.28);}
 
 .c-title {
   font-family: 'Orbitron', sans-serif;
@@ -374,11 +369,13 @@ header {
   gap: 16px;
   margin-top: 0; /* Changed from 24px to 0 */
   padding-top: 0px;
+  padding-right: 54px; /* keep last stat clear of the circular launch button */
   border-top: none !important;
 }
 .s-item { display:flex;flex-direction:column;gap:4px; }
 .s-val {
   font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;line-height:1;
+  white-space:nowrap;
 }
 .s-lbl {
   font-family:'JetBrains Mono',monospace;font-size:9px;
@@ -387,7 +384,6 @@ header {
 .card-study .s-val{color:var(--study);}
 .card-proc  .s-val{color:var(--proc);}
 .card-zen   .s-val{color:var(--zen);}
-.card-orv   .s-val{color:var(--orv);}
 
 /* Launch button */
 .c-launch {
@@ -402,7 +398,6 @@ header {
 .card-study:hover .c-launch{background:var(--study);border-color:var(--study);color:#fff;box-shadow:0 0 28px rgba(79,142,247,.6);transform:rotate(-45deg);}
 .card-proc:hover  .c-launch{background:var(--proc); border-color:var(--proc); color:#000;box-shadow:0 0 28px rgba(0,217,245,.6); transform:rotate(-45deg);}
 .card-zen:hover   .c-launch{background:var(--zen);  border-color:var(--zen);  color:#000;box-shadow:0 0 28px rgba(74,222,128,.6);transform:rotate(-45deg);}
-.card-orv:hover   .c-launch{background:var(--orv);  border-color:var(--orv);  color:#000;box-shadow:0 0 28px rgba(245,184,0,.6); transform:rotate(-45deg);}
 
 /* ── RIPPLE ── */
 .ripple {
@@ -425,7 +420,6 @@ header {
 .fd.study{background:var(--study);box-shadow:0 0 10px var(--study);}
 .fd.proc {background:var(--proc); box-shadow:0 0 10px var(--proc);}
 .fd.zen  {background:var(--zen);  box-shadow:0 0 10px var(--zen);}
-.fd.orv  {background:var(--orv);  box-shadow:0 0 10px var(--orv);}
 .fsep{width:20px;height:1px;background:var(--border);}
 .flbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-left:6px;}
 
@@ -434,7 +428,12 @@ header {
 
 /* ── RESPONSIVE ── */
 @media(max-width:700px){
-  .cards-grid{grid-template-columns:1fr;}
+  .cards-grid{
+    grid-template-columns:1fr;
+    grid-template-areas:"top" "left" "right";
+    max-width:520px;
+  }
+  .cards-grid .card-wrap:nth-child(1) { max-width:none; }
   .card-wrap{perspective:none;}
   .page{padding:44px 18px 60px;}
   .title-glow,.title-main{font-size:36px !important;}
@@ -492,7 +491,7 @@ header {
       <div class="title-glow" aria-hidden="true">TRACKERS HUB</div>
       <div class="title-main">TRACKERS HUB</div>
     </div>
-    <p class="sub">Four systems. One command center.</p>
+    <p class="sub">Three systems. One command center.</p>
     <div class="date-pill">
       <span class="live-dot"></span>
       <span id="ld">—</span>
@@ -584,35 +583,14 @@ header {
       </a>
     </div>
 
-    <!-- ORV TRACKER -->
-    <div class="card-wrap">
-      <a class="card card-orv" href="ORV-Tracker.html">
-        <div class="card-clip"><div class="wm">O</div><div class="card-shine"></div></div>
-        <div class="c-inner">
-          <div class="c-head"><div class="c-icon">✦</div><div class="c-badge">Star Stream</div></div>
-          <div class="c-title">ORV Tracker</div>
-<div class="c-bar">
-  <div class="c-fill"></div>
-  <span class="c-pct">0% SYNCHRONIZED</span>
-</div>
-          <div class="c-stats">
-            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">Ch. Read</span></div>
-            <div class="s-item"><span class="s-val">0/58</span><span class="s-lbl">Sessions</span></div>
-            <div class="s-item"><span class="s-val">33</span><span class="s-lbl">Arcs</span></div>
-          </div>
-        </div>
-        <div class="c-launch">↗</div>
-      </a>
-    </div>
   </div>
 
   <div class="hub-footer">
     <span class="fd study"></span><span class="fsep"></span>
     <span class="fd proc"></span><span class="fsep"></span>
-    <span class="fd zen"></span><span class="fsep"></span>
-    <span class="fd orv"></span>
+    <span class="fd zen"></span>
     <span class="fsep"></span>
-    <span class="flbl">4 trackers online</span>
+    <span class="flbl">3 trackers online</span>
   </div>
 
 </div>
@@ -831,7 +809,11 @@ function syncHubData() {
         const studiedHrs = studiedSecs / 3600;
 
         if(sCard) {
-            const goalHrs = parseFloat(sSettings.dailyGoal) || 8;
+            // Use today's specific goal from dailyGoalByDay if available
+            const todayDow = new Date().getDay(); // 0=Sun
+            const goalHrs = (sSettings.dailyGoalByDay && sSettings.dailyGoalByDay[todayDow])
+                ? parseFloat(sSettings.dailyGoalByDay[todayDow])
+                : parseFloat(sSettings.dailyGoal) || 8;
             const sPct = Math.min(100, Math.round((studiedHrs / goalHrs) * 100));
 
             let totalP = 0, totalHeld = 0;
@@ -867,8 +849,11 @@ function syncHubData() {
         }
 
         // --- 2. PROCRASTINATION TRACKER — Study Gate lock aware ---
-        const STUDY_SECS_CYCLE = 4 * 3600;  // 4h per cycle
-        const BUDGET_MINS      = 75;         // 75 min per unlock
+        const STUDY_SECS_CYCLE = (3 * 3600) + (15 * 60); // 3h 15m per cycle (matches proc hub)
+        const BUDGET_MINS      = 60;                       // 60 min per cycle
+        const BONUS_SECS       = (5 * 3600) + (30 * 60);  // 5h 30m → 2hr bonus
+        const BONUS_BUDGET_MINS= 120;
+        const BONUS_MAX_USED   = 2;
 
         // Load gate lock state
         let lockState = { date: todayStr(), cyclesDone: 0, procMinUsed: [], unlockedAt: null };
@@ -918,58 +903,41 @@ function syncHubData() {
             });
             const taskDoneCount = pTasks.filter(t => t.completed).length;
 
-            if (isGateUnlocked) {
-                const budgetPct = Math.min(100, Math.round((activeMinsLeft / BUDGET_MINS) * 100));
-                fill.style.width      = budgetPct + '%';
-                fill.style.background = activeMinsLeft < 15 ? '#ff3b6b' : 'linear-gradient(90deg, #4ade80, #00e5ff)';
-                if (pctLabel) pctLabel.textContent = '🔓 ' + fmtMinsLeft(activeMinsLeft) + ' BUDGET LEFT';
-                pVals[0].textContent = fmtMinsLeft(activeMinsLeft);
-                pLbls[0].textContent = 'Budget Left';
-            } else if (totalCycles === 0) {
-                fill.style.width      = cycleProgressPct + '%';
-                fill.style.background = 'linear-gradient(90deg, #4f8ef7, #00d9f5)';
-                const secsNeeded = Math.max(0, STUDY_SECS_CYCLE - secsIntoCycle);
-                const hN = Math.floor(secsNeeded/3600), mN = Math.floor((secsNeeded%3600)/60);
-                const neededStr = hN > 0 ? hN + 'h ' + mN + 'm' : mN + 'm';
-                if (pctLabel) pctLabel.textContent = '🔒 LOCKED · STUDY ' + neededStr + ' MORE';
-                pVals[0].textContent = studiedHrs.toFixed(1) + 'h / 4h';
-                pLbls[0].textContent = 'Study Progress';
+            // Check S3 bonus
+            const s1MinsUsed = lockState.procMinUsed.length > 0 ? (lockState.procMinUsed[0] || 0) : 0;
+            const bonusGranted = lockState.bonusUnlockGranted;
+            const bonusMinsLeft = bonusGranted ? Math.max(0, BONUS_BUDGET_MINS - (lockState.bonusMinsUsed || 0)) : 0;
+            // Check S2 goal
+            const goalGranted = lockState.goalUnlockGranted;
+            const goalMinsLeft = goalGranted ? Math.max(0, BUDGET_MINS - (lockState.goalMinsUsed || 0)) : 0;
+
+            const activeSituation = bonusMinsLeft > 0 ? 3 : goalMinsLeft > 0 ? 2 : isGateUnlocked ? 1 : 0;
+            const activeMinsLeftFinal = activeSituation === 3 ? bonusMinsLeft : activeSituation === 2 ? goalMinsLeft : activeMinsLeft;
+            const maxBudget = activeSituation === 3 ? BONUS_BUDGET_MINS : BUDGET_MINS;
+
+            if (activeSituation > 0) {
+                const budgetPct = Math.min(100, Math.round((activeMinsLeftFinal / maxBudget) * 100));
+                fill.style.width = budgetPct + '%';
+                fill.style.background = activeMinsLeftFinal < 15 ? '#ff3b6b' : activeSituation === 3 ? 'linear-gradient(90deg,#f5b800,#4ade80)' : 'linear-gradient(90deg,#4ade80,#00e5ff)';
+                const label = activeSituation === 3 ? '🏆 BONUS ' : activeSituation === 2 ? '🎯 GOAL ' : '🔓 ';
+                if (pctLabel) pctLabel.textContent = label + fmtMinsLeft(activeMinsLeftFinal) + ' LEFT';
+                pVals[0].textContent = fmtMinsLeft(activeMinsLeftFinal);
+                pLbls[0].textContent = activeSituation === 3 ? 'Discipline Bonus' : activeSituation === 2 ? 'Goal Unlock' : 'Budget Left';
             } else {
                 fill.style.width      = cycleProgressPct + '%';
                 fill.style.background = 'linear-gradient(90deg, #4f8ef7, #00d9f5)';
                 const secsNeeded = Math.max(0, STUDY_SECS_CYCLE - secsIntoCycle);
                 const hN = Math.floor(secsNeeded/3600), mN = Math.floor((secsNeeded%3600)/60);
                 const neededStr = hN > 0 ? hN + 'h ' + mN + 'm' : mN + 'm';
-                if (pctLabel) pctLabel.textContent = '🔒 NEXT UNLOCK IN ' + neededStr;
-                pVals[0].textContent = totalCycles + ' done · ' + neededStr + ' left';
-                pLbls[0].textContent = 'Cycles / Next Unlock';
+                if (pctLabel) pctLabel.textContent = '🔒 STUDY ' + neededStr + ' MORE';
+                pVals[0].textContent = studiedHrs.toFixed(1) + 'h / 3h15m';
+                pLbls[0].textContent = 'Study Progress';
             }
 
             pVals[1].textContent = seriesCount + pTasks.length;
             pLbls[1].textContent = `${totalEntries + pTasks.length} Entries Total`;
             pVals[2].textContent = completedSeries + taskDoneCount;
             pLbls[2].textContent = `${watchedEntries + taskDoneCount} Entries Done`;
-
-            // Lock badge on card
-            const existingBadge = pCard.querySelector('.gate-lock-badge');
-            if (!isGateUnlocked) {
-                // Fully locked — badge stays
-                if (!existingBadge) {
-                    const badge = document.createElement('div');
-                    badge.className = 'gate-lock-badge';
-                    badge.style.cssText = "position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid rgba(0,229,255,0.3);border-radius:100px;padding:3px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.25em;color:rgba(0,229,255,0.7);text-transform:uppercase;pointer-events:none;z-index:5;backdrop-filter:blur(8px);white-space:nowrap;";
-                    badge.textContent = '🔒 STUDY GATE ACTIVE';
-                    pCard.style.position = 'relative';
-                    pCard.appendChild(badge);
-                } else {
-                    existingBadge.textContent = '🔒 STUDY GATE ACTIVE';
-                    existingBadge.style.color = 'rgba(0,229,255,0.7)';
-                    existingBadge.style.borderColor = 'rgba(0,229,255,0.3)';
-                }
-            } else {
-                // Fully unlocked — remove badge
-                if (existingBadge) existingBadge.remove();
-            }
         }
 
         // --- 3. ZEN GARDEN TRACKER (Wellness) ---
@@ -1016,22 +984,6 @@ if(zCard) {
     zVals[1].textContent = new Date().toLocaleString('en-us', { month: 'short' }).toUpperCase();
     zVals[2].textContent = totalSeeds;
 }
-
-        // --- 4. ORV TRACKER (Star Stream) ---
-        const oDone = JSON.parse(localStorage.getItem('orv-d') || '[]');
-        const oCard = document.querySelector('.card-orv');
-
-        if(oCard) {
-            const chCounts = [15,4,8,9,6,11,9,10,10,10,8,10,5,11,7,6,6,6,10,8,9,11,10,10,11,12,11,7,8,5,8,7,12,9,5,11,12,12,8,8,10,7,9,11,9,7,7,10,10,9,9,11,10,10,11,11,10,35];
-            let totalChapters = 0;
-            oDone.forEach(idx => { if(chCounts[idx]) totalChapters += chCounts[idx]; });
-
-            const oPct = Math.round((oDone.length / 58) * 100);
-            oCard.querySelector('.c-fill').style.width = oPct + '%';
-            const oVals = oCard.querySelectorAll('.s-val');
-            oVals[0].textContent = totalChapters; 
-            oVals[1].textContent = `${oDone.length}/58`;
-        }
 
     } catch(err) { console.error("Sync Logic Error:", err); }
 }

@@ -32,6 +32,8 @@
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    overflow-y: hidden;
+    zoom: 0.99;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
@@ -46,11 +48,16 @@
     z-index: 9999;
   }
 
+  html, body { height: 100%; }
+
   .app {
-    max-width: 1320px;
+    max-width: 1220px;
+    height: 100vh;
     margin: 0 auto;
-    padding: 48px 56px 80px;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding: 20px 32px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
   }
 
   /* ─── Header ─── */
@@ -58,7 +65,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 56px;
+    margin-bottom: 16px;
   }
 
   .logo-area {
@@ -68,26 +75,26 @@
   }
 
   .logo-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
     background: linear-gradient(135deg, var(--accent-dim), #2a3d2a);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .logo-text h1 {
     font-family: 'Instrument Serif', serif;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 400;
     letter-spacing: -0.01em;
     color: var(--text);
   }
 
   .logo-text span {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--text-faint);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -95,7 +102,7 @@
 
   .header-stats {
     display: flex;
-    gap: 32px;
+    gap: 22px;
     align-items: center;
   }
 
@@ -105,7 +112,7 @@
 
   .header-stat .value {
     font-family: 'Instrument Serif', serif;
-    font-size: 36px;
+    font-size: 26px;
     color: var(--text);
     line-height: 1;
   }
@@ -125,9 +132,9 @@
   .streak-banner {
     background: linear-gradient(135deg, var(--surface), var(--surface2));
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px 36px;
-    margin-bottom: 40px;
+    border-radius: 13px;
+    padding: 15px 22px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -154,20 +161,20 @@
   }
 
   .streak-flame {
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
     background: var(--accent-glow);
     border: 1px solid var(--accent-dim);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 19px;
   }
 
   .streak-info h2 {
     font-family: 'Instrument Serif', serif;
-    font-size: 30px;
+    font-size: 19px;
     font-weight: 400;
     color: var(--text);
   }
@@ -178,9 +185,9 @@
   }
 
   .streak-info p {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-dim);
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   .streak-right {
@@ -191,10 +198,10 @@
     background: var(--accent);
     color: #111;
     border: none;
-    padding: 14px 32px;
-    border-radius: 10px;
+    padding: 10px 22px;
+    border-radius: 9px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -222,10 +229,10 @@
     background: transparent;
     color: var(--danger);
     border: 1px solid var(--danger);
-    padding: 14px 24px;
-    border-radius: 10px;
+    padding: 10px 18px;
+    border-radius: 9px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -256,6 +263,32 @@
     align-items: center;
   }
 
+  /* ─── System Navigation (hub switch / search) ─── */
+  .hubnav-btn {
+    flex: 1;
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .hubnav-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--text);
+    background: rgba(124, 184, 124, 0.05);
+  }
+  .hubnav-btn-icon { font-size: 14px; opacity: 0.7; }
+  .hubnav-btn-kbd { font-size: 9px; opacity: 0.35; letter-spacing: 0.08em; }
+
   .cal-day.skipped {
     color: var(--danger);
     opacity: 0.7;
@@ -277,24 +310,32 @@
   /* ─── Main Grid ─── */
   .main-grid {
     display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 28px;
-    margin-bottom: 40px;
+    grid-template-columns: 1fr 320px;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex: 1;
+    min-height: 0;
   }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 28px;
+    border-radius: 13px;
+    padding: 15px 17px;
+  }
+
+  #zen-card-calendar {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .card-title {
-    font-size: 12px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-faint);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -313,12 +354,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 
   .month-nav h3 {
     font-family: 'Instrument Serif', serif;
-    font-size: 22px;
+    font-size: 17px;
     font-weight: 400;
   }
 
@@ -326,14 +367,14 @@
     background: var(--surface2);
     border: 1px solid var(--border);
     color: var(--text-dim);
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 13px;
     transition: all 0.15s;
   }
 
@@ -346,31 +387,32 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .cal-header span {
     text-align: center;
-    font-size: 11px;
+    font-size: 9px;
     color: var(--text-faint);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 6px 0;
+    letter-spacing: 0.08em;
+    padding: 2px 0;
   }
 
   .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    gap: 5px;
   }
 
   .cal-day {
-    aspect-ratio: 1;
-    border-radius: 10px;
+    aspect-ratio: unset;
+    height: 53px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-dim);
     cursor: pointer;
     transition: all 0.2s;
@@ -427,22 +469,37 @@
   .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 15px;
+  }
+  /* Last card absorbs any leftover height so the sidebar always matches
+     the calendar column's height exactly, regardless of viewport size
+     or how many weeks the current month's grid needs. Title stays
+     pinned at top; only the quote area grows and centers within it. */
+  .side-panel > .card:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .side-panel > .card:last-child > div:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   /* Milestones */
   .milestones {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 
   .milestone {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border-radius: 10px;
+    gap: 9px;
+    padding: 9px 10px;
+    border-radius: 9px;
     background: var(--surface2);
     border: 1px solid transparent;
     transition: all 0.2s;
@@ -454,13 +511,13 @@
   }
 
   .milestone-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 11px;
     background: var(--surface);
     flex-shrink: 0;
   }
@@ -475,10 +532,10 @@
   }
 
   .milestone-info h4 {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text);
-    margin-bottom: 2px;
+    margin-bottom: 0;
   }
 
   .milestone.achieved .milestone-info h4 {
@@ -486,13 +543,14 @@
   }
 
   .milestone-info p {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--text-faint);
   }
 
   .milestone-check {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-faint);
+    flex-shrink: 0;
   }
 
   .milestone.achieved .milestone-check {
@@ -502,8 +560,8 @@
   /* ─── Weekly Rhythm ─── */
   .rhythm-row {
     display: flex;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 4px;
+    margin-top: 2px;
   }
 
   .rhythm-bar {
@@ -511,12 +569,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .rhythm-fill {
     width: 100%;
-    height: 56px;
+    height: 40px;
     border-radius: 6px;
     background: var(--surface2);
     position: relative;
@@ -538,7 +596,7 @@
   }
 
   .rhythm-label {
-    font-size: 11px;
+    font-size: 9px;
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -546,23 +604,42 @@
 
   /* ─── Journal ─── */
   .journal-area {
-    margin-top: 4px;
+    margin-top: 0;
+  }
+
+  #zen-card-reflections {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #zen-card-reflections .journal-area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #zen-card-reflections .journal-textarea {
+    flex: 1;
+    min-height: 60px;
   }
 
   .journal-textarea {
     width: 100%;
-    min-height: 80px;
+    min-height: 50px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 9px;
+    padding: 10px 12px;
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
+    font-size: 12px;
     resize: vertical;
     outline: none;
     transition: border-color 0.2s;
-    line-height: 1.6;
+    line-height: 1.5;
   }
 
   .journal-textarea:focus {
@@ -574,37 +651,10 @@
   }
 
   .journal-hint {
-    font-size: 11px;
+    font-size: 9px;
     color: var(--text-faint);
-    margin-top: 8px;
+    margin-top: 4px;
     font-style: italic;
-  }
-
-  /* ─── Footer Quote ─── */
-  .footer-quote {
-    text-align: center;
-    padding: 32px 0 0;
-    border-top: 1px solid var(--border);
-  }
-
-  .footer-quote p {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-size: 17px;
-    color: var(--text-dim);
-    max-width: 500px;
-    margin: 0 auto;
-    line-height: 1.6;
-  }
-
-  .footer-quote .attr {
-    font-family: 'DM Sans', sans-serif;
-    font-style: normal;
-    font-size: 12px;
-    color: var(--text-faint);
-    margin-top: 8px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
 
   /* ─── Animations ─── */
@@ -616,7 +666,6 @@
   .header { animation: fadeUp 0.5s ease both; }
   .streak-banner { animation: fadeUp 0.5s ease 0.05s both; }
   .main-grid { animation: fadeUp 0.5s ease 0.1s both; }
-  .footer-quote { animation: fadeUp 0.5s ease 0.15s both; }
 
   @keyframes popIn {
     from { transform: scale(0.8); opacity: 0; }
@@ -846,7 +895,13 @@
 
   /* ─── Mobile Responsive ─── */
   @media (max-width: 768px) {
-    .app { padding: 24px 16px 80px; }
+    .app { padding: 24px 16px 80px; height: auto; }
+    body { overflow-y: auto; }
+    .main-grid { flex: none; min-height: auto; }
+    #zen-card-calendar { min-height: auto; }
+    #zen-card-reflections { flex: none; }
+    #zen-card-reflections .journal-area { flex: none; }
+    #zen-card-reflections .journal-textarea { flex: none; min-height: 50px; }
 
     .header {
       flex-direction: column;
@@ -1020,13 +1075,16 @@ function getMilestones(streak, total) {
 
 // ─── QUOTES ───
 const quotes = [
-  { text: "The garden of the mind flourishes with daily attention.", attr: "— Ancient Proverb" },
+  { text: "The urge is a wave. Let it rise, crest, and pass — do not paddle out to meet it.", attr: "— Recovery Wisdom" },
   { text: "Discipline is choosing between what you want now and what you want most.", attr: "— Abraham Lincoln" },
   { text: "A clear mind is the greatest wealth one can possess.", attr: "— Buddhist Wisdom" },
-  { text: "Every day is a new chance to tend your inner garden.", attr: "— Zen Philosophy" },
+  { text: "Every craving you don't act on makes the next one weaker.", attr: "— Neuroscience of Habit" },
   { text: "Mastery is not about perfection. It's about persistence.", attr: "— Unknown" },
   { text: "The strongest oak was once a little nut that held its ground.", attr: "— Anonymous" },
-  { text: "Peace comes from within. Do not seek it without.", attr: "— Siddhartha Gautama" },
+  { text: "You are not fighting a habit. You are building a new self, one no today at a time.", attr: "— Recovery Wisdom" },
+  { text: "The mind will bargain with you. Do not negotiate with a version of yourself you don't respect.", attr: "— Stoic Practice" },
+  { text: "What you feed grows. What you starve fades.", attr: "— Ancient Proverb" },
+  { text: "Willpower is a muscle — every rep in private is still a rep.", attr: "— Behavioral Science" },
 ];
 
 function getQuote() {
@@ -1121,15 +1179,17 @@ function render() {
     const done = data.days[key];
     const skipped = data.skipped[key];
     const isPast = !isFuture && !isToday;
-    
+    const hasJournal = !!(data.journal[key] && data.journal[key].trim());
+
     let cls = 'cal-day';
     if (isToday) cls += ' today';
     if (isFuture) cls += ' future';
     if (done) cls += ' tended';
     else if (skipped) cls += ' skipped';
     else if (isPast && key >= data.startDate) cls += ' missed';
-    
-    calDays += `<div class="${cls}" data-date="${key}" ${!isFuture ? `onclick="toggleDay('${key}')"` : ''}>${d}</div>`;
+
+    const journalDot = hasJournal ? `<span style="position:absolute; top:4px; right:5px; width:4px; height:4px; border-radius:50%; background:var(--gold);"></span>` : '';
+    calDays += `<div class="${cls}" data-date="${key}" ${!isFuture ? `onclick="toggleDay('${key}')"` : ''}>${d}${journalDot}</div>`;
   }
 
   const app = document.getElementById('app');
@@ -1178,7 +1238,7 @@ function render() {
     </div>
 
     <div class="main-grid">
-      <div class="card">
+      <div class="card" id="zen-card-calendar">
         <div class="card-title">Growth Calendar</div>
         <div class="month-nav">
           <button onclick="changeMonth(-1)">←</button>
@@ -1190,7 +1250,7 @@ function render() {
         </div>
         <div class="cal-grid">${calDays}</div>
 
-        <div style="margin-top: 24px;">
+        <div style="margin-top: 10px;" id="zen-card-reflections">
           <div class="card-title">Reflections</div>
           <div class="journal-area">
             <textarea class="journal-textarea" placeholder="How are you feeling today? What helped you stay focused..." oninput="saveJournal(this.value)">${journal}</textarea>
@@ -1201,6 +1261,18 @@ function render() {
 
       <div class="side-panel">
         <div class="card">
+          <div class="card-title">System Navigation</div>
+          <div style="display:flex; gap:8px;">
+            <button class="hubnav-btn" onclick="window.hubNavSwitch && window.hubNavSwitch(event)">
+              <span class="hubnav-btn-icon">⬡</span> Switch App
+            </button>
+            <button class="hubnav-btn" onclick="window.hubNavSearch && window.hubNavSearch()">
+              <span class="hubnav-btn-icon">🔍</span> Search <span class="hubnav-btn-kbd">⌘K</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card" id="zen-card-rhythm">
           <div class="card-title">This Week's Rhythm</div>
           <div class="rhythm-row">
             ${week.map(w => `
@@ -1214,7 +1286,7 @@ function render() {
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="zen-card-milestones">
           <div class="card-title">Milestones</div>
           <div class="milestones">
             ${milestones.map(m => `
@@ -1230,19 +1302,14 @@ function render() {
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="zen-card-wisdom">
           <div class="card-title">Today's Wisdom</div>
-          <div style="padding: 4px 0;">
-            <p style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 15px; color: var(--text-dim); line-height: 1.6;">${quote.text}</p>
-            <p style="font-size: 11px; color: var(--text-faint); margin-top: 8px; letter-spacing: 0.04em;">${quote.attr}</p>
+          <div>
+            <p style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 12px; color: var(--text-dim); line-height: 1.4;">${quote.text}</p>
+            <p style="font-size: 9px; color: var(--text-faint); margin-top: 4px; letter-spacing: 0.04em;">${quote.attr}</p>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="footer-quote">
-      <p>"A garden is a grand teacher. It teaches patience and careful watchfulness."</p>
-      <div class="attr">— Gertrude Jekyll</div>
     </div>
   `;
 }
@@ -1322,10 +1389,12 @@ function toggleDay(key) {
   if (done) status = 'Tended';
   if (skipped) status = "Didn't follow it";
 
+  const dayJournal = data.journal[key] || '';
+
   // Build popup
   const backdrop = document.createElement('div');
   backdrop.className = 'day-popup-backdrop';
-  backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+  backdrop.onclick = (e) => { if (e.target === backdrop) { backdrop.remove(); render(); } };
 
   let btnsHtml = '';
   if (!done) {
@@ -1343,7 +1412,11 @@ function toggleDay(key) {
       <div class="popup-date">${dateLabel}</div>
       <div class="popup-status">Currently: ${status}</div>
       <div class="popup-btns">${btnsHtml}</div>
-      <button class="popup-btn cancel" onclick="this.closest('.day-popup-backdrop').remove()">Cancel</button>
+      <div style="margin-top: 16px; text-align: left;">
+        <div class="journal-hint" style="margin-bottom: 6px; font-style: normal;">Reflection for this day</div>
+        <textarea class="journal-textarea" style="min-height: 80px;" oninput="saveJournal(this.value, '${key}')">${dayJournal}</textarea>
+      </div>
+      <button class="popup-btn cancel" onclick="this.closest('.day-popup-backdrop').remove(); render();">Close</button>
     </div>
   `;
 
@@ -1383,9 +1456,9 @@ function changeMonth(dir) {
   render();
 }
 
-function saveJournal(val) {
+function saveJournal(val, key) {
   const data = loadData();
-  data.journal[todayStr()] = val;
+  data.journal[key || todayStr()] = val;
   saveData(data);
 }
 

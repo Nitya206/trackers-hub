@@ -816,14 +816,22 @@ function syncHubData() {
                 : parseFloat(sSettings.dailyGoal) || 8;
             const sPct = Math.min(100, Math.round((studiedHrs / goalHrs) * 100));
 
-            let totalP = 0, totalHeld = 0;
-            sAtt.subjects.forEach(s => {
-                if(!s.archived){
-                    totalP += (parseInt(s.currentPresent || s.present || 0));
-                    totalHeld += (parseInt(s.currentTotal || s.total || 0));
-                }
+            // Must match the Study tracker exactly: duty leaves count toward the
+            // percentage as if attended, so it's (present + duty) / total. Without the
+            // duty term this always read low and could never agree with the app.
+            // Also note `??` rather than `||` — a subject with 0 attended is a real 0,
+            // not a reason to fall back to the legacy field.
+            let totalP = 0, totalHeld = 0, totalDuty = 0;
+            (sAtt.subjects || []).forEach(s => {
+                if (s.archived) return;
+                const pres = parseInt(s.currentPresent ?? s.present ?? 0) || 0;
+                const held = parseInt(s.currentTotal ?? s.total ?? 0) || 0;
+                const duty = (s.history || []).filter(h => h && h.type === 'duty').length;
+                totalP += pres;
+                totalHeld += held;
+                totalDuty += duty;
             });
-            const attPct = totalHeld > 0 ? Math.round((totalP / totalHeld) * 100) : 0;
+            const attPct = totalHeld > 0 ? Math.round(((totalP + totalDuty) / totalHeld) * 100) : 0;
 
             let examText = "No Exams";
             if (sExams.length > 0) {

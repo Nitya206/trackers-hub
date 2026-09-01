@@ -27979,7 +27979,9 @@
                     subject.currentPresent--;
                     subject.currentTotal--;
                 } else if (lastAction.type === 'duty') {
-                    // nothing to revert on present/total — duty only records in history
+                    // Duty adds to the total (class was held), so undo removes it again
+                    subject.total--;
+                    subject.currentTotal--;
                 } else if (lastAction.type === 'absent') {
                     subject.total--;
                     subject.currentTotal--;
@@ -28200,14 +28202,15 @@
                 subject.currentTotal = subject.total;
                 subject.futureTotal = 0;
             }
-            if (subject.futureTotal > 0 && type !== 'duty') subject.futureTotal--;
+            if (subject.futureTotal > 0) subject.futureTotal--;
             if (type === 'present') {
                 subject.present++; subject.total++;
                 subject.currentPresent++; subject.currentTotal++;
-            } else if (type === 'absent') {
+            } else if (type === 'absent' || type === 'duty') {
+                // Duty leave still counts as a class that was held — it just credits
+                // like an attendance rather than an absence (see markDutyLeave)
                 subject.total++; subject.currentTotal++;
             }
-            // duty: recorded only, mirrors markDutyLeave
             subject.history.push({ date: new Date().toISOString(), type, viaTimetable: true });
         }
 
@@ -28264,7 +28267,7 @@
                 if (!subj) return;
                 if (r.type === 'present') {
                     subj.present--; subj.total--; subj.currentPresent--; subj.currentTotal--;
-                } else if (r.type === 'absent') {
+                } else if (r.type === 'absent' || r.type === 'duty') {
                     subj.total--; subj.currentTotal--;
                 }
                 for (let i = subj.history.length - 1; i >= 0; i--) {
@@ -28557,7 +28560,12 @@
                     timestamp: Date.now()
                 };
 
-                // Duty leave: counts toward attendance % but shown separately, not in attended count
+                // Duty leave: the class WAS held, so it belongs in the total — you're just
+                // excused from it, so it credits like an attendance. Without adding to the
+                // total, present+duty could exceed it and Missed went negative.
+                if (subject.futureTotal > 0) subject.futureTotal--;
+                subject.total++;
+                subject.currentTotal++;
                 subject.history.push({ date: new Date().toISOString(), type: 'duty' });
                 saveAttendanceState();
                 renderTrackedSubjects();
@@ -29056,10 +29064,18 @@
                             <span style="font-size: 11px; color: #7a8fa8; font-weight: 400;">(${activeSubjects.length} subjects)</span>
                         </div>
                         
-                        <div class="subject-stats" style="grid-template-columns: repeat(4, 1fr);">
-                            <div class="subject-stat">
-                                <div class="stat-label">PRESENT</div>
-                                <div class="stat-value" style="color: #6bbf59;">${aggregateData.currentPresent}</div>
+                        <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
+                            <div class="subject-stat" title="${aggregateData.dutyCount ? `${aggregateData.currentPresent} in class + ${aggregateData.dutyCount} duty leave, all credited` : 'Classes you were in'}">
+                                <div class="stat-label">ATTENDED</div>
+                                <div class="stat-value" style="color: #6bbf59;">${aggEffectivePresent}</div>
+                            </div>
+                            <div class="subject-stat" title="Classes held across all subjects that you did not attend">
+                                <div class="stat-label">MISSED</div>
+                                <div class="stat-value" style="color: #d87b7b;">${Math.max(0, aggregateData.currentTotal - aggEffectivePresent)}</div>
+                            </div>
+                            <div class="subject-stat" title="Included in Attended above">
+                                <div class="stat-label">DUTY 🏅</div>
+                                <div class="stat-value" style="color: #a78bfa;">${aggregateData.dutyCount || 0}</div>
                             </div>
                             <div class="subject-stat">
                                 <div class="stat-label">TOTAL</div>
@@ -29069,11 +29085,13 @@
                                 <div class="stat-label">UPCOMING</div>
                                 <div class="stat-value" style="color: #5b8def;">${aggregateData.futureTotal}</div>
                             </div>
-                            <div class="subject-stat">
-                                <div class="stat-label">CURRENT %</div>
-                                <div class="stat-value" style="color: ${aggStatusColor}; font-size: 18px; font-weight: 700;">
-                                    ${aggCurrentPercentage.toFixed(1)}%
-                                </div>
+                        </div>
+
+                        <div class="attendance-current">
+                            <div class="attendance-current-label">CURRENT ATTENDANCE</div>
+                            <div class="attendance-current-value ${aggCurrentStatus}">${aggCurrentPercentage.toFixed(1)}%</div>
+                            <div class="progress-bar-container" style="margin-top: 5px;">
+                                <div class="progress-bar-fill ${aggCurrentStatus}" style="width: ${aggCurrentPercentage}%"></div>
                             </div>
                         </div>
 
@@ -29229,19 +29247,19 @@
                         </div>
 
                         <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
-                            <div class="subject-stat">
+                            <div class="subject-stat" title="${dutyCount ? `${subject.currentPresent} in class + ${dutyCount} duty leave, all credited` : 'Classes you were in'}">
                                 <div class="subject-stat-label">Attended</div>
-                                <div class="subject-stat-value" style="color: #6bc49b;">${subject.currentPresent}</div>
+                                <div class="subject-stat-value" style="color: #6bc49b;">${effectivePresent}</div>
                             </div>
-                            
-                            <div class="subject-stat">
+
+                            <div class="subject-stat" title="Classes held that you did not attend">
                                 <div class="subject-stat-label">Missed</div>
-                                <div class="subject-stat-value" style="color: #d87b7b;">${subject.currentTotal - effectivePresent}</div>
+                                <div class="subject-stat-value" style="color: #d87b7b;">${Math.max(0, subject.currentTotal - effectivePresent)}</div>
                             </div>
-                            
-                            <div class="subject-stat">
+
+                            <div class="subject-stat" title="Included in Attended above — shown here just so you know how many were duty">
                                 <div class="subject-stat-label">Duty 🏅</div>
-                                <div class="subject-stat-value" style="color: #a78bfa;">${(subject.history || []).filter(h => h.type === 'duty').length}</div>
+                                <div class="subject-stat-value" style="color: #a78bfa;">${dutyCount}</div>
                             </div>
                             
                             <div class="subject-stat">

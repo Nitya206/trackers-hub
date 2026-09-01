@@ -13216,6 +13216,17 @@
                         scrollbar-width:none;
                     }
                     .att-rail::-webkit-scrollbar{display:none;}
+                    /* Duty leaves are a note, not a counted column — they only take classes
+                       off Missed, exactly how the UMS card presents them. */
+                    .att-duty-line{
+                        display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+                        font-size:11.5px; color:var(--text-secondary);
+                        padding:6px 10px; margin-top:2px;
+                        background:rgba(167,139,250,.07); border:1px solid rgba(167,139,250,.18);
+                        border-radius:8px;
+                    }
+                    .att-duty-line strong{color:#a78bfa;font-size:13px;}
+                    .att-duty-line span{color:var(--text-tertiary);font-size:10.5px;}
                     .att-rail-title{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text-tertiary);text-transform:uppercase;padding:0 4px 8px;}
                     /* Two lines so the subject code is never truncated. Each item is a
                        tinted block like the milestone chips: its own health colour as a
@@ -28464,6 +28475,40 @@
             }
         }
 
+        // Type the three numbers straight off the UMS card to resync a subject. Clicks get
+        // missed, classes get cancelled, and UMS is the source of truth — this beats hunting
+        // for the one attendance that never got logged.
+        function syncSubjectWithUMS(subjectId) {
+            const subject = attendanceState.subjects.find(s => s.id === subjectId);
+            if (!subject) return;
+            const duty = (subject.history || []).filter(h => h.type === 'duty').length;
+            const raw = prompt(
+                `Copy the numbers from the UMS card for ${(subject.name || '').split(':')[0]}.\n\n` +
+                `UMS shows "Attended/Delivered" and "Duty Leaves" — enter them as:\n` +
+                `   attended / delivered / duty\n\n` +
+                `e.g. 5/12/1   (that reads as 50% on UMS)`,
+                `${subject.currentPresent}/${subject.currentTotal}/${duty}`
+            );
+            if (!raw) return;
+            const m = raw.split('/').map(x => parseInt(x.trim(), 10));
+            const [att, del, dut] = [m[0], m[1], isNaN(m[2]) ? 0 : m[2]];
+            if (isNaN(att) || isNaN(del) || att < 0 || del < 0) { showToast('Use the form attended/delivered/duty', 'warning'); return; }
+            if (att + dut > del) { showToast(`Attended + duty (${att + dut}) is more than delivered (${del})`, 'warning'); return; }
+
+            subject.currentPresent = att;
+            subject.present = att;
+            subject.currentTotal = del;
+            subject.total = del;
+            // Rebuild the duty entries so the count matches, keeping other history intact
+            subject.history = (subject.history || []).filter(h => h.type !== 'duty');
+            for (let i = 0; i < dut; i++) subject.history.push({ date: new Date().toISOString(), type: 'duty', synced: true });
+
+            saveAttendanceState();
+            renderTrackedSubjects();
+            const pct = del > 0 ? ((att + dut) / del * 100).toFixed(1) : '0.0';
+            showToast(`Synced — ${att}/${del} with ${dut} duty = ${pct}%`, 'success');
+        }
+
         function markPresent(subjectId) {
             const subject = attendanceState.subjects.find(s => s.id === subjectId);
             if (subject) {
@@ -29064,18 +29109,14 @@
                             <span style="font-size: 11px; color: #7a8fa8; font-weight: 400;">(${activeSubjects.length} subjects)</span>
                         </div>
                         
-                        <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
-                            <div class="subject-stat" title="${aggregateData.dutyCount ? `${aggregateData.currentPresent} in class + ${aggregateData.dutyCount} duty leave, all credited` : 'Classes you were in'}">
+                        <div class="subject-stats" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="subject-stat" title="Classes you sat in">
                                 <div class="stat-label">ATTENDED</div>
-                                <div class="stat-value" style="color: #6bbf59;">${aggEffectivePresent}</div>
+                                <div class="stat-value" style="color: #6bbf59;">${aggregateData.currentPresent}</div>
                             </div>
-                            <div class="subject-stat" title="Classes held across all subjects that you did not attend">
+                            <div class="subject-stat" title="Classes you weren't in — duty leaves stay counted here, they only lift the percentage">
                                 <div class="stat-label">MISSED</div>
-                                <div class="stat-value" style="color: #d87b7b;">${Math.max(0, aggregateData.currentTotal - aggEffectivePresent)}</div>
-                            </div>
-                            <div class="subject-stat" title="Included in Attended above">
-                                <div class="stat-label">DUTY 🏅</div>
-                                <div class="stat-value" style="color: #a78bfa;">${aggregateData.dutyCount || 0}</div>
+                                <div class="stat-value" style="color: #d87b7b;">${Math.max(0, aggregateData.currentTotal - aggregateData.currentPresent)}</div>
                             </div>
                             <div class="subject-stat">
                                 <div class="stat-label">TOTAL</div>
@@ -29085,6 +29126,10 @@
                                 <div class="stat-label">UPCOMING</div>
                                 <div class="stat-value" style="color: #5b8def;">${aggregateData.futureTotal}</div>
                             </div>
+                        </div>
+
+                        <div class="att-duty-line" title="Counted toward your percentage as if attended. Attended and Missed stay as they are, exactly how UMS reports it.">
+                            🏅 Duty Leaves: <strong>${aggregateData.dutyCount || 0}</strong>${aggregateData.dutyCount ? `<span>counted toward your %</span>` : ''}
                         </div>
 
                         <div class="attendance-current">
@@ -29246,33 +29291,32 @@
                             </div>
                         </div>
 
-                        <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
-                            <div class="subject-stat" title="${dutyCount ? `${subject.currentPresent} in class + ${dutyCount} duty leave, all credited` : 'Classes you were in'}">
+                        <div class="subject-stats" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="subject-stat" title="Classes you sat in">
                                 <div class="subject-stat-label">Attended</div>
-                                <div class="subject-stat-value" style="color: #6bc49b;">${effectivePresent}</div>
+                                <div class="subject-stat-value" style="color: #6bc49b;">${subject.currentPresent}</div>
                             </div>
 
-                            <div class="subject-stat" title="Classes held that you did not attend">
+                            <div class="subject-stat" title="Classes you weren't in — duty leaves stay counted here, they only lift the percentage">
                                 <div class="subject-stat-label">Missed</div>
-                                <div class="subject-stat-value" style="color: #d87b7b;">${Math.max(0, subject.currentTotal - effectivePresent)}</div>
+                                <div class="subject-stat-value" style="color: #d87b7b;">${Math.max(0, subject.currentTotal - subject.currentPresent)}</div>
                             </div>
 
-                            <div class="subject-stat" title="Included in Attended above — shown here just so you know how many were duty">
-                                <div class="subject-stat-label">Duty 🏅</div>
-                                <div class="subject-stat-value" style="color: #a78bfa;">${dutyCount}</div>
-                            </div>
-                            
                             <div class="subject-stat">
                                 <div class="subject-stat-label">Total</div>
                                 <div class="subject-stat-value">${subject.currentTotal}</div>
                             </div>
-                            
+
                             <div class="subject-stat">
                                 <div class="subject-stat-label">Upcoming</div>
                                 <div class="subject-stat-value" style="color: #5b8def;">${subject.futureTotal || 0}</div>
                             </div>
                         </div>
-                        
+
+                        <div class="att-duty-line" title="Counted toward your percentage as if attended. Attended and Missed stay as they are, exactly how UMS reports it.">
+                            🏅 Duty Leaves: <strong>${dutyCount}</strong>${dutyCount ? `<span>counted toward your %</span>` : ''}
+                        </div>
+
                         <div class="attendance-current">
                             <div class="attendance-current-label">CURRENT ATTENDANCE</div>
                             <div class="attendance-current-value ${currentStatus}">${currentPercentage.toFixed(1)}%</div>
@@ -29413,8 +29457,11 @@
                             <button class="attendance-action-btn archive" onclick="archiveSubject(${subject.id})" title="Archive subject" style="font-size: 11px; padding: 6px 10px;">
                                 📁 ARCHIVE
                             </button>
+                            <button class="attendance-action-btn" onclick="syncSubjectWithUMS(${subject.id})" title="Type the numbers straight off UMS to resync this subject" style="font-size: 11px; padding: 6px 10px; border-color: rgba(107,196,155,0.4); color: #6bc49b;">
+                                ⟳ SYNC WITH UMS
+                            </button>
                         </div>
-                        
+
                         <button class="delete-subject-btn" onclick="deleteSubject(${subject.id})" title="Delete subject">
                             🗑️
                         </button>

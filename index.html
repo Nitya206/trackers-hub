@@ -831,7 +831,8 @@ function syncHubData() {
                 totalHeld += held;
                 totalDuty += duty;
             });
-            const attPct = totalHeld > 0 ? Math.round(((totalP + totalDuty) / totalHeld) * 100) : 0;
+            // One decimal, same as the tracker's own cards
+            const attPct = totalHeld > 0 ? (((totalP + totalDuty) / totalHeld) * 100).toFixed(1) : '0.0';
 
             let examText = "No Exams";
             if (sExams.length > 0) {

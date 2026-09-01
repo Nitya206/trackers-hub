@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- saved from url=(0235)file:///Users/ntyamehta/Library/Application%20Support/Claude/local-agent-mode-sessions/c228ded4-157c-43d6-b181-0dca5b21f1bd/77b13278-e9ae-43bd-bc11-5665f844d2cc/local_46edef82-a0df-4be1-b38e-fa87e6af544d/outputs/Study-Schedule-Pro.html -->
 <html lang="en" class="device-mac high-dpi" style="--text-base: 1rem; --accent-primary: #5b8def; font-size: 14px; --duration-fast: 150ms; --duration-normal: 300ms; --duration-slow: 500ms;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -9880,10 +9879,55 @@
             border-color: rgba(96,165,250,0.3);
         }
         .v8-sub-icon { font-size: 15px; line-height: 1; }
+        /* Sections you've switched off: greyed, faded, pushed to the end — still clickable */
+        .v8-sub-item.v8-sub-off {
+            color: var(--text-tertiary);
+            opacity: 0.42;
+            filter: grayscale(1);
+            font-weight: 500;
+        }
+        .v8-sub-item.v8-sub-off:hover {
+            opacity: 0.75;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.04);
+            border-color: var(--border-subtle);
+        }
+        /* Sits under the sub-nav strip and scrolls away with it */
+        #v8NavTools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto 4px;
+            padding: 4px 14px 0;
+            box-sizing: border-box;
+        }
+        .v8nt-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: .02em; }
+        .v8nt-actions { display: flex; gap: 4px; align-items: center; }
+        .v8nt-btn {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-tertiary);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .15s;
+        }
+        .v8nt-btn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border-primary); }
+        .v8nt-btn:disabled { opacity: .3; cursor: default; }
+        .v8nt-btn.off:hover { color: #f87171; border-color: rgba(248,113,113,.4); }
         @media (max-width: 767px) {
             .v8-sub-nav { padding: 6px 10px; gap: 2px; }
             .v8-sub-item { padding: 6px 12px; font-size: 12px; }
             .v8-sub-icon { font-size: 13px; }
+            #v8NavTools { padding: 4px 10px 0; }
+            .v8nt-label { display: none; }
+            .v8nt-actions { width: 100%; justify-content: flex-end; }
         }
 
         /* Premium visual refinement for the active v8 experience */
@@ -11665,10 +11709,13 @@
         }
 
         /* ── SUB-NAV ── */
+        /* Scrolls away with the page. It used to be sticky, which meant the strip hung
+           over the content in long sections (Marks especially) instead of leaving with
+           it — the rest of the app never pins anything, so this now matches. */
         #v8SubNavWrap {
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 9000 !important;
+            position: relative !important;
+            top: auto !important;
+            z-index: 20 !important;
             padding: 6px 20px 0 !important;
             background: transparent !important;
             max-width: 1200px !important;
@@ -13122,6 +13169,90 @@
             </div>
 
             <div id="attendanceContent" class="section-content" style="display: block;">
+                <style>
+                    .tt-checkin{background:linear-gradient(135deg,rgba(78,205,196,.12),rgba(78,205,196,.04));border:1px solid rgba(78,205,196,.3);border-radius:var(--radius-lg);padding:13px 15px;margin-bottom:var(--space-5);}
+                    .tt-checkin.done{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.25);}
+                    .tt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
+                    .tt-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+                    .tt-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+                    .tt-classes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;}
+                    .tt-pill{background:var(--surface-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;font-weight:600;color:var(--text-secondary);white-space:nowrap;}
+                    .tt-actions{display:flex;gap:8px;flex-wrap:wrap;}
+                    .tt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:8px;background:var(--surface-secondary);border:1px solid var(--border-subtle);margin-bottom:5px;flex-wrap:wrap;}
+                    .tt-row-name{font-size:12.5px;font-weight:600;color:var(--text-primary);}
+                    .tt-row-when{font-size:10px;color:var(--text-tertiary);margin-left:6px;font-weight:400;}
+                    .tt-seg{display:flex;gap:3px;}
+                    .tt-seg button{background:var(--surface-primary);border:1px solid var(--border-subtle);color:var(--text-tertiary);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;}
+                    .tt-seg button.on.p{background:rgba(52,211,153,.18);border-color:#34d399;color:#34d399;}
+                    .tt-seg button.on.a{background:rgba(248,113,113,.18);border-color:#f87171;color:#f87171;}
+                    .tt-seg button.on.d{background:rgba(167,139,250,.18);border-color:#a78bfa;color:#a78bfa;}
+                    .tt-empty{font-size:12px;color:var(--text-tertiary);line-height:1.6;}
+                    .tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:10px;}
+                    .tt-day{background:var(--surface-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:9px;}
+                    .tt-day-name{font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+                    .tt-day-count{color:var(--text-tertiary);font-weight:500;}
+                    .tt-chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-primary);border:1px solid var(--border-subtle);border-radius:var(--radius-full);padding:2px 5px 2px 8px;font-size:10.5px;font-weight:600;color:var(--text-secondary);margin:0 3px 3px 0;}
+                    .tt-chip-time{font-weight:700;font-size:9px;color:var(--accent-primary);margin-right:3px;}
+                    .tt-chip-kind{font-style:normal;font-size:8.5px;font-weight:700;opacity:.55;margin-left:3px;}
+                    .tt-chip button{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:11px;padding:0 1px;line-height:1;}
+                    .tt-chip button:hover{color:#f87171;}
+                    .tt-add{display:flex;gap:4px;margin-top:5px;}
+                    .tt-add select{flex:1;min-width:0;background:var(--surface-primary);border:1px solid var(--border-subtle);color:var(--text-primary);border-radius:6px;padding:3px 5px;font-size:10.5px;font-family:inherit;}
+
+                    /* Rail to jump between subjects instead of scrolling the whole list.
+                       Sits on the right and is styled as a card, so it reads as part of
+                       the same family as the subject blocks beside it. */
+                    .att-layout{display:flex;align-items:flex-start;gap:14px;}
+                    .att-layout .tracked-subjects{flex:1;min-width:0;order:1;}
+                    .att-rail{
+                        order:2;
+                        position:sticky; top:70px; flex:0 0 auto; width:124px;
+                        display:flex; flex-direction:column; gap:2px;
+                        max-height:calc(100vh - 130px); overflow-y:auto;
+                        padding:10px 8px; border-radius:var(--radius-lg);
+                        background:var(--surface-primary); border:1px solid var(--border-subtle);
+                        backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+                        box-shadow:var(--shadow-sm);
+                        scrollbar-width:none;
+                    }
+                    .att-rail::-webkit-scrollbar{display:none;}
+                    .att-rail-title{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text-tertiary);text-transform:uppercase;padding:0 4px 8px;}
+                    /* Two lines so the subject code is never truncated. Each item is a
+                       tinted block like the milestone chips: its own health colour as a
+                       translucent fill plus a matching border. */
+                    .att-rail-item{
+                        display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+                        border:1px solid; border-radius:8px;
+                        padding:6px 8px; cursor:pointer; font-family:inherit; text-align:left;
+                        transition:transform .14s, box-shadow .14s, filter .14s;
+                        width:100%; margin-bottom:4px;
+                    }
+                    .att-rail-item:hover{filter:brightness(1.35);}
+                    .att-rail-item.active{
+                        box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, var(--shadow-sm);
+                        transform:translateX(-2px);
+                    }
+                    .att-rail-code{font-size:11.5px;font-weight:700;letter-spacing:.01em;line-height:1.2;white-space:nowrap;}
+                    .att-rail-pct{font-size:10px;font-weight:700;line-height:1.1;opacity:.85;}
+                    @media (max-width:900px){
+                        /* Horizontal strip on narrow screens — one line, code + percentage */
+                        .att-layout{flex-direction:column;gap:8px;}
+                        .att-rail{
+                            position:sticky; top:56px; z-index:5;
+                            width:100%; max-height:none;
+                            flex-direction:row; overflow-x:auto; overflow-y:hidden;
+                            gap:5px; padding:6px 7px;
+                        }
+                        .att-rail-title{display:none;}
+                        .att-rail-item{
+                            width:auto; flex:0 0 auto; flex-direction:row; align-items:center; gap:6px;
+                            padding:5px 11px; margin-bottom:0;
+                            border-radius:var(--radius-full);
+                        }
+                        .att-rail-item.active{transform:none;}
+                    }
+                </style>
+                <div id="attendanceCheckIn"></div>
                 <div class="attendance-container">
                     <div class="attendance-card">
                         <div class="attendance-input-row">
@@ -13157,6 +13288,8 @@
                         </div>
                     </div>
 
+                    <div class="att-layout">
+                    <nav id="attSubjectRail" class="att-rail" aria-label="Jump to subject"></nav>
                     <div id="trackedSubjectsList" class="tracked-subjects">
                     <div class="tracked-subject-card" style="border: 2px solid rgba(91, 141, 239, 0.5); background: linear-gradient(135deg, rgba(91, 141, 239, 0.15) 0%, rgba(91, 141, 239, 0.05) 100%);">
                         <div class="subject-name" style="display: flex; align-items: center; gap: 8px;">
@@ -15327,6 +15460,205 @@
                         </button>
                     </div>
                 </div>
+                </div><!-- /att-layout -->
+                </div>
+            </div>
+        </div><div class="section card-section" id="marksSection">
+            <style>
+                .marks-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--space-3);margin-bottom:var(--space-5);}
+                .marks-stat{background:var(--surface-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;}
+                .marks-stat-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+                .marks-stat-value{font-size:22px;font-weight:700;color:var(--text-primary);}
+                .marks-semester-card{background:var(--surface-primary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);}
+                .marks-semester-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:var(--space-3);}
+                .marks-semester-title{font-size:15px;font-weight:700;color:var(--text-primary);background:transparent;border:1px solid transparent;border-radius:6px;padding:2px 6px;font-family:inherit;}
+                .marks-semester-title:focus{border-color:var(--border-primary);outline:none;background:var(--surface-secondary);}
+                .marks-sgpa-badge{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);flex-wrap:wrap;}
+                .marks-sgpa-value{font-size:18px;font-weight:800;color:var(--accent-primary);}
+                .marks-sim-value{font-size:12px;font-weight:700;}
+                .marks-table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px;}
+                .marks-table th{text-align:left;font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.4px;padding:4px 6px;border-bottom:1px solid var(--border-subtle);}
+                .marks-table td{padding:6px;border-bottom:1px solid var(--border-subtle);vertical-align:middle;}
+                .marks-table tr:last-child td{border-bottom:none;}
+                .marks-subj-name{font-weight:600;color:var(--text-primary);}
+                .marks-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--radius-full);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+                .marks-badge.good{background:rgba(52,211,153,.15);color:#34d399;}
+                .marks-badge.improve{background:rgba(251,191,36,.15);color:#fbbf24;}
+                .marks-badge.reappear{background:rgba(248,113,113,.15);color:#f87171;}
+                .marks-badge.pending{background:rgba(148,163,184,.15);color:#94a3b8;}
+                .marks-badge.satisfactory{background:rgba(96,165,250,.15);color:#60a5fa;}
+                .marks-select,.marks-input{background:var(--surface-secondary);border:1px solid var(--border-subtle);color:var(--text-primary);border-radius:6px;padding:5px 7px;font-size:12px;font-family:inherit;}
+                .marks-input.credits{width:52px;}
+                .marks-add-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px dashed var(--border-subtle);align-items:center;}
+                .marks-add-row input[type=text]{flex:1;min-width:140px;}
+                .marks-del-btn{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:13px;padding:2px 6px;}
+                .marks-del-btn:hover{color:#f87171;}
+                .marks-empty{text-align:center;padding:24px;color:var(--text-tertiary);font-size:13px;}
+                .marks-badge.progress{background:rgba(96,165,250,.15);color:#60a5fa;}
+                .marks-badge.locked{background:rgba(148,163,184,.12);color:#94a3b8;}
+                .marks-expand-btn{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:11px;padding:0 5px 0 0;}
+                .marks-expand-btn:hover{color:var(--accent-primary);}
+                .marks-score{font-weight:700;color:var(--text-primary);font-size:13px;white-space:nowrap;}
+                .marks-score-sub{font-weight:400;font-size:10px;color:var(--text-tertiary);margin-left:2px;}
+                .marks-score-pending{font-size:10px;color:var(--text-tertiary);}
+                .marks-derived{font-size:10px;color:#60a5fa;margin-top:2px;font-weight:600;}
+                .marks-reapp{margin-left:6px;font-size:10px;color:var(--text-tertiary);cursor:pointer;white-space:nowrap;}
+                .marks-reapp input{vertical-align:middle;}
+                .marks-target-input{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary);}
+                .marks-target-input input{width:58px;}
+                .marks-plan-summary{font-size:12px;padding:8px 11px;border-radius:8px;margin-bottom:var(--space-3);line-height:1.5;}
+                .marks-plan-summary.ok{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);color:var(--text-secondary);}
+                .marks-plan-summary.bad{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--text-secondary);}
+                .marks-target{display:flex;flex-direction:column;gap:1px;min-width:150px;}
+                .marks-target-grade{font-size:12px;font-weight:800;}
+                .marks-target-detail{font-size:10px;line-height:1.4;color:var(--text-tertiary);}
+                .marks-target.ok .marks-target-grade{color:#34d399;}
+                .marks-target.warn .marks-target-grade{color:#fbbf24;}
+                .marks-target.bad .marks-target-grade{color:#f87171;}
+                .marks-target.muted .marks-target-grade{color:var(--text-tertiary);}
+                .marks-editor-row>td{background:rgba(0,0,0,.18);padding:0 6px 10px !important;}
+                .marks-editor{padding:10px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-secondary);}
+                .marks-editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+                .marks-comp-table{width:100%;border-collapse:collapse;font-size:12px;min-width:430px;}
+                .marks-comp-table th{text-align:left;font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.4px;padding:3px 5px;border-bottom:1px solid var(--border-subtle);}
+                .marks-comp-table td{padding:4px 5px;border-bottom:1px solid rgba(140,180,255,.05);}
+                .marks-comp-table tr:last-child td{border-bottom:none;}
+                .comp-label{width:100%;min-width:110px;}
+                .comp-num{width:64px;}
+                .comp-contrib{font-weight:700;color:var(--accent-primary);white-space:nowrap;}
+                .marks-editor-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;}
+                .marks-editor-total{font-size:11px;color:var(--text-tertiary);}
+                .marks-warn{font-size:11px;color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:6px;padding:5px 8px;margin-bottom:8px;}
+                .marks-verdict{margin-top:8px;font-size:11px;padding:6px 9px;border-radius:6px;line-height:1.5;}
+                .marks-verdict.pass{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399;}
+                .marks-verdict.fail{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#f87171;}
+                .comp-reappear-toggle{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:#f0a05a;cursor:pointer;text-transform:none;letter-spacing:0;white-space:nowrap;}
+                .comp-reappear-toggle input{vertical-align:middle;}
+                .marks-reappear-note{font-size:11px;color:#f0a05a;background:rgba(240,160,90,.08);border:1px solid rgba(240,160,90,.25);border-radius:6px;padding:6px 9px;margin-bottom:8px;line-height:1.5;}
+                .comp-row-replaced{opacity:.45;}
+                .comp-replaced{font-size:11px;color:var(--text-tertiary);white-space:nowrap;}
+                .comp-boosted{font-size:10px;font-weight:700;color:#f0a05a;margin-top:1px;}
+                .comp-chances{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:none;letter-spacing:0;white-space:nowrap;}
+                .marks-chances{display:inline-block;margin-left:4px;font-size:9px;font-weight:700;padding:1px 5px;border-radius:var(--radius-full);background:rgba(96,165,250,.12);color:#60a5fa;vertical-align:middle;}
+                .marks-badge.muted-final{background:rgba(148,163,184,.12);color:#94a3b8;}
+                .marks-lock-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;opacity:.5;}
+                .marks-lock-btn:hover{opacity:1;}
+                .marks-lock-btn.on{opacity:1;}
+                .credits-input{width:48px;}
+                .marks-overall{background:linear-gradient(135deg,rgba(91,141,239,.12),rgba(91,141,239,.04));border:1px solid rgba(91,141,239,.3);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:var(--space-5);}
+                .marks-overall-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+                .marks-overall-title{font-size:13px;font-weight:700;color:var(--text-primary);}
+                .marks-overall-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary);}
+                .marks-overall-now{color:var(--accent-primary);font-size:15px;}
+                .marks-overall-toggle{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-tertiary);cursor:pointer;white-space:nowrap;}
+                .marks-overall-line{font-size:12px;line-height:1.6;}
+                .marks-overall-line.ok{color:var(--text-secondary);}
+                .marks-overall-line.bad{color:#f87171;}
+                .marks-overall-hint{font-size:12px;color:var(--text-tertiary);line-height:1.6;}
+                .marks-overall-retakes{margin-top:8px;font-size:11px;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+                .marks-retake-chip{background:rgba(240,160,90,.12);border:1px solid rgba(240,160,90,.28);color:#f0a05a;border-radius:var(--radius-full);padding:2px 8px;font-weight:600;white-space:nowrap;}
+                .marks-retake-chip.improvement{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.28);color:#60a5fa;}
+                .marks-retake-chip em{font-style:normal;opacity:.75;}
+                .marks-scope-tag{font-size:8px;font-weight:700;letter-spacing:.05em;background:rgba(91,141,239,.18);color:var(--accent-primary);border-radius:3px;padding:1px 3px;margin-left:4px;vertical-align:middle;}
+                .marks-next{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--radius-lg);margin-bottom:var(--space-3);border:1px solid;}
+                .marks-next.ok{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.28);}
+                .marks-next.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);}
+                .marks-next.bad{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3);}
+                .marks-next-label{font-size:8.5px;font-weight:800;letter-spacing:.12em;padding:3px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+                .marks-next.ok .marks-next-label{background:rgba(52,211,153,.16);color:#34d399;}
+                .marks-next.warn .marks-next-label{background:rgba(251,191,36,.16);color:#fbbf24;}
+                .marks-next.bad .marks-next-label{background:rgba(248,113,113,.16);color:#f87171;}
+                .marks-next-text{font-size:12.5px;line-height:1.55;color:var(--text-secondary);}
+                .marks-next-text strong{color:var(--text-primary);}
+                .marks-cr-tag{font-size:9px;font-weight:600;color:var(--text-tertiary);margin-left:6px;white-space:nowrap;}
+                .marks-ladder{margin-top:10px;padding-top:9px;border-top:1px dashed var(--border-subtle);}
+                .marks-ladder-head{font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+                .marks-ladder-row{display:flex;flex-wrap:wrap;gap:5px;}
+                .marks-ladder-chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-primary);border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-full);padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+                .marks-ladder-chip:hover{border-color:var(--accent-primary);color:var(--text-primary);}
+                .marks-ladder-chip.on{background:rgba(91,141,239,.18);border-color:var(--accent-primary);color:var(--accent-secondary);}
+                .marks-ladder-chip em{font-style:normal;font-weight:600;opacity:.7;font-size:10px;}
+                .marks-ladder-chip .lad-note{font-weight:500;font-size:9px;opacity:.65;}
+                .marks-ladder-note{font-size:10px;color:var(--text-tertiary);margin-top:5px;}
+                .marks-retake-chip.on{background:rgba(91,141,239,.18);border-color:var(--accent-primary);color:var(--accent-secondary);}
+                .cal-table td{font-size:11px;}
+                .cal-tight{color:#34d399;font-weight:700;}
+                .cal-loose{color:#fbbf24;font-weight:700;}
+                .cal-muted{color:var(--text-tertiary);}
+                .sc-panel{background:linear-gradient(135deg,rgba(167,139,250,.13),rgba(167,139,250,.04));border:1px solid rgba(167,139,250,.32);border-radius:var(--radius-lg);padding:13px 15px;margin-bottom:var(--space-4);}
+                .sc-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+                .sc-figure{display:flex;flex-direction:column;}
+                .sc-cgpa{font-size:30px;font-weight:800;line-height:1;color:var(--text-primary);}
+                .sc-cgpa.up{color:#34d399;} .sc-cgpa.down{color:#f87171;}
+                .sc-cap{font-size:10.5px;color:var(--text-tertiary);}
+                .sc-cap .up,.sc-table .up{color:#34d399;font-weight:700;}
+                .sc-cap .down,.sc-table .down{color:#f87171;font-weight:700;}
+                .sc-terms{display:flex;gap:8px;flex-wrap:wrap;}
+                .sc-term{font-size:11px;color:var(--text-secondary);background:var(--surface-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-full);padding:3px 10px;white-space:nowrap;}
+                .sc-presets{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:9px;}
+                .sc-btn{background:var(--surface-secondary);border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .14s;}
+                .sc-btn:hover{color:var(--text-primary);border-color:rgba(167,139,250,.5);}
+                .sc-btn.primary{background:rgba(167,139,250,.2);border-color:rgba(167,139,250,.5);color:#c4b5fd;}
+                .sc-btn.ghost{opacity:.65;}
+                .sc-mini{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:10px;padding:1px 4px;font-family:inherit;}
+                .sc-mini:hover{color:var(--text-primary);}
+                .sc-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:9px;border-top:1px dashed var(--border-subtle);}
+                .sc-actions span{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+                .sc-compare{margin-top:10px;padding-top:9px;border-top:1px dashed var(--border-subtle);}
+                .sc-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+                .sc-table td{padding:3px 6px;color:var(--text-secondary);border-bottom:1px solid rgba(140,180,255,.05);}
+                .sc-table tr.live td{background:rgba(167,139,250,.1);}
+                .sc-table tr:last-child td{border-bottom:none;}
+                .sc-pick{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+                .sc-pick select.set{border-color:rgba(167,139,250,.6);color:#c4b5fd;}
+                .sc-pick em{font-style:normal;font-size:10px;font-weight:700;}
+                .sc-pick em.up{color:#34d399;} .sc-pick em.down{color:#f87171;}
+                .sc-fixed{font-size:10.5px;color:var(--text-tertiary);}
+                .sc-saved-strip{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:var(--space-3);}
+                .sc-saved-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);}
+                .sc-chip{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.28);color:#c4b5fd;border-radius:var(--radius-full);padding:2px 6px 2px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;}
+                .sc-chip em{font-style:normal;opacity:.8;}
+                .sc-chip span{opacity:.5;padding:0 3px;}
+                .sc-chip span:hover{opacity:1;color:#f87171;}
+            </style>
+            <div class="section-header-collapsible" onclick="toggleSection('marks')">
+                <div class="section-header-left">
+                    <span class="collapse-icon" id="marksIcon">▼</span>
+                    <div>
+                        <h2 class="section-title">Marks Tracker</h2>
+                        <p class="section-subtitle">SGPA, CGPA, credits &amp; subject performance in one place</p>
+                    </div>
+                </div>
+                <div class="section-header-actions">
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showImportMarksModal()" title="Copy the Marks Distribution block from UMS and paste it — fills everything at once">📋 Paste from UMS</button>
+                    <button class="btn btn-secondary btn-sm" id="marksScenarioBtn" onclick="event.stopPropagation(); toggleScenarioMode()" title="Try hypothetical grades and watch the CGPA move — nothing is saved">🔮 What-If</button>
+                    <button class="btn btn-secondary btn-sm" id="marksModeBtn" onclick="event.stopPropagation(); toggleMarksSimpleMode()" title="Show or hide credits, grade override, chances and locks">Advanced</button>
+                    <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showAddSemesterModal()">+ Semester</button>
+                </div>
+            </div>
+            <div id="marksContent" class="section-content" style="display: block;">
+                <div class="marks-overview" id="marksOverview"></div>
+                <div id="marksScenarioPanel"></div>
+                <div id="marksOverallPlan"></div>
+                <div id="marksSemesterList"></div>
+                <div id="marksEmptyState" class="marks-empty" style="display:none;">
+                    <div style="font-size:28px;margin-bottom:8px;">🎓</div>
+                    No semesters yet. Click "+ Add Semester" to start tracking your marks.
+                </div>
+                <div style="margin-top:14px;font-size:10px;color:var(--text-tertiary);text-align:center;line-height:1.7;">
+                    LPU 10-point scale · O=10 A+=9 A=8 B+=7 B=6 C=5 D=4 E/F=0 ·
+                    flagged "Improve" below <span id="marksThresholdLabel">B+</span>
+                    <a href="#" onclick="event.preventDefault(); changeMarksThreshold();" style="color:var(--accent-primary);">(change)</a>
+                    <br>
+                    Grades shown as <span style="color:#60a5fa;">≈ X</span> are derived from your marks using
+                    cutoffs fitted to your own Term 1 &amp; 2 results. The A boundary is the only loose one.
+                    <a href="#" onclick="event.preventDefault(); showCalibrateModal();" style="color:var(--accent-primary);">Calibrate from my results</a>
+                    ·
+                    <a href="#" onclick="event.preventDefault(); editCutoffs();" style="color:var(--accent-primary);">Edit manually</a>
+                    <br>
+                    Failed subjects get <strong>reappear</strong> attempts, passed ones get <strong>improvement</strong>
+                    attempts — 5 either way. Tick it on a subject when you retake the end term; it replaces the
+                    mid term and takes over its weight.
                 </div>
             </div>
         </div><div class="section card-section" id="analyticsSection">
@@ -21702,7 +22034,1867 @@
         function saveExams() {
             localStorage.setItem('exams_v1', JSON.stringify(exams));
         }
-        
+
+        // ==================== MARKS TRACKER (SGPA / CGPA / TARGET PLANNER) ====================
+        // LPU 10-point scale: O=10 A+=9 A=8 B+=7 B=6 C=5 D=4 F/E=0, S=Satisfactory (non-GPA)
+        // Note: the live LPU UMS portal shows "E" (not "F") as the fail/reappear grade — both map to 0.
+        const MARKS_GRADE_POINTS = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'E': 0, 'F': 0 };
+        const MARKS_GRADE_ORDER = ['O', 'A+', 'A', 'B+', 'B', 'C', 'D', 'E', 'F', 'S'];
+        const MARKS_FAIL_GRADES = ['E', 'F'];
+        // Grades usable as a target (excludes fails and S), ascending
+        const MARKS_TARGETABLE = ['D', 'C', 'B', 'B+', 'A', 'A+', 'O'];
+
+        // Grade cutoffs (minimum marks out of 100). Fitted against all 15 of Nitya's
+        // Term 1 + Term 2 results with reappears applied — those sort perfectly in order
+        // (28.3 E · 41.3 C · 45.8 C · 51.5 B · 57.5 B · 59.4 B+ · 68.4 A · 78.5 A), so LPU
+        // grades on an ABSOLUTE scale here, not a curve.
+        // Boundaries pinned by data: C ≤41.3, B in 45.8–51.5, B+ in 57.5–59.4.
+        // The A boundary is only bracketed to 59.4–68.4 — 65 is a midpoint guess, so if a
+        // real result ever contradicts it, edit the cutoffs and everything re-solves.
+        const MARKS_DEFAULT_CUTOFFS = { 'O': 90, 'A+': 80, 'A': 65, 'B+': 59, 'B': 50, 'C': 40, 'D': 35 };
+        const MARKS_CUTOFFS_VERSION = 2; // bump when defaults change, to refresh saved copies
+
+        // Reappear: the end term is retaken and REPLACES mid term + end term. The combined
+        // (mid + end) weight is pooled and split across the end-term components in proportion
+        // to their original end-term weights; attendance and CA carry over untouched.
+        // Verified against ECE249 (Att5/CA25/MTE20/Theory35/Obj15 -> Theory 49, Obj 21 — exactly
+        // what the portal shows) and INT108 (no MTE, so its 45 stays 45).
+        const marksIsEndComp = c => /end\s*term|\bete\b/i.test(c.label || '');
+        const marksIsMidComp = c => /mid\s*term|\bmte\b/i.test(c.label || '');
+
+        function marksEffectiveWeight(subj, comp) {
+            const w = parseFloat(comp.weight) || 0;
+            if (!subj.reappearMode) return w;
+            const comps = subj.components || [];
+            const ends = comps.filter(marksIsEndComp);
+            if (!ends.length) return w;                 // nothing to fold into
+            if (marksIsMidComp(comp)) return 0;          // mid term is replaced
+            if (!marksIsEndComp(comp)) return w;         // attendance / CA carry over
+            const endSum = ends.reduce((s, c) => s + (parseFloat(c.weight) || 0), 0);
+            const midSum = comps.filter(marksIsMidComp).reduce((s, c) => s + (parseFloat(c.weight) || 0), 0);
+            return endSum > 0 ? (w / endSum) * (endSum + midSum) : w;
+        }
+
+        // Component weightage presets (weights are out of 100 across the whole subject)
+        const MARKS_PRESETS = {
+            theoryMte:   { label: 'Theory + MTE',    comps: [['Attendance', 5], ['CA', 25], ['Mid Term', 20], ['End Term', 50]] },
+            theoryNoMte: { label: 'Theory, no MTE',  comps: [['Attendance', 5], ['CA', 50], ['End Term', 45]] },
+            practical:   { label: 'Lab / Practical', comps: [['Attendance', 5], ['CA', 45], ['Practical End Term', 50]] }
+        };
+
+        let marksState = { semesters: [], improveThreshold: 7, cutoffs: null };
+        let marksExpanded = {}; // { [subjectId]: true } — which component editors are open
+
+        function initializeMarksTracker() {
+            loadMarksState();
+            renderMarks();
+        }
+
+        // Pre-fills Term 1 & Term 2 with the real UMS marks + grades on first load.
+        // Component marks are transcribed from the portal's "Marks Distribution" pages, so
+        // every subject's total recomputes to its published grade. Grades stay set manually
+        // because these are final results — the planner treats them as settled.
+        // ECE249 and INT108 carry reappearMode: their end terms were retaken (session 12526B).
+        const MARKS_SEED_VERSION = 5; // v2 component marks · v3 Term 3 · v4 chances · v5 real credits
+        // Credits confirmed from the official timetable PDF (page 2). Everything matched my
+        // earlier estimates except INT335, which is 2 credits and not 3.
+        const MARKS_REAL_CREDITS = { 100301: 4, 100302: 4, 100303: 3, 100304: 3, 100305: 2, 100306: 2, 100307: 4, 100308: 3 };
+        const MARKS_DEFAULT_CHANCES = 5; // LPU allows 5 reappear/improvement attempts
+        const MARKS_PASS_MARK = 40;      // university rule: below 40/100 is a fail
+
+        function getDefaultMarksSeed() {
+            // comps: [label, weight, scored, outOf]
+            const mk = (id, name, credits, grade, comps, reappearMode, chancesUsed) => ({
+                id, name, credits, grade,
+                reappear: MARKS_FAIL_GRADES.includes(grade) || !!reappearMode,
+                reappearMode: !!reappearMode,
+                chancesUsed: chancesUsed || 0,
+                chancesTotal: MARKS_DEFAULT_CHANCES,
+                locked: false,
+                difficulty: 3,
+                plannedRetake: null,
+                components: comps.map((c, i) => ({ id: id * 10 + i, label: c[0], weight: c[1], scored: c[2], total: c[3] }))
+            });
+            const ATT = 'Attendance', CA = 'CA', OMT = 'Objective Type Mid Term', TMT = 'Theory Mid Term';
+            const OET = 'Objective Type End Term', TET = 'Theory End Term', PET = 'Practical End Term';
+            return {
+                semesters: [
+                    {
+                        id: 1001, name: 'Term 1', targetSGPA: null, subjects: [
+                            mk(100101, 'CHE110: ENVIRONMENTAL STUDIES', 2, 'A',
+                                [[ATT, 5, 3, 5], [CA, 40, 80, 100], [OMT, 20, 15, 30], [OET, 35, 47, 60]]),
+                            mk(100102, 'CSE111: ORIENTATION TO COMPUTING-I', 2, 'A',
+                                [[ATT, 20, 4, 5], [CA, 50, 87, 100], [OET, 30, 38, 60]]),
+                            mk(100103, 'CSE326: INTERNET PROGRAMMING LABORATORY', 2, 'B',
+                                [[ATT, 5, 3, 5], [CA, 45, 34, 100], [OET, 50, 40, 60]]),
+                            // Reappear: end terms retaken — Theory 3/40, Objective 8/30 (1 chance used)
+                            mk(100104, 'ECE249: BASIC ELECTRICAL AND ELECTRONICS ENGINEERING', 3, 'E',
+                                [[ATT, 5, 3, 5], [CA, 25, 64, 100], [OMT, 20, 3, 30], [TET, 35, 3, 40], [OET, 15, 8, 30]], true, 1),
+                            mk(100105, 'ECE279: BASIC ELECTRICAL AND ELECTRONICS ENGG LABORATORY', 1, 'C',
+                                [[ATT, 5, 2, 5], [CA, 45, 25, 100], [PET, 50, 65, 100]]),
+                            // Reappear: practical end term retaken — 63/100 (was 26/100), 1 chance used
+                            mk(100106, 'INT108: PYTHON PROGRAMMING', 4, 'B+',
+                                [[ATT, 5, 3, 5], [CA, 50, 56, 100], [PET, 45, 63, 100]], true, 1),
+                            mk(100107, 'MTH165: MATHEMATICS FOR ENGINEERS', 4, 'C',
+                                [[ATT, 5, 4, 5], [CA, 25, 35, 100], [OMT, 20, 14, 30], [TET, 35, 14, 40], [OET, 15, 14, 30]])
+                        ]
+                    },
+                    {
+                        id: 1002, name: 'Term 2', targetSGPA: null, subjects: [
+                            mk(100201, 'CSE101: COMPUTER PROGRAMMING', 4, 'B',
+                                [[ATT, 5, 4, 5], [CA, 50, 66, 100], [PET, 45, 37, 100]]),
+                            mk(100202, 'CSE121: ORIENTATION TO COMPUTING-II', 2, 'A',
+                                [[ATT, 20, 2, 5], [CA, 50, 85, 100], [OET, 30, 47, 60]]),
+                            mk(100203, 'CSE320: SOFTWARE ENGINEERING', 3, 'A',
+                                [[ATT, 5, 4, 5], [CA, 25, 80, 100], [OMT, 20, 13, 30], [OET, 50, 45, 60]]),
+                            mk(100204, 'INT306: DATABASE MANAGEMENT SYSTEMS', 4, 'B',
+                                [[ATT, 5, 2, 5], [CA, 50, 63, 100], [PET, 45, 40, 100]]),
+                            mk(100205, 'MEC136: ENGINEERING DRAWING WITH AUTOCAD', 4, 'E',
+                                [[ATT, 5, 0, 5], [CA, 25, 10, 100], [TMT, 20, 15, 40], [TET, 50, 21, 70]]),
+                            mk(100206, 'MTH166: DIFFERENTIAL EQUATIONS AND VECTOR CALCULUS', 4, 'E',
+                                [[ATT, 5, 0, 5], [CA, 25, 35, 100], [OMT, 20, 8, 30], [TET, 35, 4, 40], [OET, 15, 10, 30]]),
+                            mk(100207, 'PEL125: UPPER INTERMEDIATE COMMUNICATION SKILLS-I', 3, 'A',
+                                [[ATT, 15, 3, 5], [CA, 30, 70, 100], [OMT, 15, 20, 30], [OET, 40, 71, 100]]),
+                            mk(100208, 'PHY110: ENGINEERING PHYSICS', 3, 'B',
+                                [[ATT, 5, 2, 5], [CA, 25, 40, 100], [OMT, 20, 22, 30], [OET, 50, 37, 60]])
+                        ]
+                    },
+                    {
+                        // Term 3 — in progress. Weightages are transcribed from the portal's
+                        // Term 3 Marks Distribution; every mark is blank because results are
+                        // still Awaited. CREDITS ARE A BEST GUESS — the portal doesn't publish
+                        // them until grades land, so check them against your registration and
+                        // fix any that are wrong (the Cr column is editable).
+                        id: 1003, name: 'Term 3', targetSGPA: null, subjects: [
+                            mk(100301, 'CSE202: OBJECT ORIENTED PROGRAMMING', 4, '',
+                                [[ATT, 5, null, 5], [CA, 50, null, 100], [PET, 45, null, 100]]),
+                            mk(100302, 'CSE205: DATA STRUCTURES AND ALGORITHMS', 4, '',
+                                [[ATT, 5, null, 5], [CA, 50, null, 100], [PET, 45, null, 100]]),
+                            mk(100303, 'CSE306: COMPUTER NETWORKS', 3, '',
+                                [[ATT, 5, null, 5], [CA, 25, null, 100], [TMT, 20, null, 30], [TET, 50, null, 100]]),
+                            mk(100304, 'CSE423: VIRTUALIZATION AND CLOUD COMPUTING', 3, '',
+                                [[ATT, 5, null, 5], [CA, 25, null, 100], [TMT, 20, null, 30], [TET, 50, null, 100]]),
+                            mk(100305, 'GEN231: COMMUNITY DEVELOPMENT PROJECT', 2, '',
+                                [[PET, 100, null, 100]]),
+                            mk(100306, 'INT335: DESIGN THINKING', 2, '',
+                                [[ATT, 5, null, 5], [CA, 25, null, 100], [TMT, 20, null, 30], [TET, 50, null, 100]]),
+                            mk(100307, 'MTH401: DISCRETE MATHEMATICS', 4, '',
+                                [[ATT, 5, null, 5], [CA, 25, null, 100], [TMT, 20, null, 30], [TET, 50, null, 100]]),
+                            mk(100308, 'PEL136: ADVANCED COMMUNICATION SKILLS-II', 3, '',
+                                [[ATT, 15, null, 5], [CA, 30, null, 100], ['Practical Mid Term', 15, null, 50], [PET, 40, null, 100]])
+                        ]
+                    }
+                ],
+                improveThreshold: 7,
+                cutoffs: Object.assign({}, MARKS_DEFAULT_CUTOFFS),
+                cutoffsVersion: MARKS_CUTOFFS_VERSION,
+                seedVersion: MARKS_SEED_VERSION
+            };
+        }
+
+        function loadMarksState() {
+            try {
+                const saved = localStorage.getItem('marksState_v1');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.semesters)) {
+                        marksState = Object.assign({ improveThreshold: 7, cutoffs: null }, parsed);
+                    }
+                } else {
+                    // First-ever load — seed with your real Term 1 / Term 2 marks
+                    marksState = getDefaultMarksSeed();
+                }
+            } catch (e) { console.warn('marks state load failed', e); }
+            // Migrate older saved shapes forward
+            if (!marksState.cutoffs || (marksState.cutoffsVersion || 0) < MARKS_CUTOFFS_VERSION) {
+                // Only overwrite cutoffs the user hasn't customised themselves
+                marksState.cutoffs = Object.assign({}, MARKS_DEFAULT_CUTOFFS);
+                marksState.cutoffsVersion = MARKS_CUTOFFS_VERSION;
+            }
+            marksState.semesters.forEach(sem => {
+                if (sem.targetSGPA === undefined) sem.targetSGPA = null;
+                sem.subjects.forEach(s => {
+                    if (!Array.isArray(s.components)) s.components = [];
+                    if (s.reappearMode === undefined) s.reappearMode = false;
+                    if (s.chancesTotal == null) s.chancesTotal = MARKS_DEFAULT_CHANCES;
+                    if (s.chancesUsed == null) s.chancesUsed = s.reappearMode ? 1 : 0;
+                    if (s.locked === undefined) s.locked = false;
+                    if (s.difficulty == null) s.difficulty = 3;
+                    if (s.plannedRetake === undefined) s.plannedRetake = null;
+                });
+            });
+
+            // Earlier seeds stored grades with no component marks, so the Marks column read
+            // as empty. Backfill those from the current seed — matched by id, and only where
+            // the subject still has no components, so nothing you've typed is overwritten.
+            if ((marksState.seedVersion || 1) < MARKS_SEED_VERSION) {
+                const seed = getDefaultMarksSeed();
+                const fresh = {};
+                seed.semesters.forEach(sem => { sem.subjects.forEach(s => { fresh[s.id] = s; }); });
+                marksState.semesters.forEach(sem => {
+                    sem.subjects.forEach(s => {
+                        const seeded = fresh[s.id];
+                        if (seeded && s.components.length === 0) {
+                            s.components = JSON.parse(JSON.stringify(seeded.components));
+                            s.reappearMode = seeded.reappearMode;
+                            if (seeded.reappear) s.reappear = true;
+                        }
+                    });
+                });
+                // Add whole seeded semesters that aren't there yet (e.g. Term 3), and top up
+                // any seeded semester that's missing subjects. Never touches your own entries.
+                seed.semesters.forEach(seedSem => {
+                    const existing = marksState.semesters.find(s => s.id === seedSem.id);
+                    if (!existing) {
+                        marksState.semesters.push(JSON.parse(JSON.stringify(seedSem)));
+                    } else {
+                        seedSem.subjects.forEach(ss => {
+                            if (!existing.subjects.some(s => s.id === ss.id)) {
+                                existing.subjects.push(JSON.parse(JSON.stringify(ss)));
+                            }
+                        });
+                    }
+                });
+                // Correct Term 3 credits against the official timetable, but only where the
+                // value is still one of my estimates — anything you edited yourself stands.
+                marksState.semesters.forEach(sem => sem.subjects.forEach(s => {
+                    if (MARKS_REAL_CREDITS[s.id] != null && s.credits !== MARKS_REAL_CREDITS[s.id]) {
+                        s.credits = MARKS_REAL_CREDITS[s.id];
+                    }
+                }));
+                marksState.seedVersion = MARKS_SEED_VERSION;
+            }
+            saveMarksState();
+        }
+
+        function saveMarksState() {
+            localStorage.setItem('marksState_v1', JSON.stringify(marksState));
+        }
+
+        function marksEscapeHtml(s) {
+            if (s == null) return '';
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function marksFindSubject(semId, subjId) {
+            const sem = marksState.semesters.find(s => s.id === semId);
+            if (!sem) return {};
+            return { sem, subj: sem.subjects.find(s => s.id === subjId) };
+        }
+
+        function marksGradeOptions(selected) {
+            const opts = ['<option value=""' + (selected ? '' : ' selected') + '>Auto</option>'];
+            MARKS_GRADE_ORDER.forEach(g => {
+                opts.push(`<option value="${g}" ${selected === g ? 'selected' : ''}>${g}</option>`);
+            });
+            return opts.join('');
+        }
+
+        // ---- Marks math ----------------------------------------------------
+        // Each component contributes (scored / total) * effective weight to a 100-point score.
+        function marksComponentContribution(subj, c) {
+            const scored = parseFloat(c.scored), total = parseFloat(c.total);
+            const weight = marksEffectiveWeight(subj, c);
+            if (isNaN(scored) || isNaN(total) || total <= 0) return 0;
+            return (scored / total) * weight;
+        }
+
+        function marksComponentEntered(c) {
+            return c.scored !== null && c.scored !== '' && c.scored !== undefined
+                && c.total !== null && c.total !== '' && c.total !== undefined
+                && parseFloat(c.total) > 0;
+        }
+
+        function marksSubjectProgress(subj) {
+            const comps = subj.components || [];
+            let earned = 0, enteredWeight = 0, pendingWeight = 0, totalWeight = 0;
+            comps.forEach(c => {
+                const w = marksEffectiveWeight(subj, c);
+                totalWeight += w;
+                if (w === 0) return; // replaced by the reappear end term — ignore entirely
+                if (marksComponentEntered(c)) { earned += marksComponentContribution(subj, c); enteredWeight += w; }
+                else pendingWeight += w;
+            });
+            return {
+                earned, enteredWeight, pendingWeight, totalWeight,
+                hasComponents: comps.length > 0,
+                complete: comps.length > 0 && pendingWeight === 0,
+                maxPossible: earned + pendingWeight
+            };
+        }
+
+        function deriveGradeFromMarks(total) {
+            const sorted = Object.entries(marksState.cutoffs).sort((a, b) => b[1] - a[1]);
+            for (const [g, cut] of sorted) { if (total >= cut) return g; }
+            return 'E';
+        }
+
+        function marksNeededForGrade(grade) {
+            const c = marksState.cutoffs[grade];
+            return c === undefined ? null : c;
+        }
+
+        // The grade used in GPA math: a manual grade always wins; otherwise it's derived
+        // from components, but only once every component has marks entered.
+        function marksEffectiveGrade(subj) {
+            if (subj.grade) return subj.grade;
+            const p = marksSubjectProgress(subj);
+            return p.complete ? deriveGradeFromMarks(p.earned) : null;
+        }
+
+        function computeSGPA(subjects) {
+            let weighted = 0, creditSum = 0;
+            subjects.forEach(s => {
+                const grade = marksEffectiveGrade(s);
+                if (!grade || grade === 'S') return;
+                const gp = MARKS_GRADE_POINTS[grade];
+                if (gp === undefined) return;
+                const cr = parseFloat(s.credits) || 0;
+                weighted += gp * cr;
+                creditSum += cr;
+            });
+            return creditSum > 0 ? weighted / creditSum : null;
+        }
+
+        function computeOverallCGPA() {
+            return computeSGPA(marksState.semesters.reduce((acc, sem) => acc.concat(sem.subjects), []));
+        }
+
+        function marksGradeLabelForThreshold(val) {
+            const entries = Object.entries(MARKS_GRADE_POINTS).sort((a, b) => b[1] - a[1]);
+            for (const [g, gp] of entries) { if (val >= gp) return g; }
+            return 'E';
+        }
+
+        // ---- Reappear / improvement chances --------------------------------
+        // LPU gives 5 attempts. A graded subject is not necessarily finished: if the grade is
+        // weak and chances remain, it can still be improved. Only "locked" (your call) or
+        // running out of chances truly settles it.
+        function marksChancesLeft(subj) {
+            const total = subj.chancesTotal == null ? MARKS_DEFAULT_CHANCES : subj.chancesTotal;
+            return Math.max(0, total - (subj.chancesUsed || 0));
+        }
+
+        // A failed subject gets REAPPEAR attempts; a passed one gets IMPROVEMENT attempts.
+        // The mechanics are the same (retake the end term), the words are not — and
+        // "reappear" must never be shown against a subject that actually passed.
+        function marksAttemptKind(subj) {
+            const g = marksEffectiveGrade(subj);
+            if (!g || g === 'S') return null;
+            return MARKS_FAIL_GRADES.includes(g) ? 'reappear' : 'improvement';
+        }
+
+        function marksAttemptWord(subj, caps) {
+            const k = marksAttemptKind(subj);
+            const w = k === 'reappear' ? 'reappear' : 'improvement';
+            return caps ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+        }
+
+        // Graded, not locked, still weak, and chances remain -> worth retaking
+        function marksIsImprovable(subj) {
+            if (subj.locked) return false;
+            const g = marksEffectiveGrade(subj);
+            if (!g || g === 'S') return false;
+            const gp = MARKS_GRADE_POINTS[g];
+            if (gp === undefined) return false;
+            return gp < marksState.improveThreshold && marksChancesLeft(subj) > 0;
+        }
+
+        // Truly done: you locked it, or there are no attempts left to use
+        function marksIsSettled(subj) {
+            const g = marksEffectiveGrade(subj);
+            if (!g) return false;
+            return !!subj.locked || !marksIsImprovable(subj);
+        }
+
+        // ---- Difficulty (effort weighting) ----------------------------------
+        // Credits say what a grade step is WORTH; difficulty says what it COSTS. Without it
+        // the planner assumes every subject is equally hard, which it obviously isn't.
+        const MARKS_DIFFICULTY = { 1: 'Easy', 2: 'Light', 3: 'Normal', 4: 'Hard', 5: 'Brutal' };
+        function marksDifficulty(subj) {
+            const d = parseInt(subj.difficulty, 10);
+            return (isNaN(d) || d < 1 || d > 5) ? 3 : d;
+        }
+
+        // ---- Retake ladder ---------------------------------------------------
+        // What each realistic outcome of a retake is actually worth. Passing a failed
+        // subject is a completely different job from acing it, so show the whole ladder
+        // instead of quoting only the grade that happens to hit the target.
+        function marksRetakeLadder(subj) {
+            const totalCredits = marksState.semesters.reduce((a, sem) =>
+                a + sem.subjects.reduce((b, s) => b + (parseFloat(s.credits) || 0), 0), 0);
+            const g = marksEffectiveGrade(subj);
+            const gpNow = MARKS_GRADE_POINTS[g] || 0;
+            const cr = parseFloat(subj.credits) || 0;
+            if (!totalCredits) return [];
+            return MARKS_TARGETABLE
+                .filter(x => MARKS_GRADE_POINTS[x] > gpNow)
+                .map(x => ({
+                    grade: x,
+                    gp: MARKS_GRADE_POINTS[x],
+                    gain: (MARKS_GRADE_POINTS[x] - gpNow) * cr / totalCredits,
+                    note: x === 'D' ? 'just pass' : ''
+                }));
+        }
+
+        function setPlannedRetake(semId, subjId, grade) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.plannedRetake = (subj.plannedRetake === grade) ? null : grade;
+            saveMarksState(); renderMarks();
+        }
+
+        function setSubjectDifficulty(semId, subjId, value) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.difficulty = parseInt(value, 10) || 3;
+            saveMarksState(); renderMarks();
+        }
+
+        // The grade a subject is assumed to end on: a planned retake overrides the current one
+        function marksPlannedGrade(subj) {
+            const cur = marksEffectiveGrade(subj);
+            if (subj.plannedRetake && MARKS_GRADE_POINTS[subj.plannedRetake] > (MARKS_GRADE_POINTS[cur] || 0)) {
+                return subj.plannedRetake;
+            }
+            return cur;
+        }
+
+        // ---- Cutoff calibration ---------------------------------------------
+        // The marks->grade cutoffs started as my estimate. Every published grade with full
+        // component marks brackets them tighter: a subject that scored M and got grade G
+        // proves cutoff(G) <= M, and cutoff(anything above G) > M. This derives those
+        // brackets from your own results so the guesswork shrinks as data arrives.
+        function marksCalibrateCutoffs() {
+            const order = ['E', 'D', 'C', 'B', 'B+', 'A', 'A+', 'O'];
+            const obs = [];
+            marksState.semesters.forEach(sem => sem.subjects.forEach(s => {
+                if (!s.grade || s.grade === 'S') return;        // must be a real published grade
+                if (order.indexOf(s.grade) < 0) return;
+                const p = marksSubjectProgress(s);
+                if (!p.complete) return;                        // and every component entered
+                obs.push({ grade: s.grade, marks: p.earned, code: marksCode(s) });
+            }));
+
+            const out = {};
+            order.forEach((g, i) => {
+                if (g === 'E') return;
+                const atG = obs.filter(o => o.grade === g).map(o => o.marks);
+                const below = obs.filter(o => order.indexOf(o.grade) < i).map(o => o.marks);
+                const hi = atG.length ? Math.min(...atG) : null;      // cutoff <= lowest mark that got G
+                let lo = below.length ? Math.max(...below) : null;    // cutoff  > highest mark that got less
+                // The university's own pass rule is a hard constraint: below 40 is a fail,
+                // so the lowest passing grade can never sit under 40.
+                if (g === 'D') lo = Math.max(lo == null ? 0 : lo, MARKS_PASS_MARK);
+
+                // Only move a cutoff we've actually SEEN that grade for. With no sample the
+                // bracket is open-ended upward and any "estimate" would just be the grade
+                // below it, which would wrongly drag the cutoff down.
+                let estimate = null;
+                if (hi != null) estimate = (lo != null) ? (lo + hi) / 2 : hi;
+
+                const cur = marksState.cutoffs[g];
+                const inside = (lo == null || cur > lo) && (hi == null || cur <= hi);
+                out[g] = { lo, hi, estimate, samples: atG.length, current: cur, inside,
+                           width: (lo != null && hi != null) ? hi - lo : null };
+            });
+            return { brackets: out, observations: obs.length };
+        }
+
+        function showCalibrateModal() {
+            const { brackets, observations } = marksCalibrateCutoffs();
+            const order = ['O', 'A+', 'A', 'B+', 'B', 'C', 'D'];
+            const rows = order.map(g => {
+                const b = brackets[g] || {};
+                const range = (b.lo != null || b.hi != null)
+                    ? `${b.lo != null ? '>' + b.lo.toFixed(1) : '—'} and ${b.hi != null ? '≤' + b.hi.toFixed(1) : '—'}`
+                    : '<span style="color:var(--text-tertiary);">no data</span>';
+                const tone = b.estimate == null ? 'muted' : (b.width != null && b.width < 6 ? 'tight' : 'loose');
+                return `<tr>
+                    <td style="font-weight:700;">${g}</td>
+                    <td>${b.current != null ? b.current : '—'}</td>
+                    <td>${range}</td>
+                    <td class="cal-${tone}">${b.estimate != null ? b.estimate.toFixed(1) : '—'}</td>
+                    <td style="font-size:10px;color:${b.inside === false ? '#f87171' : 'var(--text-tertiary)'};">
+                        ${b.estimate == null ? 'never seen — kept' : (b.inside ? 'current fits' : 'current is outside')}
+                    </td>
+                </tr>`;
+            }).join('');
+            const modal = document.createElement('div');
+            modal.className = 'auth-modal active';
+            modal.id = 'calibrateModal';
+            modal.innerHTML = `
+                <div class="auth-modal-content" style="max-width:540px;max-height:88vh;overflow-y:auto;">
+                    <button class="auth-modal-close" onclick="this.closest('.auth-modal').remove()">×</button>
+                    <h3 style="margin-bottom:6px;color:var(--accent-primary);">🎯 Calibrate cutoffs</h3>
+                    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:14px;line-height:1.6;">
+                        Derived from <strong>${observations}</strong> of your own published grades that have full component marks.
+                        A subject that scored M and got grade G proves the cutoff for G is at or below M,
+                        and every higher grade's cutoff is above M. Narrow brackets are solid; wide ones are still a guess.
+                    </p>
+                    <div style="overflow-x:auto;">
+                    <table class="marks-comp-table cal-table">
+                        <thead><tr><th>Grade</th><th>Using</th><th>Your results say</th><th>Best estimate</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    </div>
+                    <button class="btn btn-primary" onclick="applyCalibration()" style="width:100%;margin-top:14px;">Apply estimates</button>
+                    <p style="font-size:10px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
+                        Grades with no data keep their current value. Re-run after each term and the brackets tighten.
+                    </p>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        function applyCalibration() {
+            const { brackets } = marksCalibrateCutoffs();
+            const next = Object.assign({}, marksState.cutoffs);
+            Object.entries(brackets).forEach(([g, b]) => {
+                // Grades we've never observed keep whatever they had
+                if (b.estimate != null) next[g] = Math.round(b.estimate * 10) / 10;
+            });
+            const order = ['D', 'C', 'B', 'B+', 'A', 'A+', 'O'];
+            next['D'] = Math.max(next['D'] == null ? MARKS_PASS_MARK : next['D'], MARKS_PASS_MARK);
+            // Keep the ladder monotonic — a higher grade can never need fewer marks
+            for (let i = 1; i < order.length; i++) {
+                if (next[order[i]] <= next[order[i - 1]]) next[order[i]] = next[order[i - 1]] + 0.1;
+            }
+            marksState.cutoffs = next;
+            marksState.cutoffsVersion = MARKS_CUTOFFS_VERSION;
+            saveMarksState(); renderMarks();
+            document.getElementById('calibrateModal')?.remove();
+            showToast('Cutoffs recalibrated from your results', 'success');
+        }
+
+        // ---- Credit-weighted allocation -------------------------------------
+        // Asking every subject for the same grade is bad advice: one grade step is worth
+        // (step x credits) points, so a step on a 4-credit subject is worth 4x the same step
+        // on a 1-credit one — for roughly the same effort. Every step in the ladder below is
+        // exactly +1 grade point, so "fewest grade steps to reach the target" is achieved by
+        // always pushing the highest-credit subject that still has headroom. Low-credit
+        // subjects get left at whatever their marks already imply.
+        const MARKS_LADDER = ['E', 'D', 'C', 'B', 'B+', 'A', 'A+', 'O'];
+
+        function marksAllocateTargets(items, fixedPoints, requiredPoints) {
+            const gp = g => MARKS_GRADE_POINTS[g] || 0;
+            const alloc = items.map(it => {
+                const p = it.progress;
+                // Floor = what you'd get scoring nothing more. Ceiling = everything remaining perfect.
+                const floorG = p.hasComponents ? deriveGradeFromMarks(p.earned) : 'E';
+                const ceilG = p.hasComponents ? deriveGradeFromMarks(p.maxPossible) : 'O';
+                let fi = MARKS_LADDER.indexOf(floorG); if (fi < 0) fi = 0;
+                let ci = MARKS_LADDER.indexOf(ceilG); if (ci < 0) ci = MARKS_LADDER.length - 1;
+                if (ci < fi) ci = fi;
+                return { it, idx: fi, floorIdx: fi, ceilIdx: ci,
+                         cr: parseFloat(it.subj.credits) || 0, diff: marksDifficulty(it.subj) };
+            });
+
+            let pts = fixedPoints + alloc.reduce((s, a) => s + gp(MARKS_LADDER[a.idx]) * a.cr, 0);
+            let guard = 0;
+            while (pts < requiredPoints - 1e-9 && guard++ < 1000) {
+                // Best value for effort: a step is worth (credits) points and costs
+                // (difficulty), so spend the next step where credits/difficulty is highest.
+                // Ties go to whichever is furthest behind, so a tier lifts evenly instead
+                // of one subject being maxed out.
+                let best = null, bestVal = -1;
+                alloc.forEach(a => {
+                    if (a.idx >= a.ceilIdx) return;
+                    const val = a.cr / a.diff;
+                    if (val > bestVal || (val === bestVal && best && a.idx < best.idx)) { best = a; bestVal = val; }
+                });
+                if (!best) break;
+                const before = gp(MARKS_LADDER[best.idx]);
+                best.idx++;
+                pts += (gp(MARKS_LADDER[best.idx]) - before) * best.cr;
+            }
+            return { alloc, feasible: pts >= requiredPoints - 1e-9, points: pts };
+        }
+
+        // Turn an allocation into per-subject advice
+        function marksBuildOpenRows(items, fixedPoints, requiredPoints) {
+            const { alloc, feasible } = marksAllocateTargets(items, fixedPoints, requiredPoints);
+            const rows = alloc.map(a => {
+                const { it } = a;
+                const p = it.progress;
+                const neededGrade = MARKS_LADDER[a.idx];
+                const pushed = a.idx > a.floorIdx;
+                const neededMarks = marksNeededForGrade(neededGrade);
+                let status, detail, requiredPct = null;
+
+                if (!p.hasComponents) {
+                    status = 'setup'; detail = 'Add components to plan';
+                } else if (!pushed) {
+                    // Its own marks already carry it; effort is better spent elsewhere
+                    status = 'coast';
+                    detail = `${a.cr} credit${a.cr === 1 ? '' : 's'}${a.diff >= 4 ? ', ' + MARKS_DIFFICULTY[a.diff].toLowerCase() : ''} — already on ${neededGrade}, no push needed`;
+                } else if (neededMarks === null) {
+                    status = 'setup'; detail = 'No cutoff set for ' + neededGrade;
+                } else if (p.earned >= neededMarks) {
+                    status = 'secured'; detail = `${neededGrade} already secured at ${p.earned.toFixed(1)}`;
+                } else if (p.pendingWeight <= 0) {
+                    status = 'missed'; detail = `Finished at ${p.earned.toFixed(1)}, needed ${neededMarks}`;
+                } else if (p.maxPossible < neededMarks - 1e-9) {
+                    // Genuinely out of reach for THIS subject — even full marks fall short
+                    status = 'impossible';
+                    detail = `Even full marks only reaches ${p.maxPossible.toFixed(1)} (${deriveGradeFromMarks(p.maxPossible)}) — ${neededGrade} is gone`;
+                } else {
+                    const need = neededMarks - p.earned;
+                    requiredPct = (need / p.pendingWeight) * 100;
+                    status = 'needs';
+                    // At the top of its ladder: worth saying so, but it's still achievable
+                    detail = (a.idx >= a.ceilIdx && neededGrade === 'O')
+                        ? `Everything you've got — ${need.toFixed(1)} more marks, ${requiredPct.toFixed(0)}% of what's left`
+                        : `${need.toFixed(1)} more marks — score ${requiredPct.toFixed(0)}% of what's left`;
+                }
+                return { sem: it.sem, subj: it.subj, progress: p, neededGrade, neededMarks,
+                         status, detail, requiredPct, credits: a.cr, pushed, difficulty: a.diff,
+                         value: a.cr / a.diff };
+            });
+            // Where your effort actually pays: value-for-effort, pushes first
+            rows.sort((a, b) => (b.pushed - a.pushed) || (b.value - a.value) || (b.credits - a.credits));
+            return { rows, feasible };
+        }
+
+        // ---- Target planner ------------------------------------------------
+        // Three buckets: settled subjects contribute fixed points; in-progress subjects get a
+        // required pace on their remaining components; improvable subjects (graded but weak,
+        // chances left) get told which retake grade would reach the target and what it gains.
+        function marksPlanSemester(sem) {
+            const target = parseFloat(sem.targetSGPA);
+            const totalCredits = sem.subjects.reduce((s, x) => s + (parseFloat(x.credits) || 0), 0);
+            if (isNaN(target) || totalCredits <= 0) return null;
+
+            // Current standing across everything that already has a grade
+            let gradedWeighted = 0, gradedCredits = 0;
+            sem.subjects.forEach(subj => {
+                const g = marksEffectiveGrade(subj);
+                if (!g || g === 'S') return;
+                const cr = parseFloat(subj.credits) || 0;
+                gradedWeighted += (MARKS_GRADE_POINTS[g] || 0) * cr;
+                gradedCredits += cr;
+            });
+
+            // Improvement options: what retake grade would get this semester to target
+            const improvable = sem.subjects.filter(marksIsImprovable).map(subj => {
+                const cr = parseFloat(subj.credits) || 0;
+                const nowGrade = marksEffectiveGrade(subj);
+                const gpNow = MARKS_GRADE_POINTS[nowGrade] || 0;
+                const sgpaWith = gp => gradedCredits > 0
+                    ? (gradedWeighted - gpNow * cr + gp * cr) / gradedCredits : null;
+                let neededGrade = null;
+                for (const g of MARKS_TARGETABLE) {
+                    if (MARKS_GRADE_POINTS[g] <= gpNow) continue;
+                    const s = sgpaWith(MARKS_GRADE_POINTS[g]);
+                    if (s !== null && s >= target - 1e-9) { neededGrade = g; break; }
+                }
+                const bestSgpa = sgpaWith(10);
+                const maxGain = bestSgpa !== null ? bestSgpa - (gradedWeighted / gradedCredits) : 0;
+                const gainAtNeeded = neededGrade
+                    ? sgpaWith(MARKS_GRADE_POINTS[neededGrade]) - (gradedWeighted / gradedCredits) : null;
+                return {
+                    subj, nowGrade, credits: cr, chancesLeft: marksChancesLeft(subj),
+                    neededGrade, gainAtNeeded, maxGain,
+                    enoughAlone: neededGrade !== null
+                };
+            });
+
+            let lockedPoints = 0, openCredits = 0;
+            const open = [];
+            sem.subjects.forEach(subj => {
+                const cr = parseFloat(subj.credits) || 0;
+                // Settled subjects contribute fixed points; anything still ungraded is "open"
+                // and gets a required pace on its remaining components.
+                if (marksEffectiveGrade(subj)) lockedPoints += (MARKS_GRADE_POINTS[marksEffectiveGrade(subj)] || 0) * cr;
+                else { openCredits += cr; open.push(subj); }
+            });
+
+            const remainingPoints = target * totalCredits - lockedPoints;
+            const perCreditGP = openCredits > 0 ? remainingPoints / openCredits : null;
+
+            // Credit-weighted, not evenly spread
+            const built = marksBuildOpenRows(
+                open.map(subj => ({ sem, subj, progress: marksSubjectProgress(subj) })),
+                lockedPoints, target * totalCredits);
+            const rows = built.rows;
+
+            const currentSGPA = gradedCredits > 0 ? gradedWeighted / gradedCredits : null;
+            return { target, totalCredits, lockedPoints, openCredits, perCreditGP, rows,
+                     improvable, currentSGPA, gradedCredits };
+        }
+
+        // ---- Overall CGPA planner ------------------------------------------
+        // Same idea as the semester planner, but the scope is every subject in every term —
+        // which is the number that actually decides your degree. Movable credits = subjects
+        // still ungraded PLUS (optionally) graded-but-improvable ones you could retake.
+        function marksPlanOverall() {
+            const target = parseFloat(marksState.targetCGPA);
+            const withRetakes = marksState.planWithRetakes !== false;
+            const all = [];
+            marksState.semesters.forEach(sem => sem.subjects.forEach(subj => all.push({ sem, subj })));
+            const totalCredits = all.reduce((a, x) => a + (parseFloat(x.subj.credits) || 0), 0);
+            if (isNaN(target) || totalCredits <= 0) return null;
+
+            let fixedPoints = 0, movableCredits = 0, ceilingPoints = 0;
+            let currentPoints = 0, gradedCredits = 0;
+            const open = [], improv = [];
+            all.forEach(entry => {
+                const { subj } = entry;
+                const cr = parseFloat(subj.credits) || 0;
+                const g = marksEffectiveGrade(subj);
+                if (g && g !== 'S') { currentPoints += (MARKS_GRADE_POINTS[g] || 0) * cr; gradedCredits += cr; }
+                if (!g) {                                   // still in progress
+                    open.push(entry); movableCredits += cr; ceilingPoints += 10 * cr;
+                } else if (withRetakes && marksIsImprovable(subj)) {
+                    improv.push(entry); movableCredits += cr; ceilingPoints += 10 * cr;
+                } else {                                    // settled / locked / out of chances
+                    const gp = (MARKS_GRADE_POINTS[g] || 0);
+                    fixedPoints += gp * cr; ceilingPoints += gp * cr;
+                }
+            });
+
+            const requiredPoints = target * totalCredits;
+            const maxCGPA = ceilingPoints / totalCredits;
+            const possible = requiredPoints <= ceilingPoints + 1e-9;
+            const perCreditGP = movableCredits > 0 ? (requiredPoints - fixedPoints) / movableCredits : null;
+            const gradeFor = gp => MARKS_TARGETABLE.find(g => MARKS_GRADE_POINTS[g] >= gp - 1e-9) || null;
+
+            // Subjects still being marked — allocated by credit weight, so the heavy
+            // subjects get pushed and the light ones are left alone. Improvable subjects
+            // are held at their CURRENT grade here: retakes are a choice, shown separately,
+            // not something the plan quietly assumes you'll do.
+            // A retake you've actually committed to (picked from the ladder) counts;
+            // one you haven't is not silently assumed.
+            const improvableNowPoints = improv.reduce((s, { subj }) => {
+                const g = marksPlannedGrade(subj);
+                return s + (MARKS_GRADE_POINTS[g] || 0) * (parseFloat(subj.credits) || 0);
+            }, 0);
+            const plannedRetakes = improv.filter(({ subj }) => subj.plannedRetake &&
+                MARKS_GRADE_POINTS[subj.plannedRetake] > (MARKS_GRADE_POINTS[marksEffectiveGrade(subj)] || 0));
+            const built = marksBuildOpenRows(
+                open.map(({ sem, subj }) => ({ sem, subj, progress: marksSubjectProgress(subj) })),
+                fixedPoints + improvableNowPoints, requiredPoints);
+            const rows = built.rows;
+            const reachableWithoutRetakes = built.feasible;
+
+            // Old subjects you could retake: does the current grade already clear the bar?
+            const improvable = improv.map(({ sem, subj }) => {
+                const g = marksEffectiveGrade(subj);
+                const gpNow = MARKS_GRADE_POINTS[g] || 0;
+                const cr = parseFloat(subj.credits) || 0;
+                const neededGrade = gradeFor(perCreditGP);
+                const alreadyOk = perCreditGP !== null && gpNow >= perCreditGP - 1e-9;
+                const gain = neededGrade ? (MARKS_GRADE_POINTS[neededGrade] - gpNow) * cr / totalCredits : 0;
+                const maxGain = (10 - gpNow) * cr / totalCredits;
+                return {
+                    sem, subj, nowGrade: g, credits: cr, chancesLeft: marksChancesLeft(subj),
+                    neededGrade, alreadyOk, gain, maxGain,
+                    status: alreadyOk ? 'secured' : (neededGrade ? 'needs' : 'impossible'),
+                    detail: alreadyOk
+                        ? `${g} already clears the bar — no retake needed`
+                        : neededGrade
+                            ? `${marksAttemptWord(subj)} to ${neededGrade} (+${gain.toFixed(2)} CGPA)`
+                            : 'even O is not enough'
+                };
+            }).sort((a, b) => b.maxGain - a.maxGain);
+
+            return {
+                target, totalCredits, fixedPoints, movableCredits, ceilingPoints,
+                perCreditGP, maxCGPA, possible, withRetakes, rows, improvable,
+                reachableWithoutRetakes, plannedRetakes,
+                currentCGPA: gradedCredits > 0 ? currentPoints / gradedCredits : null,
+                gradedCredits, openCount: open.length, improvableCount: improv.length
+            };
+        }
+
+        // ---- What-If scenarios ----------------------------------------------
+        // A forward sandbox: pick hypothetical grades and watch the CGPA move. Nothing
+        // here touches your real data — the planner works backwards from a target, this
+        // works forwards from guesses, and combinations are where it gets interesting
+        // (your three E's interact, so one-subject-at-a-time can't answer it).
+        let marksScenario = { on: false, grades: {} };
+
+        function marksScenarioEligible(subj) {
+            if (subj.locked) return false;
+            if (!marksEffectiveGrade(subj)) return true;          // still to be marked
+            return marksChancesLeft(subj) > 0;                    // could be retaken
+        }
+
+        function marksScenarioGradeOf(subj) {
+            if (marksScenario.on && marksScenario.grades[subj.id]) return marksScenario.grades[subj.id];
+            return marksEffectiveGrade(subj);
+        }
+
+        function marksScenarioCompute() {
+            let pts = 0, creds = 0, changed = 0;
+            const perTerm = [];
+            marksState.semesters.forEach(sem => {
+                let sp = 0, sc = 0;
+                sem.subjects.forEach(subj => {
+                    const g = marksScenarioGradeOf(subj);
+                    if (marksScenario.grades[subj.id] &&
+                        marksScenario.grades[subj.id] !== marksEffectiveGrade(subj)) changed++;
+                    if (!g || g === 'S') return;
+                    const cr = parseFloat(subj.credits) || 0;
+                    const gp = MARKS_GRADE_POINTS[g] || 0;
+                    pts += gp * cr; creds += cr; sp += gp * cr; sc += cr;
+                });
+                perTerm.push({ sem, sgpa: sc > 0 ? sp / sc : null, credits: sc });
+            });
+            const cgpa = creds > 0 ? pts / creds : null;
+            const now = computeOverallCGPA();
+            return { cgpa, credits: creds, current: now,
+                     delta: (cgpa != null && now != null) ? cgpa - now : null, changed, perTerm };
+        }
+
+        function toggleScenarioMode() {
+            marksScenario.on = !marksScenario.on;
+            if (!marksScenario.on) marksScenario.grades = {};
+            renderMarks();
+        }
+
+        function marksScenarioSet(subjId, grade) {
+            if (!grade) delete marksScenario.grades[subjId];
+            else marksScenario.grades[subjId] = grade;
+            renderMarks();
+        }
+
+        function marksScenarioReset() { marksScenario.grades = {}; renderMarks(); }
+
+        // Quick starting points, so you're not filling 20 dropdowns by hand
+        function marksScenarioPreset(kind, grade) {
+            marksState.semesters.forEach(sem => sem.subjects.forEach(subj => {
+                if (!marksScenarioEligible(subj)) return;
+                const cur = marksEffectiveGrade(subj);
+                const isFail = cur && MARKS_FAIL_GRADES.includes(cur);
+                if (kind === 'fails' && isFail) marksScenario.grades[subj.id] = grade;
+                if (kind === 'pending' && !cur) marksScenario.grades[subj.id] = grade;
+                if (kind === 'weak' && cur && !isFail &&
+                    MARKS_GRADE_POINTS[cur] < marksState.improveThreshold) marksScenario.grades[subj.id] = grade;
+            }));
+            renderMarks();
+        }
+
+        function marksScenarioSave() {
+            const r = marksScenarioCompute();
+            if (!r.changed) { showToast('Nothing set yet — pick some grades first', 'warning'); return; }
+            const name = prompt('Name this scenario:', `Scenario ${(marksState.scenarios || []).length + 1}`);
+            if (!name) return;
+            if (!marksState.scenarios) marksState.scenarios = [];
+            marksState.scenarios.push({
+                id: Date.now(), name: name.trim(),
+                grades: Object.assign({}, marksScenario.grades),
+                cgpa: r.cgpa, changed: r.changed
+            });
+            saveMarksState(); renderMarks();
+            showToast('Scenario saved — compare it against others', 'success');
+        }
+
+        function marksScenarioLoad(id) {
+            const s = (marksState.scenarios || []).find(x => x.id === id);
+            if (!s) return;
+            marksScenario.on = true;
+            marksScenario.grades = Object.assign({}, s.grades);
+            renderMarks();
+        }
+
+        function marksScenarioDelete(id) {
+            marksState.scenarios = (marksState.scenarios || []).filter(x => x.id !== id);
+            saveMarksState(); renderMarks();
+        }
+
+        // Commit only the retakes — ungraded subjects will get real marks anyway
+        function marksScenarioApply() {
+            let n = 0;
+            marksState.semesters.forEach(sem => sem.subjects.forEach(subj => {
+                const g = marksScenario.grades[subj.id];
+                if (!g) return;
+                const cur = marksEffectiveGrade(subj);
+                if (cur && MARKS_GRADE_POINTS[g] > (MARKS_GRADE_POINTS[cur] || 0)) { subj.plannedRetake = g; n++; }
+            }));
+            if (!n) { showToast('No retakes in this scenario to commit', 'info'); return; }
+            saveMarksState();
+            marksScenario.on = false; marksScenario.grades = {};
+            renderMarks();
+            showToast(`${n} retake${n === 1 ? '' : 's'} added to your plan`, 'success');
+        }
+
+        function renderScenarioPanel() {
+            const el = document.getElementById('marksScenarioPanel');
+            if (!el) return;
+            const saved = marksState.scenarios || [];
+            if (!marksScenario.on) {
+                el.innerHTML = saved.length ? `<div class="sc-saved-strip">
+                    <span class="sc-saved-label">Saved scenarios</span>
+                    ${saved.map(s => `<button class="sc-chip" onclick="marksScenarioLoad(${s.id})" title="Load this scenario">
+                        ${marksEscapeHtml(s.name)} <em>${s.cgpa != null ? s.cgpa.toFixed(2) : '—'}</em>
+                        <span onclick="event.stopPropagation(); marksScenarioDelete(${s.id});" title="Delete">×</span>
+                    </button>`).join('')}
+                </div>` : '';
+                return;
+            }
+
+            const r = marksScenarioCompute();
+            const up = r.delta != null && r.delta >= 0;
+            const rows = r.perTerm.filter(t => t.sgpa != null).map(t =>
+                `<span class="sc-term">${marksEscapeHtml(t.sem.name)} <strong>${t.sgpa.toFixed(2)}</strong></span>`).join('');
+
+            el.innerHTML = `
+                <div class="sc-panel">
+                    <div class="sc-top">
+                        <div class="sc-figure">
+                            <div class="sc-cgpa ${up ? 'up' : 'down'}">${r.cgpa != null ? r.cgpa.toFixed(2) : '—'}</div>
+                            <div class="sc-cap">projected CGPA${r.delta != null ? ` · <span class="${up ? 'up' : 'down'}">${up ? '+' : ''}${r.delta.toFixed(2)}</span> vs ${r.current != null ? r.current.toFixed(2) : '—'}` : ''}</div>
+                        </div>
+                        <div class="sc-terms">${rows || '<span class="sc-cap">Set some grades below</span>'}</div>
+                    </div>
+                    <div class="sc-presets">
+                        <span class="sc-cap">Quick fill:</span>
+                        <button class="sc-btn" onclick="marksScenarioPreset('fails','D')">Fails → pass</button>
+                        <button class="sc-btn" onclick="marksScenarioPreset('fails','C')">Fails → C</button>
+                        <button class="sc-btn" onclick="marksScenarioPreset('fails','B')">Fails → B</button>
+                        <button class="sc-btn" onclick="marksScenarioPreset('pending','A')">Pending → A</button>
+                        <button class="sc-btn" onclick="marksScenarioPreset('pending','B')">Pending → B</button>
+                        <button class="sc-btn" onclick="marksScenarioPreset('weak','A')">Weak passes → A</button>
+                        <button class="sc-btn ghost" onclick="marksScenarioReset()">Clear</button>
+                    </div>
+                    <div class="sc-actions">
+                        <span class="sc-cap">${r.changed} subject${r.changed === 1 ? '' : 's'} changed · nothing is saved to your real marks</span>
+                        <span>
+                            <button class="sc-btn" onclick="marksScenarioSave()">💾 Save scenario</button>
+                            <button class="sc-btn primary" onclick="marksScenarioApply()">Commit retakes to plan</button>
+                        </span>
+                    </div>
+                    ${saved.length ? `<div class="sc-compare">
+                        <div class="sc-cap" style="margin-bottom:5px;">Compare</div>
+                        <table class="sc-table">
+                            <tr><td>Right now</td><td><strong>${r.current != null ? r.current.toFixed(2) : '—'}</strong></td><td></td><td></td></tr>
+                            <tr class="live"><td>This scenario</td><td><strong>${r.cgpa != null ? r.cgpa.toFixed(2) : '—'}</strong></td>
+                                <td class="${up ? 'up' : 'down'}">${r.delta != null ? (up ? '+' : '') + r.delta.toFixed(2) : ''}</td><td></td></tr>
+                            ${saved.map(s => {
+                                const d = (s.cgpa != null && r.current != null) ? s.cgpa - r.current : null;
+                                return `<tr><td>${marksEscapeHtml(s.name)}</td>
+                                    <td><strong>${s.cgpa != null ? s.cgpa.toFixed(2) : '—'}</strong></td>
+                                    <td class="${d >= 0 ? 'up' : 'down'}">${d != null ? (d >= 0 ? '+' : '') + d.toFixed(2) : ''}</td>
+                                    <td><button class="sc-mini" onclick="marksScenarioLoad(${s.id})">load</button>
+                                        <button class="sc-mini" onclick="marksScenarioDelete(${s.id})">×</button></td></tr>`;
+                            }).join('')}
+                        </table>
+                    </div>` : ''}
+                </div>`;
+        }
+
+        // ---- "What to do next" -------------------------------------------
+        // One line, top of the section. Picks the single highest-leverage thing:
+        // something broken first, then the biggest risk, then where marks matter most.
+        function marksCode(subj) { return (subj.name || '').split(':')[0].trim(); }
+
+        function marksNextAction(overall) {
+            const rows = overall ? overall.rows : [];
+
+            // Plan-level problems are plan-level. Blaming a single subject for a target
+            // that no combination reaches is both wrong and useless.
+            if (overall && !overall.possible) {
+                return { tone: 'bad',
+                    text: `Target <strong>${overall.target.toFixed(2)}</strong> can't be reached — even with every remaining subject at O${overall.withRetakes ? ' and every retake perfect' : ''}, the ceiling is <strong>${overall.maxCGPA.toFixed(2)}</strong>. Lower the target${overall.withRetakes ? '' : ', or tick "count retakes"'}.` };
+            }
+            if (overall && !overall.reachableWithoutRetakes) {
+                const best = (overall.improvable || []).filter(r => !r.alreadyOk)[0];
+                return { tone: 'warn',
+                    text: `Term work alone won't reach <strong>${overall.target.toFixed(2)}</strong> — you need retakes as well.` +
+                          (best ? ` Best one: <strong>${marksEscapeHtml(marksCode(best.subj))}</strong> ${best.nowGrade}→${best.neededGrade} for <strong>+${best.gain.toFixed(2)}</strong> CGPA.` : '') };
+            }
+
+            // A subject that has genuinely run out of room
+            const dead = rows.find(r => r.status === 'impossible' || r.status === 'missed');
+            if (dead) return { tone: 'bad',
+                text: `<strong>${marksEscapeHtml(marksCode(dead.subj))}</strong> can't make its grade any more — ${dead.detail}. Lower the CGPA target, or lock it and lean on the others.` };
+
+            const risky = rows.filter(r => r.status === 'needs' && r.requiredPct > 85)
+                              .sort((a, b) => b.requiredPct - a.requiredPct)[0];
+            if (risky) return { tone: 'warn',
+                text: `<strong>${marksEscapeHtml(marksCode(risky.subj))}</strong> is the one at risk — it needs <strong>${risky.requiredPct.toFixed(0)}%</strong> of everything still to come. Put your hours there.` };
+
+            // Biggest lever = pending weight × credits (where a mark moves the CGPA most).
+            // Subjects the allocator left coasting are deliberately skipped.
+            let best = null;
+            rows.forEach(r => {
+                if (r.status !== 'needs' || !r.pushed) return;
+                const lev = r.progress.pendingWeight * (parseFloat(r.subj.credits) || 0);
+                if (!best || lev > best.lev) best = { lev, r };
+            });
+            if (best) {
+                const r = best.r;
+                const coasting = rows.filter(x => x.status === 'coast').length;
+                return { tone: 'ok',
+                    text: `Focus <strong>${marksEscapeHtml(marksCode(r.subj))}</strong> (${r.subj.credits} cr) — needs <strong>${r.neededGrade}</strong>, so <strong>${r.requiredPct.toFixed(0)}%</strong> of its remaining ${r.progress.pendingWeight} marks of weight.` +
+                          (coasting ? ` ${coasting} low-credit subject${coasting === 1 ? '' : 's'} can coast.` : '') };
+            }
+
+            if (overall && overall.improvable) {
+                const t = overall.improvable.filter(x => !x.alreadyOk)[0];
+                if (t) return { tone: 'ok',
+                    text: `Nothing pending. Best use of ${marksAttemptWord(t.subj) === 'reappear' ? 'a reappear' : 'an improvement'} chance: <strong>${marksEscapeHtml(marksCode(t.subj))}</strong> ${t.nowGrade}→${t.neededGrade} for <strong>+${t.gain.toFixed(2)}</strong> CGPA.` };
+            }
+
+            // No target set — still point at the biggest open block
+            let openBest = null;
+            marksState.semesters.forEach(sem => sem.subjects.forEach(subj => {
+                if (marksEffectiveGrade(subj)) return;
+                const p = marksSubjectProgress(subj);
+                const lev = p.pendingWeight * (parseFloat(subj.credits) || 0);
+                if (p.pendingWeight > 0 && (!openBest || lev > openBest.lev)) openBest = { lev, subj, p };
+            }));
+            if (openBest) return { tone: 'ok',
+                text: `Set an overall CGPA target above and this turns into a plan. Biggest block right now: <strong>${marksEscapeHtml(marksCode(openBest.subj))}</strong>, ${openBest.p.pendingWeight} marks of weight still open.` };
+
+            return { tone: 'ok', text: 'All caught up — nothing pending, nothing worth retaking.' };
+        }
+
+        function toggleMarksSimpleMode() {
+            marksState.simpleMode = marksState.simpleMode === false;
+            saveMarksState(); renderMarks();
+        }
+
+        function setOverallTarget(value) {
+            const v = parseFloat(value);
+            marksState.targetCGPA = (isNaN(v) || v <= 0) ? null : Math.min(10, v);
+            saveMarksState(); renderMarks();
+        }
+
+        function togglePlanWithRetakes(checked) {
+            marksState.planWithRetakes = checked;
+            saveMarksState(); renderMarks();
+        }
+
+        // ---- Semester / subject CRUD ---------------------------------------
+        function showAddSemesterModal() {
+            const name = prompt('Semester name (e.g. "Term 3")', `Term ${marksState.semesters.length + 1}`);
+            if (!name) return;
+            marksState.semesters.push({ id: Date.now(), name: name.trim(), targetSGPA: null, subjects: [] });
+            saveMarksState(); renderMarks();
+            showToast('Semester added', 'success');
+        }
+
+        function renameSemester(semId, name) {
+            const sem = marksState.semesters.find(s => s.id === semId);
+            if (!sem) return;
+            sem.name = name.trim() || sem.name;
+            saveMarksState();
+        }
+
+        function deleteSemester(semId) {
+            if (!confirm('Delete this semester and all its subjects?')) return;
+            marksState.semesters = marksState.semesters.filter(s => s.id !== semId);
+            saveMarksState(); renderMarks();
+            showToast('Semester deleted', 'info');
+        }
+
+        function setSemesterTarget(semId, value) {
+            const sem = marksState.semesters.find(s => s.id === semId);
+            if (!sem) return;
+            const v = parseFloat(value);
+            sem.targetSGPA = (isNaN(v) || v <= 0) ? null : Math.min(10, v);
+            saveMarksState(); renderMarks();
+        }
+
+        function addSubject(semId) {
+            const sem = marksState.semesters.find(s => s.id === semId);
+            if (!sem) return;
+            const nameEl = document.getElementById(`newSubjName-${semId}`);
+            const credEl = document.getElementById(`newSubjCredits-${semId}`);
+            const presetEl = document.getElementById(`newSubjPreset-${semId}`);
+            const name = nameEl ? nameEl.value.trim() : '';
+            const credits = credEl ? parseFloat(credEl.value) : NaN;
+            const presetKey = presetEl ? presetEl.value : 'theoryMte';
+            if (!name) { showToast('Enter a subject name', 'warning'); return; }
+            if (isNaN(credits) || credits <= 0) { showToast('Enter valid credits', 'warning'); return; }
+            const preset = MARKS_PRESETS[presetKey] || MARKS_PRESETS.theoryMte;
+            const subjId = Date.now();
+            sem.subjects.push({
+                id: subjId, name, credits, grade: '', reappear: false,
+                components: preset.comps.map((c, i) => ({
+                    id: subjId + i + 1, label: c[0], weight: c[1], scored: null, total: null
+                }))
+            });
+            marksExpanded[subjId] = true;
+            if (nameEl) nameEl.value = '';
+            if (credEl) credEl.value = '';
+            saveMarksState(); renderMarks();
+            showToast('Subject added — enter marks as they come in', 'success');
+        }
+
+        function deleteMarksSubject(semId, subjId) {
+            const sem = marksState.semesters.find(s => s.id === semId);
+            if (!sem) return;
+            sem.subjects = sem.subjects.filter(s => s.id !== subjId);
+            saveMarksState(); renderMarks();
+        }
+
+        function toggleSubjectLocked(semId, subjId) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.locked = !subj.locked;
+            saveMarksState(); renderMarks();
+            showToast(subj.locked ? 'Locked — treated as final' : 'Unlocked — improvement suggestions back on', 'info');
+        }
+
+        function updateChancesUsed(semId, subjId, value) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            const total = subj.chancesTotal == null ? MARKS_DEFAULT_CHANCES : subj.chancesTotal;
+            let v = parseInt(value, 10);
+            if (isNaN(v) || v < 0) v = 0;
+            subj.chancesUsed = Math.min(v, total);
+            saveMarksState(); renderMarks();
+        }
+
+        function updateSubjectCredits(semId, subjId, value) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            const v = parseFloat(value);
+            if (isNaN(v) || v < 0) { showToast('Enter valid credits', 'warning'); renderMarks(); return; }
+            subj.credits = v;
+            saveMarksState(); renderMarks();
+        }
+
+        function setManualGrade(semId, subjId, grade) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.grade = grade;
+            if (MARKS_FAIL_GRADES.includes(grade)) subj.reappear = true;
+            else if (grade) subj.reappear = false;
+            saveMarksState(); renderMarks();
+        }
+
+        function toggleReappear(semId, subjId, checked) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.reappear = checked;
+            saveMarksState(); renderMarks();
+        }
+
+        function toggleSubjectExpand(subjId) {
+            marksExpanded[subjId] = !marksExpanded[subjId];
+            renderMarks();
+        }
+
+        // Reappear: end term retaken, absorbing the mid term's weight (see marksEffectiveWeight)
+        function toggleReappearMode(semId, subjId, checked) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.reappearMode = checked;
+            if (checked) {
+                // Only a failed subject is a "reappear"; a passed one is an improvement,
+                // so don't stamp the reappear flag on subjects that actually passed.
+                if (marksAttemptKind(subj) === 'reappear') subj.reappear = true;
+                // The retaken end term is a fresh attempt — clear the old end-term marks
+                (subj.components || []).filter(marksIsEndComp).forEach(c => { c.scored = null; c.total = null; });
+                showToast(`${marksAttemptWord(subj, true)} attempt — enter the retaken end-term marks`, 'info');
+            }
+            saveMarksState(); renderMarks();
+        }
+
+        // ---- Component CRUD ------------------------------------------------
+        function updateComponent(semId, subjId, compId, field, value) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            const comp = subj.components.find(c => c.id === compId);
+            if (!comp) return;
+            if (field === 'label') comp.label = value;
+            else {
+                const v = value === '' ? null : parseFloat(value);
+                comp[field] = (v === null || isNaN(v)) ? null : v;
+            }
+            saveMarksState(); renderMarks();
+        }
+
+        function addComponent(semId, subjId) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.components.push({ id: Date.now(), label: 'New component', weight: 0, scored: null, total: null });
+            saveMarksState(); renderMarks();
+        }
+
+        function deleteComponent(semId, subjId, compId) {
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            subj.components = subj.components.filter(c => c.id !== compId);
+            saveMarksState(); renderMarks();
+        }
+
+        function applyComponentPreset(semId, subjId, presetKey) {
+            if (!presetKey) return;
+            const { subj } = marksFindSubject(semId, subjId);
+            if (!subj) return;
+            const preset = MARKS_PRESETS[presetKey];
+            if (!preset) return;
+            if (subj.components.some(marksComponentEntered)
+                && !confirm('This replaces the component list and clears entered marks. Continue?')) { renderMarks(); return; }
+            const base = Date.now();
+            subj.components = preset.comps.map((c, i) => ({ id: base + i, label: c[0], weight: c[1], scored: null, total: null }));
+            saveMarksState(); renderMarks();
+        }
+
+        function changeMarksThreshold() {
+            const input = prompt('Flag subjects below this grade point as "needs improvement" (0-10):', marksState.improveThreshold);
+            if (input === null) return;
+            const val = parseFloat(input);
+            if (isNaN(val) || val < 0 || val > 10) { showToast('Enter a number 0-10', 'warning'); return; }
+            marksState.improveThreshold = val;
+            saveMarksState(); renderMarks();
+        }
+
+        function editCutoffs() {
+            const current = MARKS_TARGETABLE.slice().reverse()
+                .map(g => `${g}=${marksState.cutoffs[g]}`).join(', ');
+            const input = prompt(
+                'Minimum marks (out of 100) needed for each grade.\n\n' +
+                'Fitted to your own Term 1 + Term 2 results (reappears applied), which sort\n' +
+                'cleanly, so grading looks absolute. Pinned by data: C is at or below 41.3,\n' +
+                'B falls between 45.8 and 51.5, B+ between 57.5 and 59.4.\n' +
+                'The A boundary is only known to sit between 59.4 and 68.4 — 65 is a guess.\n\n' +
+                'Format: O=90, A+=80, A=65, B+=59, B=50, C=40, D=35',
+                current
+            );
+            if (input === null) return;
+            const next = {};
+            input.split(',').forEach(part => {
+                const m = part.trim().match(/^([A-Za-z+]+)\s*=\s*([\d.]+)$/);
+                if (m) {
+                    const g = m[1].toUpperCase();
+                    if (MARKS_GRADE_POINTS[g] !== undefined) next[g] = parseFloat(m[2]);
+                }
+            });
+            if (!Object.keys(next).length) { showToast('Could not parse cutoffs', 'warning'); return; }
+            marksState.cutoffs = next;
+            marksState.cutoffsVersion = MARKS_CUTOFFS_VERSION;
+            saveMarksState(); renderMarks();
+            showToast('Cutoffs updated', 'success');
+        }
+
+        // ---- Import from UMS ------------------------------------------------
+        // Select the portal's "Marks Distribution" block, copy, paste here. The page reads:
+        //   CSE202:OBJECT ORIENTED PROGRAMMING
+        //   Attendance
+        //   Marks Obtained: 3 / 5
+        //   Weighted Marks: 3 / 5
+        // "Awaited" is treated as not-yet-entered. The weighted denominator IS the weightage,
+        // which is why a pasted reappear page already carries its redistributed weights.
+        function parseUMSMarks(text) {
+            const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const noise = /^(present|absent|awaited|view marks details\.*|marks distribution.*|regular|reappear\/improvement|statistical analysis|marks|grades|\|)$/i;
+            const subjects = [];
+            let cur = null, lastLabel = null, pending = null;
+
+            lines.forEach(raw => {
+                const line = raw.replace(/\s*\|\s*view marks details\.*/i, '').replace(/^[✓✔•\-\s]+/, '').trim();
+                if (!line) return;
+
+                const subjM = line.match(/^([A-Za-z]{2,4}\s?\d{3})\s*:\s*(.+)$/);
+                if (subjM) {
+                    cur = { code: subjM[1].replace(/\s/g, '').toUpperCase(), name: subjM[1].replace(/\s/g, '').toUpperCase() + ': ' + subjM[2].trim(), components: [] };
+                    subjects.push(cur); lastLabel = null; pending = null; return;
+                }
+                const obt = line.match(/^Marks\s*Obtained\s*:\s*(Awaited|[\d.]+)\s*\/\s*([\d.]*)/i);
+                if (obt) {
+                    if (cur && lastLabel) {
+                        pending = {
+                            label: lastLabel,
+                            scored: /awaited/i.test(obt[1]) ? null : parseFloat(obt[1]),
+                            total: obt[2] ? parseFloat(obt[2]) : null
+                        };
+                    }
+                    return;
+                }
+                const wt = line.match(/^Weighted\s*Marks\s*:\s*(Awaited|[\d.]+)\s*\/\s*([\d.]*)/i);
+                if (wt) {
+                    if (cur && pending && wt[2]) {
+                        pending.weight = parseFloat(wt[2]);
+                        if (pending.total === null && pending.scored === null) pending.total = null;
+                        cur.components.push(pending);
+                    }
+                    pending = null; lastLabel = null; return;
+                }
+                if (noise.test(line)) return;
+                if (/^\d+(\.\d+)?$/.test(line)) return;
+                lastLabel = line;
+            });
+
+            return subjects.filter(s => s.components.length > 0);
+        }
+
+        function showImportMarksModal() {
+            const semOpts = marksState.semesters.map(s => `<option value="${s.id}">${marksEscapeHtml(s.name)}</option>`).join('');
+            const modal = document.createElement('div');
+            modal.className = 'auth-modal active';
+            modal.id = 'importMarksModal';
+            modal.innerHTML = `
+                <div class="auth-modal-content" style="max-width:560px;max-height:88vh;overflow-y:auto;">
+                    <button class="auth-modal-close" onclick="this.closest('.auth-modal').remove()">×</button>
+                    <h3 style="margin-bottom:6px;color:var(--accent-primary);">📋 Paste from UMS</h3>
+                    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:14px;line-height:1.6;">
+                        Open <strong>Marks → Marks Distribution</strong> on the portal, select the whole block, copy, paste below.
+                        It reads every subject, component, weightage and mark in one go. "Awaited" stays blank.
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <select id="importSemTarget" class="marks-select" style="width:100%;">
+                            ${semOpts}<option value="__new__">+ New semester…</option>
+                        </select>
+                        <textarea id="importMarksText" class="marks-input" rows="9" placeholder="Paste the Marks Distribution text here…"
+                            style="width:100%;font-family:ui-monospace,monospace;font-size:11px;line-height:1.5;resize:vertical;"
+                            oninput="previewImportMarks()"></textarea>
+                        <div id="importPreview" style="font-size:12px;color:var(--text-tertiary);"></div>
+                        <button class="btn btn-primary" onclick="applyImportMarks()" style="width:100%;">Import</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        function previewImportMarks() {
+            const el = document.getElementById('importPreview');
+            const txt = document.getElementById('importMarksText');
+            if (!el || !txt) return;
+            const parsed = parseUMSMarks(txt.value);
+            if (!parsed.length) {
+                el.innerHTML = txt.value.trim()
+                    ? '<span style="color:#fbbf24;">Nothing recognised yet — make sure the "Marks Obtained / Weighted Marks" lines are included.</span>' : '';
+                return;
+            }
+            el.innerHTML = parsed.map(s => {
+                const w = s.components.reduce((a, c) => a + (c.weight || 0), 0);
+                const filled = s.components.filter(c => c.scored !== null).length;
+                return `<div style="margin-bottom:3px;">
+                    <strong style="color:var(--text-secondary);">${marksEscapeHtml(s.code)}</strong>
+                    · ${s.components.length} components · weight ${w}${w !== 100 ? ' <span style="color:#fbbf24;">(not 100)</span>' : ''}
+                    · ${filled} with marks</div>`;
+            }).join('') + `<div style="margin-top:6px;color:var(--text-secondary);">${parsed.length} subject${parsed.length === 1 ? '' : 's'} ready to import.</div>`;
+        }
+
+        function applyImportMarks() {
+            const txt = document.getElementById('importMarksText');
+            const semSel = document.getElementById('importSemTarget');
+            if (!txt || !semSel) return;
+            const parsed = parseUMSMarks(txt.value);
+            if (!parsed.length) { showToast('Nothing to import', 'warning'); return; }
+
+            let sem;
+            if (semSel.value === '__new__') {
+                const name = prompt('Name for the new semester:', `Term ${marksState.semesters.length + 1}`);
+                if (!name) return;
+                sem = { id: Date.now(), name: name.trim(), targetSGPA: null, subjects: [] };
+                marksState.semesters.push(sem);
+            } else {
+                sem = marksState.semesters.find(s => String(s.id) === semSel.value);
+            }
+            if (!sem) { showToast('Pick a semester', 'warning'); return; }
+
+            let updated = 0, added = 0;
+            parsed.forEach(ps => {
+                let subj = sem.subjects.find(s => marksCode(s).toUpperCase() === ps.code);
+                if (!subj) {
+                    subj = { id: Date.now() + Math.floor(Math.random() * 1000), name: ps.name, credits: 3,
+                             grade: '', reappear: false, reappearMode: false,
+                             chancesUsed: 0, chancesTotal: MARKS_DEFAULT_CHANCES, locked: false, components: [] };
+                    sem.subjects.push(subj); added++;
+                } else updated++;
+                // UMS weights are already final (a reappear page shows the redistributed
+                // numbers), so take them literally and drop our own reappear adjustment.
+                subj.reappearMode = false;
+                subj.components = ps.components.map((c, i) => ({
+                    id: Date.now() + i + Math.floor(Math.random() * 1000),
+                    label: c.label, weight: c.weight, scored: c.scored,
+                    total: c.total != null ? c.total : (c.scored != null ? c.weight : null)
+                }));
+            });
+
+            saveMarksState(); renderMarks();
+            document.getElementById('importMarksModal')?.remove();
+            showToast(`Imported ${parsed.length} subject${parsed.length === 1 ? '' : 's'} (${updated} updated, ${added} new)`, 'success');
+        }
+
+        function statusBadgeForSubject(subj) {
+            const eff = marksEffectiveGrade(subj);
+            const left = marksChancesLeft(subj);
+            const total = subj.chancesTotal == null ? MARKS_DEFAULT_CHANCES : subj.chancesTotal;
+            const kind = marksAttemptKind(subj);
+            const chip = `<span class="marks-chances" title="${kind === 'reappear' ? 'Reappear' : 'Improvement'} attempts left">${left}/${total}</span>`;
+
+            if (!eff) {
+                const p = marksSubjectProgress(subj);
+                if (p.hasComponents && p.enteredWeight > 0) return `<span class="marks-badge progress">${p.enteredWeight}% in</span>`;
+                return '<span class="marks-badge pending">Pending</span>';
+            }
+            if (subj.locked) return '<span class="marks-badge locked">🔒 Locked</span>';
+            if (eff === 'S') return '<span class="marks-badge satisfactory">Satisfactory</span>';
+
+            if (kind === 'reappear') {   // actually failed
+                return left > 0
+                    ? `<span class="marks-badge reappear">Reappear</span>${chip}`
+                    : '<span class="marks-badge reappear">Failed · no chances</span>';
+            }
+            // passed — never say "reappear" here
+            const gp = MARKS_GRADE_POINTS[eff];
+            if (gp === undefined) return '';
+            if (gp < marksState.improveThreshold) {
+                return left > 0
+                    ? `<span class="marks-badge improve">Improvement</span>${chip}`
+                    : '<span class="marks-badge muted-final">Passed · no chances</span>';
+            }
+            return '<span class="marks-badge good">Good</span>';
+        }
+
+        // ---- Component editor row -------------------------------------------
+        function renderComponentEditor(sem, subj) {
+            const p = marksSubjectProgress(subj);
+            const reap = !!subj.reappearMode;
+            const chanceTotal = subj.chancesTotal == null ? MARKS_DEFAULT_CHANCES : subj.chancesTotal;
+            const kind = marksAttemptKind(subj);           // null until it has a grade
+            const kindWord = kind === 'reappear' ? 'reappear' : (kind === 'improvement' ? 'improvement' : 'reappear/improvement');
+            const kindLabel = kind === 'reappear' ? 'Reappears' : (kind === 'improvement' ? 'Improvements' : 'Chances');
+            const kindToggle = kind === 'improvement' ? 'Improvement' : 'Reappear';
+            const rows = subj.components.map(c => {
+                const entered = marksComponentEntered(c);
+                const baseW = parseFloat(c.weight) || 0;
+                const effW = marksEffectiveWeight(subj, c);
+                const replaced = reap && effW === 0;
+                const boosted = reap && effW !== baseW && effW > 0;
+                const weightCell = replaced
+                    ? `<span class="comp-replaced" title="Replaced by the retaken end term">${baseW} → 0</span>`
+                    : `<input type="number" class="marks-input comp-num" min="0" step="0.5" value="${c.weight != null ? c.weight : ''}"
+                        onchange="updateComponent(${sem.id}, ${subj.id}, ${c.id}, 'weight', this.value)" title="Weightage out of 100">
+                       ${boosted ? `<div class="comp-boosted" title="Mid-term weight folded in on reappear">→ ${effW.toFixed(0)}</div>` : ''}`;
+                return `
+                <tr class="${replaced ? 'comp-row-replaced' : ''}">
+                    <td><input class="marks-input comp-label" value="${marksEscapeHtml(c.label)}"
+                        onchange="updateComponent(${sem.id}, ${subj.id}, ${c.id}, 'label', this.value)"></td>
+                    <td>${weightCell}</td>
+                    <td><input type="number" class="marks-input comp-num" min="0" step="0.5" placeholder="—" value="${c.scored != null ? c.scored : ''}"
+                        onchange="updateComponent(${sem.id}, ${subj.id}, ${c.id}, 'scored', this.value)" title="Marks you scored" ${replaced ? 'disabled' : ''}></td>
+                    <td><input type="number" class="marks-input comp-num" min="0" step="0.5" placeholder="—" value="${c.total != null ? c.total : ''}"
+                        onchange="updateComponent(${sem.id}, ${subj.id}, ${c.id}, 'total', this.value)" title="Marks out of" ${replaced ? 'disabled' : ''}></td>
+                    <td class="comp-contrib">${replaced ? '<span style="color:var(--text-tertiary);">replaced</span>'
+                        : entered ? marksComponentContribution(subj, c).toFixed(1)
+                        : '<span style="color:var(--text-tertiary);">pending</span>'}</td>
+                    <td><button class="marks-del-btn" onclick="deleteComponent(${sem.id}, ${subj.id}, ${c.id})" title="Remove component">🗑️</button></td>
+                </tr>`;
+            }).join('');
+
+            const weightWarn = Math.abs(p.totalWeight - 100) > 0.01
+                ? `<div class="marks-warn">Weightages add up to ${p.totalWeight.toFixed(0)}, not 100 — totals will be off until you fix that.</div>` : '';
+            const presetOpts = Object.entries(MARKS_PRESETS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+            return `
+            <tr class="marks-editor-row">
+                <td colspan="7">
+                    <div class="marks-editor">
+                        <div class="marks-editor-head">
+                            <span>Components — fill these in as marks come out</span>
+                            <span style="display:flex;gap:8px;align-items:center;">
+                                <label class="comp-chances" title="How many of your ${chanceTotal} ${kindWord} attempts you've already used">
+                                    ${kindLabel} used
+                                    <input type="number" class="marks-input comp-num" style="width:44px;" min="0" max="${chanceTotal}"
+                                        value="${subj.chancesUsed || 0}" onchange="updateChancesUsed(${sem.id}, ${subj.id}, this.value)">
+                                    <span style="opacity:.6;">of ${chanceTotal}</span>
+                                </label>
+                                <label class="comp-chances" title="How hard this subject is for YOU — the planner spends effort where credits ÷ difficulty is highest, so a brutal 4-credit subject may be worse value than an easy 3-credit one">
+                                    Difficulty
+                                    <select class="marks-select" style="padding:3px 5px;" onchange="setSubjectDifficulty(${sem.id}, ${subj.id}, this.value)">
+                                        ${Object.entries(MARKS_DIFFICULTY).map(([v, l]) =>
+                                            `<option value="${v}" ${marksDifficulty(subj) === +v ? 'selected' : ''}>${v} · ${l}</option>`).join('')}
+                                    </select>
+                                </label>
+                                <label class="comp-reappear-toggle" title="End term retaken — it replaces mid term + end term and takes their combined weight">
+                                    <input type="checkbox" ${reap ? 'checked' : ''} onchange="toggleReappearMode(${sem.id}, ${subj.id}, this.checked)"> ${kindToggle}
+                                </label>
+                                <select class="marks-select" onchange="applyComponentPreset(${sem.id}, ${subj.id}, this.value); this.value='';">
+                                    <option value="">Apply preset…</option>${presetOpts}
+                                </select>
+                            </span>
+                        </div>
+                        ${reap ? `<div class="marks-reappear-note">${kindToggle} attempt — enter only the retaken end-term marks. The mid term drops out and its weight is folded into the end term; attendance and CA carry over from your first attempt.</div>` : ''}
+                        ${weightWarn}
+                        <div style="overflow-x:auto;">
+                        <table class="marks-comp-table">
+                            <thead><tr><th>Component</th><th>Weight</th><th>Scored</th><th>Out of</th><th>Gives</th><th></th></tr></thead>
+                            <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:10px;">No components yet.</td></tr>'}</tbody>
+                        </table>
+                        </div>
+                        <div class="marks-editor-foot">
+                            <button class="btn btn-secondary btn-sm" onclick="addComponent(${sem.id}, ${subj.id})">+ Component</button>
+                            <span class="marks-editor-total">
+                                Banked <strong>${p.earned.toFixed(1)}</strong> from ${p.enteredWeight} marks of weight ·
+                                ${p.pendingWeight} still to come ·
+                                ceiling <strong>${p.maxPossible.toFixed(1)}</strong>
+                            </span>
+                        </div>
+                        ${(() => {
+                            // Retake ladder — every realistic outcome and what it's worth
+                            if (!marksIsImprovable(subj)) return '';
+                            const ladder = marksRetakeLadder(subj);
+                            if (!ladder.length) return '';
+                            const word = marksAttemptWord(subj);
+                            return `<div class="marks-ladder">
+                                <div class="marks-ladder-head">If you ${word} this — pick what's realistic, it feeds the plan</div>
+                                <div class="marks-ladder-row">
+                                    ${ladder.map(l => `<button class="marks-ladder-chip ${subj.plannedRetake === l.grade ? 'on' : ''}"
+                                        onclick="setPlannedRetake(${sem.id}, ${subj.id}, '${l.grade}')"
+                                        title="${l.note || 'Finish on ' + l.grade}">
+                                        ${l.grade}${l.note ? `<span class="lad-note">${l.note}</span>` : ''}
+                                        <em>+${l.gain.toFixed(2)}</em>
+                                    </button>`).join('')}
+                                </div>
+                                ${subj.plannedRetake ? `<div class="marks-ladder-note">Planning on <strong>${subj.plannedRetake}</strong> — click again to unset.</div>`
+                                    : '<div class="marks-ladder-note">Nothing planned, so the target plan assumes this stays as it is.</div>'}
+                            </div>`;
+                        })()}
+                        ${(() => {
+                            const v = marksPassFailVerdict(subj);
+                            if (!v) return '';
+                            return `<div class="marks-verdict ${v.pass ? 'pass' : 'fail'}">
+                                <strong>${v.pass ? 'PASS' : 'FAIL — back'}</strong>
+                                at ${v.total.toFixed(1)}/100${v.complete ? '' : ' so far'} ·
+                                ≥40 overall ${v.req1 ? '✓' : '✗'} ·
+                                ≥30% end term ${v.optionA ? '✓' : '✗'} (${v.etePct.toFixed(0)}%)${
+                                    v.combinedPct !== null ? ` · ≥30% mid+end ${v.optionB ? '✓' : '✗'} (${v.combinedPct.toFixed(0)}%)` : ''}
+                            </div>`;
+                        })()}
+                    </div>
+                </td>
+            </tr>`;
+        }
+
+        function renderMarks() {
+            const overviewEl = document.getElementById('marksOverview');
+            const listEl = document.getElementById('marksSemesterList');
+            const emptyEl = document.getElementById('marksEmptyState');
+            const thresholdLabelEl = document.getElementById('marksThresholdLabel');
+            if (!overviewEl || !listEl) return;
+
+            if (thresholdLabelEl) thresholdLabelEl.textContent = marksGradeLabelForThreshold(marksState.improveThreshold);
+
+            const allSubjects = marksState.semesters.reduce((acc, sem) => acc.concat(sem.subjects), []);
+            const cgpa = computeOverallCGPA();
+            const totalCredits = allSubjects.reduce((sum, s) => sum + (parseFloat(s.credits) || 0), 0);
+            let improveCount = 0, reappearCount = 0, inProgress = 0;
+            allSubjects.forEach(s => {
+                if (s.reappear) { reappearCount++; return; }
+                const eff = marksEffectiveGrade(s);
+                if (!eff) { inProgress++; return; }
+                if (eff !== 'S' && MARKS_GRADE_POINTS[eff] !== undefined
+                    && MARKS_GRADE_POINTS[eff] < marksState.improveThreshold) improveCount++;
+            });
+
+            overviewEl.innerHTML = `
+                <div class="marks-stat"><div class="marks-stat-label">CGPA</div><div class="marks-stat-value" style="color:var(--accent-primary);">${cgpa !== null ? cgpa.toFixed(2) : '—'}</div></div>
+                <div class="marks-stat"><div class="marks-stat-label">Total Credits</div><div class="marks-stat-value">${totalCredits}</div></div>
+                <div class="marks-stat"><div class="marks-stat-label">In Progress</div><div class="marks-stat-value" style="color:#60a5fa;">${inProgress}</div></div>
+                <div class="marks-stat"><div class="marks-stat-label">Need Improvement</div><div class="marks-stat-value" style="color:#fbbf24;">${improveCount}</div></div>
+                <div class="marks-stat"><div class="marks-stat-label">Reappear</div><div class="marks-stat-value" style="color:#f87171;">${reappearCount}</div></div>
+            `;
+
+            if (marksState.semesters.length === 0) {
+                listEl.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                const oe = document.getElementById('marksOverallPlan');
+                if (oe) oe.innerHTML = '';
+                return;
+            }
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            const simple = marksState.simpleMode !== false;
+            const modeBtn = document.getElementById('marksModeBtn');
+            if (modeBtn) modeBtn.textContent = simple ? 'Advanced' : 'Simple';
+            const scBtn = document.getElementById('marksScenarioBtn');
+            if (scBtn) scBtn.textContent = marksScenario.on ? '✕ Exit What-If' : '🔮 What-If';
+            try { renderScenarioPanel(); } catch (e) { console.warn('scenario panel failed', e); }
+
+            // ---- Overall CGPA target panel + next action ----
+            const overall = marksPlanOverall();
+            const overallEl = document.getElementById('marksOverallPlan');
+            if (overallEl) {
+                const tgtInput = `<input type="number" class="marks-input" min="0" max="10" step="0.1" placeholder="—"
+                    value="${marksState.targetCGPA != null ? marksState.targetCGPA : ''}"
+                    onchange="setOverallTarget(this.value)" style="width:64px;">`;
+                let body = '';
+                if (!overall) {
+                    body = `<div class="marks-overall-hint">Set a target CGPA and every term gets planned against it — this is the number your degree is graded on.</div>`;
+                } else if (!overall.possible) {
+                    body = `<div class="marks-overall-line bad">
+                        <strong>Not reachable.</strong> Even with every remaining subject at O${overall.withRetakes ? ' and every retake perfect' : ''},
+                        the best you can finish on is <strong>${overall.maxCGPA.toFixed(2)}</strong> across ${overall.totalCredits} credits.
+                        ${!overall.withRetakes ? 'Turn on "count retakes" to see what improvement attempts would add.' : 'Lower the target, or lock fewer subjects.'}
+                    </div>`;
+                } else {
+                    const pushes = overall.rows.filter(r => r.pushed && r.status !== 'coast');
+                    const coasts = overall.rows.filter(r => !r.pushed || r.status === 'coast');
+                    const planTxt = pushes.length
+                        ? `Push <strong>${pushes.slice(0, 4).map(r => marksEscapeHtml(marksCode(r.subj)) + ' → ' + r.neededGrade).join('</strong>, <strong>')}</strong>` +
+                          (coasts.length ? `. The other ${coasts.length} can coast — too few credits to be worth the hours.` : '.')
+                        : `Your current marks already carry it — nothing needs pushing.`;
+                    body = `<div class="marks-overall-line ok">
+                        ${planTxt}
+                        ${!overall.reachableWithoutRetakes && overall.withRetakes
+                            ? ` Term work alone won't get there, so a ${overall.improvable.length ? 'retake' : 'change of target'} is needed too.` : ''}
+                        <br><span style="opacity:.8;">Weighted by credits, not spread evenly — a grade step on a 4-credit subject is worth 4× the same step on a 1-credit one.
+                        Ceiling <strong>${overall.maxCGPA.toFixed(2)}</strong>.</span>
+                    </div>`;
+                    if (overall.plannedRetakes && overall.plannedRetakes.length) {
+                        body += `<div class="marks-overall-retakes">Counting your planned retakes: ` +
+                            overall.plannedRetakes.map(({ subj }) => `<span class="marks-retake-chip on">${marksEscapeHtml(marksCode(subj))} → ${subj.plannedRetake}</span>`).join('') +
+                            `</div>`;
+                    }
+                    const retakes = overall.improvable.filter(r => !r.alreadyOk && !r.subj.plannedRetake).slice(0, 4);
+                    if (overall.withRetakes && retakes.length) {
+                        body += `<div class="marks-overall-retakes">Best use of your chances: ` +
+                            retakes.map(r => `<span class="marks-retake-chip ${marksAttemptWord(r.subj)}" title="${marksAttemptWord(r.subj, true)} · ${r.chancesLeft} left">${marksEscapeHtml(r.subj.name.split(':')[0])} ${r.nowGrade}→${r.neededGrade} <em>+${r.gain.toFixed(2)}</em></span>`).join('') +
+                            `</div>`;
+                    }
+                }
+                const next = marksNextAction(overall);
+                overallEl.innerHTML = `
+                    <div class="marks-next ${next.tone}">
+                        <span class="marks-next-label">DO THIS NEXT</span>
+                        <span class="marks-next-text">${next.text}</span>
+                    </div>
+                    <div class="marks-overall">
+                        <div class="marks-overall-head">
+                            <span class="marks-overall-title">🎓 Overall CGPA target</span>
+                            <span class="marks-overall-controls">
+                                Now <strong class="marks-overall-now">${cgpa !== null ? cgpa.toFixed(2) : '—'}</strong>
+                                → target ${tgtInput}
+                                <label class="marks-overall-toggle" title="Count graded-but-weak subjects you could still retake as improvable">
+                                    <input type="checkbox" ${marksState.planWithRetakes !== false ? 'checked' : ''}
+                                        onchange="togglePlanWithRetakes(this.checked)"> count retakes
+                                </label>
+                            </span>
+                        </div>
+                        ${body}
+                    </div>`;
+            }
+
+            listEl.innerHTML = marksState.semesters.map(sem => {
+                const sgpa = computeSGPA(sem.subjects);
+                const semCredits = sem.subjects.reduce((sum, s) => sum + (parseFloat(s.credits) || 0), 0);
+                const plan = marksPlanSemester(sem);
+                // A term target wins for its own subjects; otherwise fall back to the overall
+                // CGPA plan, since that's the number that actually matters.
+                const scope = plan || overall;
+                const scopeIsOverall = !plan && !!overall;
+                const planBySubj = {}, impBySubj = {};
+                if (scope) {
+                    scope.rows.forEach(r => { planBySubj[r.subj.id] = r; });
+                    scope.improvable.forEach(r => { impBySubj[r.subj.id] = r; });
+                }
+
+                let planSummary = '';
+                if (plan) {
+                    if (plan.openCredits <= 0) {
+                        const hit = sgpa !== null && sgpa >= plan.target - 1e-9;
+                        let extra = '';
+                        if (!hit && plan.improvable.length) {
+                            const solo = plan.improvable.filter(r => r.enoughAlone);
+                            const best = plan.improvable.slice().sort((a, b) => b.maxGain - a.maxGain)[0];
+                            extra = solo.length
+                                ? ` <br>Retaking <strong>${solo.map(r => r.subj.name.split(':')[0] + ' → ' + r.neededGrade).join('</strong> or <strong>')}</strong> would get you there on its own.`
+                                : ` <br>No single retake closes it — the biggest lever is <strong>${best.subj.name.split(':')[0]}</strong> at up to +${best.maxGain.toFixed(2)}, so you'd need more than one.`;
+                        } else if (!hit) {
+                            extra = ' <br>Nothing left to improve — every subject is locked or out of chances.';
+                        }
+                        planSummary = `<div class="marks-plan-summary ${hit ? 'ok' : 'bad'}">
+                            Everything graded — finished at <strong>${sgpa !== null ? sgpa.toFixed(2) : '—'}</strong>
+                            ${hit ? 'which meets' : 'against'} your ${plan.target.toFixed(2)} target.${extra}
+                        </div>`;
+                    } else {
+                        const gp = plan.perCreditGP;
+                        const impossible = gp > 10 + 1e-9;
+                        const asGrade = MARKS_TARGETABLE.find(g => MARKS_GRADE_POINTS[g] >= gp - 1e-9);
+                        planSummary = `<div class="marks-plan-summary ${impossible ? 'bad' : 'ok'}">
+                            For <strong>${plan.target.toFixed(2)}</strong> SGPA you need an average of
+                            <strong>${gp.toFixed(2)} grade points</strong> across the ${plan.openCredits} open
+                            credit${plan.openCredits === 1 ? '' : 's'}${impossible
+                                ? ' — not reachable, that is above a straight O.'
+                                : ` — roughly an <strong>${asGrade || 'O'}</strong> in each.`}
+                        </div>`;
+                    }
+                }
+
+                const rows = sem.subjects.length ? sem.subjects.map(subj => {
+                    const p = marksSubjectProgress(subj);
+                    const eff = marksEffectiveGrade(subj);
+                    const derived = !subj.grade && eff;
+                    const planRow = planBySubj[subj.id];
+                    const isOpen = !!marksExpanded[subj.id];
+
+                    const marksCell = p.hasComponents
+                        ? `<div class="marks-score">${p.earned.toFixed(1)}<span class="marks-score-sub">/${p.enteredWeight || 0} in</span></div>
+                           ${p.pendingWeight > 0 ? `<div class="marks-score-pending">${p.pendingWeight} pending</div>` : ''}`
+                        : '<span style="color:var(--text-tertiary);font-size:11px;">—</span>';
+
+                    const gradeCell = `
+                        <select class="marks-select" onchange="setManualGrade(${sem.id}, ${subj.id}, this.value)" title="Auto = derive from component marks">${marksGradeOptions(subj.grade)}</select>
+                        ${derived ? `<div class="marks-derived" title="Estimated from your marks via the cutoff table — LPU curves grades, so treat it as a guess">≈ ${eff}</div>` : ''}`;
+
+                    let targetCell = '<span style="color:var(--text-tertiary);font-size:11px;">—</span>';
+                    const impRow = impBySubj[subj.id];
+                    const src = scopeIsOverall ? ' title="From your overall CGPA target"' : '';
+
+                    // In What-If mode this column becomes the hypothetical-grade picker
+                    if (marksScenario.on) {
+                        if (!marksScenarioEligible(subj)) {
+                            targetCell = `<span class="sc-fixed" title="${subj.locked ? 'Locked' : 'No chances left'}">fixed ${eff || ''}</span>`;
+                        } else {
+                            const picked = marksScenario.grades[subj.id] || '';
+                            const base = eff ? (MARKS_GRADE_POINTS[eff] || 0) : null;
+                            const delta = picked && base != null
+                                ? (MARKS_GRADE_POINTS[picked] - base) * (parseFloat(subj.credits) || 0)
+                                : null;
+                            targetCell = `<span class="sc-pick">
+                                <select class="marks-select ${picked ? 'set' : ''}" onchange="marksScenarioSet(${subj.id}, this.value)">
+                                    <option value="">${eff ? 'keep ' + eff : '—'}</option>
+                                    ${MARKS_TARGETABLE.slice().reverse().map(g =>
+                                        `<option value="${g}" ${picked === g ? 'selected' : ''}>${g}</option>`).join('')}
+                                </select>
+                                ${delta != null && delta !== 0 ? `<em class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : ''}${delta} pts</em>` : ''}
+                            </span>`;
+                        }
+                    } else if (subj.locked) {
+                        targetCell = '<span class="marks-badge locked">🔒 Final</span>';
+                    } else if (planRow) {
+                        const cls = { secured: 'ok', coast: 'ok', needs: 'warn', impossible: 'bad', missed: 'bad', setup: 'muted' }[planRow.status] || 'muted';
+                        targetCell = `<div class="marks-target ${cls}"${src}>
+                            ${planRow.neededGrade ? `<span class="marks-target-grade">${planRow.status === 'coast' ? '～ ' : ''}${planRow.neededGrade}${scopeIsOverall ? '<span class="marks-scope-tag">CGPA</span>' : ''}</span>` : ''}
+                            <span class="marks-target-detail">${planRow.detail}</span>
+                        </div>`;
+                    } else if (impRow) {
+                        // Graded but weak, chances remain — what would a retake buy?
+                        const ok = impRow.alreadyOk || impRow.enoughAlone;
+                        const cls = impRow.alreadyOk ? 'ok' : (ok ? 'warn' : 'muted');
+                        const label = impRow.alreadyOk ? '✓' : '↑ ' + (impRow.neededGrade || 'O');
+                        const detail = impRow.detail || (impRow.enoughAlone
+                            ? `${marksAttemptWord(subj)} to ${impRow.neededGrade} hits target (+${impRow.gainAtNeeded.toFixed(2)} SGPA)`
+                            : `even a perfect ${marksAttemptWord(subj)} only adds +${impRow.maxGain.toFixed(2)} — not enough alone`);
+                        targetCell = `<div class="marks-target ${cls}"${src}>
+                            <span class="marks-target-grade">${label}${scopeIsOverall ? '<span class="marks-scope-tag">CGPA</span>' : ''}</span>
+                            <span class="marks-target-detail">${detail}</span>
+                        </div>`;
+                    } else if (eff) {
+                        targetCell = '<span class="marks-badge locked">Final</span>';
+                    }
+
+                    if (simple) {
+                        return `
+                        <tr>
+                            <td class="marks-subj-name">
+                                <button class="marks-expand-btn" onclick="toggleSubjectExpand(${subj.id})" title="Show/hide components">${isOpen ? '▾' : '▸'}</button>
+                                ${marksEscapeHtml(subj.name)}
+                                <span class="marks-cr-tag">${subj.credits} cr</span>
+                            </td>
+                            <td>${marksCell}</td>
+                            <td>${targetCell}</td>
+                            <td>${statusBadgeForSubject(subj)}</td>
+                        </tr>
+                        ${isOpen ? renderComponentEditor(sem, subj) : ''}`;
+                    }
+                    return `
+                    <tr>
+                        <td class="marks-subj-name">
+                            <button class="marks-expand-btn" onclick="toggleSubjectExpand(${subj.id})" title="Show/hide components">${isOpen ? '▾' : '▸'}</button>
+                            ${marksEscapeHtml(subj.name)}
+                        </td>
+                        <td><input type="number" class="marks-input comp-num credits-input" min="0" step="0.5" value="${subj.credits}"
+                            onchange="updateSubjectCredits(${sem.id}, ${subj.id}, this.value)" title="Credits — drives the SGPA weighting"></td>
+                        <td>${marksCell}</td>
+                        <td>${gradeCell}</td>
+                        <td>${targetCell}</td>
+                        <td>
+                            ${statusBadgeForSubject(subj)}
+                            ${marksAttemptKind(subj) === 'reappear' || !eff ? `<label class="marks-reapp" title="Flag as a reappear (failed) subject">
+                                <input type="checkbox" ${subj.reappear ? 'checked' : ''} onchange="toggleReappear(${sem.id}, ${subj.id}, this.checked)"> R
+                            </label>` : ''}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            ${eff ? `<button class="marks-lock-btn ${subj.locked ? 'on' : ''}" onclick="toggleSubjectLocked(${sem.id}, ${subj.id})"
+                                title="${subj.locked ? 'Locked — click to reopen for improvement' : 'Lock as final — stop suggesting improvement'}">${subj.locked ? '🔒' : '🔓'}</button>` : ''}
+                            <button class="marks-del-btn" onclick="deleteMarksSubject(${sem.id}, ${subj.id})" title="Remove subject">🗑️</button>
+                        </td>
+                    </tr>
+                    ${isOpen ? renderComponentEditor(sem, subj) : ''}`;
+                }).join('') : `<tr><td colspan="${simple ? 4 : 7}" style="text-align:center;color:var(--text-tertiary);padding:14px;">No subjects yet — add one below.</td></tr>`;
+
+                const presetOpts = Object.entries(MARKS_PRESETS)
+                    .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+                return `
+                    <div class="marks-semester-card" data-sem-id="${sem.id}">
+                        <div class="marks-semester-header">
+                            <input class="marks-semester-title" value="${marksEscapeHtml(sem.name)}" onchange="renameSemester(${sem.id}, this.value)">
+                            <div class="marks-sgpa-badge">
+                                <span>SGPA <span class="marks-sgpa-value">${sgpa !== null ? sgpa.toFixed(2) : '—'}</span></span>
+                                <span>· ${semCredits} credits</span>
+                                ${simple ? '' : `<label class="marks-target-input" title="Optional — the overall CGPA target already covers this term">🎯 Term target
+                                    <input type="number" class="marks-input" min="0" max="10" step="0.1" placeholder="—"
+                                        value="${sem.targetSGPA != null ? sem.targetSGPA : ''}"
+                                        onchange="setSemesterTarget(${sem.id}, this.value)">
+                                </label>
+                                <button class="marks-del-btn" onclick="deleteSemester(${sem.id})" title="Delete semester">🗑️</button>`}
+                            </div>
+                        </div>
+                        ${planSummary}
+                        <div style="overflow-x:auto;">
+                        <table class="marks-table">
+                            <thead><tr>${simple
+                                ? `<th>Subject</th><th>Marks</th><th>${marksScenario.on ? 'What if…' : 'What you need'}</th><th>Status</th>`
+                                : `<th>Subject</th><th>Cr</th><th>Marks</th><th>Grade</th><th>${marksScenario.on ? 'What if…' : 'To hit target'}</th><th>Status</th><th></th>`}</tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        </div>
+                        <div class="marks-add-row" ${simple ? 'style="display:none;"' : ''}>
+                            <input type="text" class="marks-input" placeholder="Subject name" id="newSubjName-${sem.id}">
+                            <input type="number" class="marks-input credits" placeholder="Cr" min="0" step="0.5" id="newSubjCredits-${sem.id}">
+                            <select class="marks-select" id="newSubjPreset-${sem.id}">${presetOpts}</select>
+                            <button class="btn btn-primary btn-sm" onclick="addSubject(${sem.id})">+ Add Subject</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+        // ---- Pass/fail verdict, derived straight from the component marks ----
+        // LPU rule: overall >= 40/100, AND either >=30% in the end term alone,
+        // or >=30% across mid term + end term combined.
+        function marksPassFailVerdict(subj) {
+            const comps = subj.components || [];
+            if (!comps.length) return null;
+            const ete = comps.filter(marksIsEndComp);
+            if (!ete.length) return null;
+            // Only judge once the end-term marks are actually in
+            if (!ete.every(marksComponentEntered)) return null;
+
+            const p = marksSubjectProgress(subj);
+            const sumW = arr => arr.reduce((s, c) => s + marksEffectiveWeight(subj, c), 0);
+            const sumC = arr => arr.reduce((s, c) => s + marksComponentContribution(subj, c), 0);
+
+            const eteW = sumW(ete), eteC = sumC(ete);
+            const etePct = eteW > 0 ? (eteC / eteW) * 100 : 0;
+            const optionA = etePct >= 30;
+
+            // On a reappear the mid term no longer exists, so option B doesn't apply —
+            // the retaken end term already absorbed that weight.
+            let optionB = false, combinedPct = null;
+            if (!subj.reappearMode) {
+                const mteEntered = comps.filter(marksIsMidComp).filter(marksComponentEntered);
+                if (mteEntered.length) {
+                    const combW = eteW + sumW(mteEntered);
+                    if (combW > 0) { combinedPct = ((eteC + sumC(mteEntered)) / combW) * 100; optionB = combinedPct >= 30; }
+                }
+            }
+
+            const req1 = p.earned >= 40;
+            const pass = req1 && (optionA || optionB);
+            return { pass, total: p.earned, req1, optionA, optionB, etePct, combinedPct, complete: p.complete, reappear: !!subj.reappearMode };
+        }
+
         function showAddExamModal() {
             const modal = document.createElement('div');
             modal.className = 'auth-modal active';
@@ -24282,7 +26474,10 @@
             // ==================== PART 1 NEW FEATURES INIT ====================
             // Initialize exam countdown
             initializeExamCountdown();
-            
+
+            // Initialize marks tracker
+            initializeMarksTracker();
+
             // Initialize streak heatmap
             renderStreakHeatmap();
             
@@ -25738,7 +27933,20 @@
                     console.error('Failed to load attendance state:', e);
                 }
             }
+            if (!attendanceState.timetable) attendanceState.timetable = {};
+            if (!attendanceState.dayLog) attendanceState.dayLog = {};
+
+            // First run: drop the real LPU timetable in rather than making you click a
+            // button for something you already handed over. Only when nothing is set yet,
+            // and only once — clearing it afterwards stays cleared.
+            const hasTT = Object.values(attendanceState.timetable).some(a => a && a.length);
+            if (!hasTT && !attendanceState.ttSeeded && (attendanceState.subjects || []).length) {
+                attendanceState.ttSeeded = 1;
+                try { ttApplyLpuPreset(true); } catch (e) { console.warn('timetable seed failed', e); }
+            }
+
             renderTrackedSubjects();
+            renderAttendanceCheckIn();
         }
 
         function saveAttendanceState() {
@@ -25895,6 +28103,362 @@
             document.getElementById('goalPercent').value = '85';
 
             showToast(`Tracking ${subjectName}`, 'success');
+        }
+
+        // ==================== WEEKLY TIMETABLE + DAILY CHECK-IN ====================
+        // Set the timetable once; after that a day is two clicks. "Attended everything"
+        // marks the whole day; otherwise you tick only the ones you missed. Extra classes
+        // and duty leave still go through the normal per-subject buttons.
+        const TT_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        let ttDraft = null;   // in-progress per-class choices before you confirm
+        let ttEditOpen = false;
+
+        // Transcribed from the official LPU timetable PDF (VID 12524910, section K4P25SP).
+        // Times are the period start, L = lecture, P = practical, T = tutorial. Saturday is
+        // "Project Work / Other Weekly Activities" with no fixed slot, so it's left empty.
+        const TT_LPU_PRESET = {
+            1: [['09:20','CSE205','P'],['10:10','CSE205','P'],['11:00','PEL136','P'],['11:50','PEL136','P'],
+                ['13:30','CSE423','L'],['15:10','CSE202','P'],['16:00','CSE202','P']],
+            2: [['09:20','CSE205','L'],['10:10','CSE205','L'],['11:50','MTH401','L'],['12:40','INT335','L']],
+            3: [['09:20','CSE423','L'],['10:10','PEL136','L'],['11:00','MTH401','L'],['11:50','INT335','L'],
+                ['12:40','PEL136','P'],['14:20','CSE306','L']],
+            4: [['11:00','CSE202','L'],['11:50','CSE202','L'],['13:30','CSE306','P'],['14:20','CSE306','P'],
+                ['15:10','CSE423','P']],
+            5: [['09:20','MTH401','T'],['10:10','CSE202','L'],['11:00','CSE202','L'],['13:30','CSE205','L'],
+                ['14:20','CSE205','L'],['15:10','MTH401','L'],['16:00','CSE306','L']],
+            6: [], 0: []
+        };
+
+        // Entries are either a bare subject id (added by hand) or {id, time, kind}
+        function ttEntryId(e) { return (e && typeof e === 'object') ? e.id : e; }
+
+        function ttApplyLpuPreset(silent) {
+            const byCode = {};
+            (attendanceState.subjects || []).forEach(s => {
+                const code = (s.name || '').split(':')[0].trim().toUpperCase();
+                if (code) byCode[code] = s.id;
+            });
+            const missing = new Set();
+            const tt = {};
+            Object.entries(TT_LPU_PRESET).forEach(([day, list]) => {
+                tt[day] = list.map(([time, code, kind]) => {
+                    if (!byCode[code]) { missing.add(code); return null; }
+                    return { id: byCode[code], time, kind };
+                }).filter(Boolean);
+            });
+            attendanceState.timetable = tt;
+            attendanceState.ttSeeded = 1;
+            saveAttendanceState();
+            ttEditOpen = false;
+            const total = Object.values(tt).reduce((a, l) => a + l.length, 0);
+            if (silent) return;                     // auto-seed on first load stays quiet
+            renderAttendanceCheckIn();
+            showToast(missing.size
+                ? `Loaded ${total} classes — not tracking ${[...missing].join(', ')} yet`
+                : `Timetable loaded — ${total} classes a week`, missing.size ? 'warning' : 'success');
+        }
+
+        function ttGet() {
+            if (!attendanceState.timetable) attendanceState.timetable = {};
+            if (!attendanceState.dayLog) attendanceState.dayLog = {};
+            return attendanceState.timetable;
+        }
+
+        function ttClassesFor(dayIdx) {
+            const tt = ttGet();
+            const list = tt[dayIdx] || [];
+            return list.map((e, i) => {
+                const id = ttEntryId(e);
+                const subj = attendanceState.subjects.find(s => s.id === id);
+                if (!subj) return null;
+                return { subjectId: id, name: subj.name, slot: i,
+                         time: (e && e.time) || '', kind: (e && e.kind) || '' };
+            }).filter(Boolean);
+        }
+
+        function ttAddClass(dayIdx, subjectId) {
+            if (!subjectId) return;
+            const tt = ttGet();
+            if (!tt[dayIdx]) tt[dayIdx] = [];
+            tt[dayIdx].push(Number(subjectId));
+            saveAttendanceState(); renderAttendanceCheckIn();
+        }
+
+        function ttRemoveClass(dayIdx, slot) {
+            const tt = ttGet();
+            if (!tt[dayIdx]) return;
+            tt[dayIdx].splice(slot, 1);
+            saveAttendanceState(); renderAttendanceCheckIn();
+        }
+
+        function ttToggleEditor() { ttEditOpen = !ttEditOpen; renderAttendanceCheckIn(); }
+
+        // Apply one class result to a subject, silently (no toast per class)
+        function ttApplyOne(subject, type) {
+            if (subject.currentPresent === undefined) {
+                subject.currentPresent = subject.present;
+                subject.currentTotal = subject.total;
+                subject.futureTotal = 0;
+            }
+            if (subject.futureTotal > 0 && type !== 'duty') subject.futureTotal--;
+            if (type === 'present') {
+                subject.present++; subject.total++;
+                subject.currentPresent++; subject.currentTotal++;
+            } else if (type === 'absent') {
+                subject.total++; subject.currentTotal++;
+            }
+            // duty: recorded only, mirrors markDutyLeave
+            subject.history.push({ date: new Date().toISOString(), type, viaTimetable: true });
+        }
+
+        function ttStartPick() {
+            const today = new Date().getDay();
+            ttDraft = {};
+            ttClassesFor(today).forEach(c => { ttDraft[c.slot] = 'present'; });
+            renderAttendanceCheckIn();
+        }
+
+        function ttSetChoice(slot, type) {
+            if (!ttDraft) ttDraft = {};
+            ttDraft[slot] = type;
+            renderAttendanceCheckIn();
+        }
+
+        function ttCancelPick() { ttDraft = null; renderAttendanceCheckIn(); }
+
+        function ttMarkDay(allPresent) {
+            const today = new Date().getDay();
+            const classes = ttClassesFor(today);
+            if (!classes.length) { showToast('No classes in the timetable for today', 'info'); return; }
+            const key = localDate(new Date());
+            ttGet();
+            if (attendanceState.dayLog[key]) { showToast('Today is already marked', 'warning'); return; }
+
+            const record = [];
+            classes.forEach(c => {
+                const type = allPresent ? 'present' : ((ttDraft && ttDraft[c.slot]) || 'present');
+                const subj = attendanceState.subjects.find(s => s.id === c.subjectId);
+                if (!subj) return;
+                ttApplyOne(subj, type);
+                record.push({ subjectId: c.subjectId, slot: c.slot, type });
+            });
+            attendanceState.dayLog[key] = { at: Date.now(), classes: record };
+            ttDraft = null;
+            saveAttendanceState();
+            renderTrackedSubjects(); renderAttendanceCheckIn();
+            const p = record.filter(r => r.type === 'present').length;
+            const a = record.filter(r => r.type === 'absent').length;
+            const d = record.filter(r => r.type === 'duty').length;
+            showToast(`Day marked — ${p} present${a ? ', ' + a + ' absent' : ''}${d ? ', ' + d + ' duty' : ''}`, 'success');
+        }
+
+        // Undo a whole day, exactly reversing what was applied
+        function ttUndoDay() {
+            const key = localDate(new Date());
+            ttGet();
+            const entry = attendanceState.dayLog[key];
+            if (!entry) return;
+            if (!confirm("Undo today's attendance?")) return;
+            entry.classes.forEach(r => {
+                const subj = attendanceState.subjects.find(s => s.id === r.subjectId);
+                if (!subj) return;
+                if (r.type === 'present') {
+                    subj.present--; subj.total--; subj.currentPresent--; subj.currentTotal--;
+                } else if (r.type === 'absent') {
+                    subj.total--; subj.currentTotal--;
+                }
+                for (let i = subj.history.length - 1; i >= 0; i--) {
+                    if (subj.history[i].viaTimetable && subj.history[i].type === r.type) { subj.history.splice(i, 1); break; }
+                }
+            });
+            delete attendanceState.dayLog[key];
+            saveAttendanceState();
+            renderTrackedSubjects(); renderAttendanceCheckIn();
+            showToast("Today's attendance undone ↩️", 'success');
+        }
+
+        function renderAttendanceCheckIn() {
+            const el = document.getElementById('attendanceCheckIn');
+            if (!el) return;
+            ttGet();
+            const now = new Date();
+            const today = now.getDay();
+            const key = localDate(now);
+            const classes = ttClassesFor(today);
+            const alreadyDone = !!attendanceState.dayLog[key];
+            const hasTimetable = Object.values(attendanceState.timetable).some(a => a && a.length);
+
+            const subjOpts = attendanceState.subjects
+                .map(s => `<option value="${s.id}">${(s.name || '').split(':')[0]}</option>`).join('');
+
+            // ---- Timetable editor ----
+            const editor = !ttEditOpen ? '' : `
+                <div class="tt-grid">
+                    ${TT_DAYS.map((d, i) => {
+                        const cls = ttClassesFor(i);
+                        return `<div class="tt-day">
+                            <div class="tt-day-name"><span>${d.slice(0, 3)}</span><span class="tt-day-count">${cls.length || ''}</span></div>
+                            <div>${cls.map(c => `<span class="tt-chip" title="${c.time ? c.time + ' · ' : ''}${({ L: 'Lecture', P: 'Practical', T: 'Tutorial' }[c.kind] || 'Class')}">
+                                ${c.time ? `<b class="tt-chip-time">${c.time}</b>` : ''}${(c.name || '').split(':')[0]}${c.kind ? `<i class="tt-chip-kind">${c.kind}</i>` : ''}
+                                <button onclick="ttRemoveClass(${i}, ${c.slot})" title="Remove">×</button></span>`).join('') ||
+                                '<span style="font-size:10px;color:var(--text-tertiary);">No classes</span>'}</div>
+                            <div class="tt-add">
+                                <select onchange="ttAddClass(${i}, this.value); this.value='';">
+                                    <option value="">+ add…</option>${subjOpts}
+                                </select>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px;">
+                    <span style="font-size:10px;color:var(--text-tertiary);">
+                        Add a subject once per class period — twice on a day means two classes that day.
+                    </span>
+                    <button class="btn btn-secondary btn-sm" onclick="if(confirm('Replace the whole timetable with your LPU one?')) ttApplyLpuPreset();"
+                        title="Load the 29 weekly classes from your official timetable">📄 Load my LPU timetable</button>
+                </div>`;
+
+            let body;
+            if (!attendanceState.subjects.length) {
+                body = `<div class="tt-empty">Track a few subjects below first, then set your weekly timetable here.</div>`;
+            } else if (!hasTimetable) {
+                body = `<div class="tt-empty">
+                    No timetable yet. Load your LPU one below, or open Timetable and build it by hand.
+                    <div style="margin-top:9px;">
+                        <button class="btn btn-primary btn-sm" onclick="ttApplyLpuPreset()">📄 Load my LPU timetable</button>
+                    </div>
+                </div>`;
+            } else if (alreadyDone) {
+                const rec = attendanceState.dayLog[key].classes;
+                const p = rec.filter(r => r.type === 'present').length;
+                const a = rec.filter(r => r.type === 'absent').length;
+                const d = rec.filter(r => r.type === 'duty').length;
+                body = `<div class="tt-classes">
+                        ${rec.map(r => {
+                            const s = attendanceState.subjects.find(x => x.id === r.subjectId);
+                            const col = r.type === 'present' ? '#34d399' : (r.type === 'absent' ? '#f87171' : '#a78bfa');
+                            return `<span class="tt-pill" style="border-color:${col}55;color:${col};">${(s ? s.name : '?').split(':')[0]} ${r.type === 'present' ? '✓' : r.type === 'absent' ? '✕' : '🏅'}</span>`;
+                        }).join('')}
+                    </div>
+                    <div class="tt-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="ttUndoDay()">↩️ Undo today</button>
+                    </div>
+                    <div class="tt-sub" style="margin-top:6px;">${p} present${a ? ' · ' + a + ' absent' : ''}${d ? ' · ' + d + ' duty leave' : ''} — extra classes still go through the buttons below.</div>`;
+            } else if (!classes.length) {
+                body = `<div class="tt-empty">No classes scheduled today. Anything extra can be added with the per-subject buttons below.</div>`;
+            } else if (ttDraft) {
+                body = `<div>${classes.map(c => {
+                        const cur = ttDraft[c.slot] || 'present';
+                        const dupes = classes.filter(x => x.subjectId === c.subjectId);
+                        const nth = c.time ? '' : (dupes.length > 1 ? ` (class ${dupes.indexOf(c) + 1} of ${dupes.length})` : '');
+                        const when = c.time ? `${c.time}${c.kind ? ' · ' + ({ L: 'Lecture', P: 'Practical', T: 'Tutorial' }[c.kind] || c.kind) : ''}` : nth;
+                        return `<div class="tt-row">
+                            <span class="tt-row-name">${(c.name || '').split(':')[0]}<span class="tt-row-when">${when}</span></span>
+                            <span class="tt-seg">
+                                <button class="p ${cur === 'present' ? 'on' : ''}" onclick="ttSetChoice(${c.slot}, 'present')">Present</button>
+                                <button class="a ${cur === 'absent' ? 'on' : ''}" onclick="ttSetChoice(${c.slot}, 'absent')">Missed</button>
+                                <button class="d ${cur === 'duty' ? 'on' : ''}" onclick="ttSetChoice(${c.slot}, 'duty')">Duty</button>
+                            </span>
+                        </div>`;
+                    }).join('')}
+                    <div class="tt-actions" style="margin-top:9px;">
+                        <button class="btn btn-primary btn-sm" onclick="ttMarkDay(false)">Save day</button>
+                        <button class="btn btn-secondary btn-sm" onclick="ttCancelPick()">Cancel</button>
+                    </div></div>`;
+            } else {
+                const counts = {};
+                classes.forEach(c => { const k = (c.name || '').split(':')[0]; counts[k] = (counts[k] || 0) + 1; });
+                body = `<div class="tt-classes">
+                        ${Object.entries(counts).map(([n, k]) => `<span class="tt-pill">${n}${k > 1 ? ' ×' + k : ''}</span>`).join('')}
+                    </div>
+                    <div class="tt-actions">
+                        <button class="btn btn-primary btn-sm" onclick="ttMarkDay(true)">✓ Attended all ${classes.length}</button>
+                        <button class="btn btn-secondary btn-sm" onclick="ttStartPick()">Missed some…</button>
+                    </div>`;
+            }
+
+            el.innerHTML = `
+                <div class="tt-checkin ${alreadyDone ? 'done' : ''}">
+                    <div class="tt-head">
+                        <div>
+                            <div class="tt-title">${alreadyDone ? '✅ ' : '📅 '}${TT_DAYS[today]}${classes.length ? ` · ${classes.length} class${classes.length === 1 ? '' : 'es'}` : ''}</div>
+                            <div class="tt-sub">${alreadyDone ? 'Marked for today' : (classes.length ? 'Mark the whole day in one go' : 'Nothing scheduled')}</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="ttToggleEditor()">${ttEditOpen ? 'Close timetable' : '🗓️ Timetable'}</button>
+                    </div>
+                    ${body}
+                    ${editor}
+                </div>`;
+        }
+
+        // ==================== SUBJECT RAIL ====================
+        // Sticky jump-list beside the attendance cards, because scrolling past eight
+        // full-height subject cards to reach the ninth is miserable. Doubles as a
+        // status glance: each entry is colour-coded by that subject's percentage.
+        let attRailObserver = null;
+
+        // Same palette and tinted-block treatment as the milestone chips in the cards
+        function attRailColor(pct, goal) {
+            if (pct >= (goal || 75)) return '#6bc49b';
+            if (pct >= (goal || 75) - 10) return '#d4b86b';
+            return '#d87b7b';
+        }
+        function attRailTint(hex, alpha) {
+            const n = parseInt(hex.slice(1), 16);
+            return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+        }
+
+        function attScrollToSubject(subjectId) {
+            const el = document.getElementById('att-subj-' + subjectId);
+            if (!el) return;
+            const isNarrow = window.innerWidth <= 900;
+            const offset = isNarrow ? 108 : 74;   // clear the sticky header / rail strip
+            const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            attSetRailActive(subjectId);
+        }
+
+        function attSetRailActive(subjectId) {
+            document.querySelectorAll('#attSubjectRail .att-rail-item').forEach(b => {
+                b.classList.toggle('active', b.dataset.subjId === String(subjectId));
+            });
+        }
+
+        function renderSubjectRail() {
+            const rail = document.getElementById('attSubjectRail');
+            if (!rail) return;
+            const subs = (attendanceState.subjects || []).filter(s => !s.archived);
+            if (subs.length < 2) { rail.style.display = 'none'; return; }
+            rail.style.display = '';
+
+            rail.innerHTML = '<div class="att-rail-title">Subjects</div>' + subs.map(s => {
+                if (s.currentPresent === undefined) { s.currentPresent = s.present; s.currentTotal = s.total; }
+                const duty = (s.history || []).filter(h => h.type === 'duty').length;
+                const pct = calculateAttendancePercentage(s.currentPresent + duty, s.currentTotal);
+                const col = attRailColor(pct, s.goal);
+                const code = (s.name || '').split(':')[0].trim() || s.name;
+                // Rounded in the rail so it fits the narrow column; exact value in the tooltip
+                return `<button class="att-rail-item" data-subj-id="${s.id}"
+                            style="background:${attRailTint(col, 0.1)};border-color:${attRailTint(col, 0.25)};color:${col};"
+                            onclick="attScrollToSubject(${s.id})" title="${(s.name || '').replace(/"/g, '&quot;')} · ${pct}% · ${s.currentPresent + duty}/${s.currentTotal}">
+                        <span class="att-rail-code">${code}</span>
+                        <span class="att-rail-pct">${Math.round(pct)}%</span>
+                    </button>`;
+            }).join('');
+
+            // Highlight whichever card is currently in view
+            if (attRailObserver) attRailObserver.disconnect();
+            if ('IntersectionObserver' in window) {
+                attRailObserver = new IntersectionObserver(entries => {
+                    const visible = entries.filter(e => e.isIntersecting)
+                        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+                    if (visible) attSetRailActive(visible.target.id.replace('att-subj-', ''));
+                }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+                subs.forEach(s => {
+                    const el = document.getElementById('att-subj-' + s.id);
+                    if (el) attRailObserver.observe(el);
+                });
+            }
         }
 
         function markPresent(subjectId) {
@@ -26417,12 +28981,15 @@
 
         function renderTrackedSubjects() {
             const container = document.getElementById('trackedSubjectsList');
-            
+            try { renderAttendanceCheckIn(); } catch (e) {}
+
             // Filter out archived subjects
             const activeSubjects = attendanceState.subjects.filter(s => !s.archived);
-            
+
             if (activeSubjects.length === 0) {
                 container.innerHTML = '<div style="text-align: center; padding: 40px; color: #64748b;">No subjects tracked yet. Add a subject above to get started.</div>';
+                const railEmpty = document.getElementById('attSubjectRail');
+                if (railEmpty) railEmpty.style.display = 'none';
                 return;
             }
 
@@ -26650,7 +29217,7 @@
                 const isLast = idx === activeSubjects.length - 1;
 
                 return `
-                    <div class="tracked-subject-card card">
+                    <div class="tracked-subject-card card" id="att-subj-${subject.id}" data-att-pct="${currentPercentage}">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 26px;">
                             <div class="subject-name">${subject.name}</div>
                             <div style="display: flex; gap: 4px; flex: 0 0 auto;">
@@ -26836,6 +29403,9 @@
                     </div>
                 `;
             }).join('');
+
+            // Rebuild the jump rail against the cards that were just rendered
+            try { renderSubjectRail(); } catch (e) { console.warn('subject rail failed', e); }
         }
 
         // Expose functions globally
@@ -28857,7 +31427,8 @@
                         { id: 'todos',      label: 'Todos',      icon: '✅', sectionId: 'todosSection', extraSectionIds: ['dailyGoalSection'] },
                         { id: 'timer',      label: 'Timer',      icon: '⏱️', sectionId: 'lobdellSection' },
                         { id: 'exams',      label: 'Exams',      icon: '🎯', sectionId: 'examSection' },
-                        { id: 'attendance', label: 'Attendance', icon: '📋', sectionId: 'attendanceSection' }
+                        { id: 'attendance', label: 'Attendance', icon: '📋', sectionId: 'attendanceSection' },
+                        { id: 'marks',      label: 'Marks',      icon: '🎓', sectionId: 'marksSection' }
                     ]
                 },
                 review: {
@@ -28878,9 +31449,89 @@
             // For backward compat — kept for any existing references
             const TAB_SECTIONS = {
                 today:  ['v8Today'],
-                plan:   ['scheduleSection', 'todosSection', 'lobdellSection', 'examSection', 'focusTodoSection', 'attendanceSection'],
+                plan:   ['scheduleSection', 'todosSection', 'lobdellSection', 'examSection', 'focusTodoSection', 'attendanceSection', 'marksSection'],
                 review: ['srsSection', 'analyticsSection', 'logsSection'],
                 more:   ['settingsSection']
+            };
+
+            // ===== Nav preferences: turn sections off, and reorder them =====
+            // Sections you don't use go grey and drop to the end of the strip rather than
+            // disappearing — clicking one asks whether you want it back.
+            let v8NavPrefs = { off: {}, order: {} };
+            function v8LoadNavPrefs() {
+                try {
+                    const raw = localStorage.getItem('v8_nav_prefs');
+                    if (raw) {
+                        const p = JSON.parse(raw);
+                        v8NavPrefs = { off: p.off || {}, order: p.order || {} };
+                    }
+                } catch (e) {}
+            }
+            function v8SaveNavPrefs() {
+                try { localStorage.setItem('v8_nav_prefs', JSON.stringify(v8NavPrefs)); } catch (e) {}
+            }
+            v8LoadNavPrefs();
+
+            // Subs in display order: your saved order first, then anything new,
+            // with the switched-off ones pushed to the back.
+            function v8OrderedSubs(tab) {
+                const config = TAB_CONFIG[tab];
+                if (!config) return [];
+                const saved = v8NavPrefs.order[tab] || [];
+                const byId = {};
+                config.subs.forEach(s => { byId[s.id] = s; });
+                const out = [];
+                saved.forEach(id => { if (byId[id]) { out.push(byId[id]); delete byId[id]; } });
+                config.subs.forEach(s => { if (byId[s.id]) out.push(s); });
+                const on = out.filter(s => !v8NavPrefs.off[s.id]);
+                const off = out.filter(s => v8NavPrefs.off[s.id]);
+                return on.concat(off);
+            }
+            function v8FirstEnabled(tab) {
+                const subs = v8OrderedSubs(tab).filter(s => !v8NavPrefs.off[s.id]);
+                return subs.length ? subs[0].id : (TAB_CONFIG[tab] ? TAB_CONFIG[tab].default : null);
+            }
+
+            // Always resolve the tab that actually owns this section, rather than trusting
+            // whichever tab happens to be open — otherwise the "keep at least one" guard
+            // checks the wrong list and can empty a tab completely.
+            function v8TabOfSub(subId) {
+                return Object.keys(TAB_CONFIG).find(t =>
+                    (TAB_CONFIG[t].subs || []).some(s => s.id === subId)) || v8._currentTab;
+            }
+
+            window.v8NavDisable = function(subId) {
+                const tab = v8TabOfSub(subId);
+                const enabled = v8OrderedSubs(tab).filter(s => !v8NavPrefs.off[s.id]);
+                if (enabled.length <= 1) { showToast('Keep at least one section in this tab', 'warning'); return; }
+                const sub = (TAB_CONFIG[tab].subs || []).find(s => s.id === subId);
+                v8NavPrefs.off[subId] = true;
+                v8SaveNavPrefs();
+                v8._currentSub[tab] = v8FirstEnabled(tab);
+                v8GoTo(tab);
+                showToast(`${sub ? sub.label : 'Section'} switched off — it's greyed at the end of the strip`, 'info');
+            };
+
+            window.v8NavEnable = function(subId) {
+                const tab = v8TabOfSub(subId);
+                delete v8NavPrefs.off[subId];
+                v8SaveNavPrefs();
+                v8._currentSub[tab] = subId;
+                v8GoTo(tab);
+                showToast('Back in use', 'success');
+            };
+
+            window.v8NavMove = function(subId, dir) {
+                const tab = v8TabOfSub(subId);
+                const list = v8OrderedSubs(tab).filter(s => !v8NavPrefs.off[s.id]).map(s => s.id);
+                const i = list.indexOf(subId);
+                const j = i + dir;
+                if (i < 0 || j < 0 || j >= list.length) return;
+                list.splice(j, 0, list.splice(i, 1)[0]);
+                // Keep the switched-off ones after the active ones in the saved order
+                v8NavPrefs.order[tab] = list.concat(v8OrderedSubs(tab).filter(s => v8NavPrefs.off[s.id]).map(s => s.id));
+                v8SaveNavPrefs();
+                renderSubNav(tab);
             };
 
             function renderSubNav(tab) {
@@ -28890,23 +31541,56 @@
                 if (!config || tab === 'today' || config.subs.length <= 1) {
                     wrap.style.display = 'none';
                     wrap.innerHTML = '';
+                    const b = document.getElementById('v8NavTools');
+                    if (b) b.style.display = 'none';
                     return;
                 }
                 wrap.style.display = 'flex';
                 const activeSub = v8._currentSub[tab] || config.default;
-                wrap.innerHTML = config.subs.map(s => `
-                    <button class="v8-sub-item ${s.id === activeSub ? 'active' : ''}"
+                const ordered = v8OrderedSubs(tab);
+                wrap.innerHTML = ordered.map(s => {
+                    const off = !!v8NavPrefs.off[s.id];
+                    return `
+                    <button class="v8-sub-item ${s.id === activeSub && !off ? 'active' : ''} ${off ? 'v8-sub-off' : ''}"
                             data-sub="${s.id}"
+                            title="${off ? 'Not in use — click to turn it back on' : s.label}"
                             onclick="v8GoSub('${s.id}')">
                         <span class="v8-sub-icon">${s.icon}</span>
                         <span class="v8-sub-label">${s.label}</span>
-                    </button>
-                `).join('');
+                    </button>`;
+                }).join('');
+
+                // Control bar for whichever section you're in
+                let tools = document.getElementById('v8NavTools');
+                if (!tools) {
+                    tools = document.createElement('div');
+                    tools.id = 'v8NavTools';
+                    wrap.parentNode.appendChild(tools);
+                }
+                const enabled = ordered.filter(s => !v8NavPrefs.off[s.id]);
+                const cur = enabled.find(s => s.id === activeSub);
+                if (!cur) { tools.style.display = 'none'; return; }
+                const pos = enabled.indexOf(cur);
+                tools.style.display = 'flex';
+                tools.innerHTML = `
+                    <span class="v8nt-label">${cur.icon} ${cur.label}</span>
+                    <span class="v8nt-actions">
+                        <button class="v8nt-btn" onclick="v8NavMove('${cur.id}', -1)" ${pos === 0 ? 'disabled' : ''} title="Move left">‹</button>
+                        <button class="v8nt-btn" onclick="v8NavMove('${cur.id}', 1)" ${pos === enabled.length - 1 ? 'disabled' : ''} title="Move right">›</button>
+                        <button class="v8nt-btn off" onclick="v8NavDisable('${cur.id}')" title="Switch this section off — it greys out and moves to the end">Don't use this</button>
+                    </span>`;
             }
 
             window.v8GoSub = function(subId) {
                 const tab = v8._currentTab;
                 if (!TAB_CONFIG[tab]) return;
+                if (v8NavPrefs.off[subId]) {
+                    const sub = (TAB_CONFIG[tab].subs || []).find(s => s.id === subId);
+                    if (confirm(`${sub ? sub.label : 'This section'} is switched off. Start using it again?`)) {
+                        v8NavEnable(subId);
+                    }
+                    return;
+                }
                 v8._currentSub[tab] = subId;
                 try { localStorage.setItem('v8_last_sub_' + tab, subId); } catch(e) {}
                 v8GoTo(tab); // re-route with the new sub
@@ -28928,9 +31612,14 @@
                     s.classList.remove('v8-show');
                 });
 
-                // Show only the active sub-section
+                // Show only the active sub-section. If it's been switched off (or a stale
+                // one was restored from storage), fall through to the first one still in use.
                 const config = TAB_CONFIG[tab];
-                const activeSub = v8._currentSub[tab] || config.default;
+                let activeSub = v8._currentSub[tab] || config.default;
+                if (v8NavPrefs.off[activeSub]) {
+                    activeSub = v8FirstEnabled(tab);
+                    v8._currentSub[tab] = activeSub;
+                }
                 // Mark body with active sub for CSS-driven visibility
                 document.body.setAttribute('data-active-sub', activeSub);
                 const subConfig = config.subs.find(s => s.id === activeSub) || config.subs[0];
@@ -29377,7 +32066,7 @@
      MANIFEST_VERSION: bump this number whenever manifests change so stale
      localStorage caches are automatically cleared on next visit.
   ───────────────────────────────────────── */
-  const MANIFEST_VERSION = 8; // ← bump to bust old cached indices (Zen has no sub-sections)
+  const MANIFEST_VERSION = 9; // ← bump to bust old cached indices (v9: added Marks Tracker section)
 
   const APP_NAV_MANIFEST = {
     proc: [
@@ -29411,6 +32100,7 @@
       { label: '⏱️ Timer',       navFunc: 'v8GoToSub', navArg: 'plan~timer',      kind: 'sub' },
       { label: '🎯 Exams',       navFunc: 'v8GoToSub', navArg: 'plan~exams',      kind: 'sub' },
       { label: '📋 Attendance',  navFunc: 'v8GoToSub', navArg: 'plan~attendance', kind: 'sub' },
+      { label: '🎓 Marks',       navFunc: 'v8GoToSub', navArg: 'plan~marks',      kind: 'sub' },
       { label: '🃏 SRS',         navFunc: 'v8GoToSub', navArg: 'review~srs',      kind: 'sub' },
       { label: '📊 Analytics',   navFunc: 'v8GoToSub', navArg: 'review~analytics',kind: 'sub' },
       { label: '📜 Logs',        navFunc: 'v8GoToSub', navArg: 'review~logs',     kind: 'sub' },

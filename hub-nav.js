@@ -113,7 +113,7 @@
      MANIFEST_VERSION: bump this number whenever manifests change so stale
      localStorage caches are automatically cleared on next visit.
   ───────────────────────────────────────── */
-  const MANIFEST_VERSION = 8; // ← bump to bust old cached indices (Zen has no sub-sections)
+  const MANIFEST_VERSION = 9; // ← bump to bust old cached indices (v9: added Marks Tracker section)
 
   const APP_NAV_MANIFEST = {
     proc: [
@@ -147,6 +147,7 @@
       { label: '⏱️ Timer',       navFunc: 'v8GoToSub', navArg: 'plan~timer',      kind: 'sub' },
       { label: '🎯 Exams',       navFunc: 'v8GoToSub', navArg: 'plan~exams',      kind: 'sub' },
       { label: '📋 Attendance',  navFunc: 'v8GoToSub', navArg: 'plan~attendance', kind: 'sub' },
+      { label: '🎓 Marks',       navFunc: 'v8GoToSub', navArg: 'plan~marks',      kind: 'sub' },
       { label: '🃏 SRS',         navFunc: 'v8GoToSub', navArg: 'review~srs',      kind: 'sub' },
       { label: '📊 Analytics',   navFunc: 'v8GoToSub', navArg: 'review~analytics',kind: 'sub' },
       { label: '📜 Logs',        navFunc: 'v8GoToSub', navArg: 'review~logs',     kind: 'sub' },

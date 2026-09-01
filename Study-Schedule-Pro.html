@@ -13216,17 +13216,6 @@
                         scrollbar-width:none;
                     }
                     .att-rail::-webkit-scrollbar{display:none;}
-                    /* Duty leaves are a note, not a counted column — they only take classes
-                       off Missed, exactly how the UMS card presents them. */
-                    .att-duty-line{
-                        display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-                        font-size:11.5px; color:var(--text-secondary);
-                        padding:6px 10px; margin-top:2px;
-                        background:rgba(167,139,250,.07); border:1px solid rgba(167,139,250,.18);
-                        border-radius:8px;
-                    }
-                    .att-duty-line strong{color:#a78bfa;font-size:13px;}
-                    .att-duty-line span{color:var(--text-tertiary);font-size:10.5px;}
                     .att-rail-title{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text-tertiary);text-transform:uppercase;padding:0 4px 8px;}
                     /* Two lines so the subject code is never truncated. Each item is a
                        tinted block like the milestone chips: its own health colour as a
@@ -13244,6 +13233,8 @@
                         transform:translateX(-2px);
                     }
                     .att-rail-code{font-size:11.5px;font-weight:700;letter-spacing:.01em;line-height:1.2;white-space:nowrap;}
+                    .att-rail-overall{margin-bottom:7px;border-style:solid;border-width:1px;}
+                    .att-rail-overall::after{content:'';display:block;}
                     .att-rail-pct{font-size:10px;font-weight:700;line-height:1.1;opacity:.85;}
                     @media (max-width:900px){
                         /* Horizontal strip on narrow screens — one line, code + percentage */
@@ -13526,7 +13517,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -13771,7 +13762,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -14016,7 +14007,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -14261,7 +14252,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -14506,7 +14497,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -14751,7 +14742,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">1</div>
                             </div>
                             
@@ -14996,7 +14987,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">0</div>
                             </div>
                             
@@ -15241,7 +15232,7 @@
                             </div>
                             
                             <div class="subject-stat">
-                                <div class="subject-stat-label">Duty 🏅</div>
+                                <div class="subject-stat-label">Duty</div>
                                 <div class="subject-stat-value" style="color: #a78bfa;">2</div>
                             </div>
                             
@@ -28422,6 +28413,8 @@
             return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
         }
 
+        function attScrollToOverall() { attScrollToSubject('overall'); }
+
         function attScrollToSubject(subjectId) {
             const el = document.getElementById('att-subj-' + subjectId);
             if (!el) return;
@@ -28445,7 +28438,26 @@
             if (subs.length < 2) { rail.style.display = 'none'; return; }
             rail.style.display = '';
 
-            rail.innerHTML = '<div class="att-rail-title">Subjects</div>' + subs.map(s => {
+            // Overall sits on top — same treatment, so you can jump back to the summary
+            // without scrolling up past every card.
+            let aggP = 0, aggT = 0, aggD = 0;
+            subs.forEach(s => {
+                if (s.currentPresent === undefined) { s.currentPresent = s.present; s.currentTotal = s.total; }
+                aggP += s.currentPresent || 0;
+                aggT += s.currentTotal || 0;
+                aggD += (s.history || []).filter(h => h.type === 'duty').length;
+            });
+            const aggPct = aggT > 0 ? calculateAttendancePercentage(aggP + aggD, aggT) : 0;
+            const aggGoal = subs[0] ? subs[0].goal : 75;
+            const aggCol = attRailColor(aggPct, aggGoal);
+            const overallItem = `<button class="att-rail-item att-rail-overall" data-subj-id="overall"
+                    style="background:${attRailTint(aggCol, 0.14)};border-color:${attRailTint(aggCol, 0.35)};color:${aggCol};"
+                    onclick="attScrollToOverall()" title="Overall aggregate · ${aggPct}% · ${aggP + aggD}/${aggT}">
+                    <span class="att-rail-code">📊 Overall</span>
+                    <span class="att-rail-pct">${Math.round(aggPct)}%</span>
+                </button>`;
+
+            rail.innerHTML = '<div class="att-rail-title">Subjects</div>' + overallItem + subs.map(s => {
                 if (s.currentPresent === undefined) { s.currentPresent = s.present; s.currentTotal = s.total; }
                 const duty = (s.history || []).filter(h => h.type === 'duty').length;
                 const pct = calculateAttendancePercentage(s.currentPresent + duty, s.currentTotal);
@@ -28468,8 +28480,8 @@
                         .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
                     if (visible) attSetRailActive(visible.target.id.replace('att-subj-', ''));
                 }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
-                subs.forEach(s => {
-                    const el = document.getElementById('att-subj-' + s.id);
+                ['overall'].concat(subs.map(s => s.id)).forEach(key => {
+                    const el = document.getElementById('att-subj-' + key);
                     if (el) attRailObserver.observe(el);
                 });
             }
@@ -29102,14 +29114,14 @@
                 const worstSubject = subjectPctList.length ? subjectPctList.reduce((a, b) => b.pct < a.pct ? b : a) : null;
 
                 aggregateHTML = `
-                    <div class="tracked-subject-card card" style="border: 1px solid rgba(91, 141, 239, 0.3);">
+                    <div class="tracked-subject-card card" id="att-subj-overall" style="border: 1px solid rgba(91, 141, 239, 0.3);">
                         <div class="subject-name" style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 18px;">📊</span>
                             <span>OVERALL AGGREGATE</span>
                             <span style="font-size: 11px; color: #7a8fa8; font-weight: 400;">(${activeSubjects.length} subjects)</span>
                         </div>
                         
-                        <div class="subject-stats" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
                             <div class="subject-stat" title="Classes you sat in">
                                 <div class="stat-label">ATTENDED</div>
                                 <div class="stat-value" style="color: #6bbf59;">${aggregateData.currentPresent}</div>
@@ -29117,6 +29129,10 @@
                             <div class="subject-stat" title="Classes you weren't in — duty leaves stay counted here, they only lift the percentage">
                                 <div class="stat-label">MISSED</div>
                                 <div class="stat-value" style="color: #d87b7b;">${Math.max(0, aggregateData.currentTotal - aggregateData.currentPresent)}</div>
+                            </div>
+                            <div class="subject-stat" title="Counted toward your percentage as if attended — Attended and Missed stay as they are, exactly how UMS reports it">
+                                <div class="stat-label">DUTY</div>
+                                <div class="stat-value" style="color: #a78bfa;">${aggregateData.dutyCount || 0}</div>
                             </div>
                             <div class="subject-stat">
                                 <div class="stat-label">TOTAL</div>
@@ -29126,10 +29142,6 @@
                                 <div class="stat-label">UPCOMING</div>
                                 <div class="stat-value" style="color: #5b8def;">${aggregateData.futureTotal}</div>
                             </div>
-                        </div>
-
-                        <div class="att-duty-line" title="Counted toward your percentage as if attended. Attended and Missed stay as they are, exactly how UMS reports it.">
-                            🏅 Duty Leaves: <strong>${aggregateData.dutyCount || 0}</strong>${aggregateData.dutyCount ? `<span>counted toward your %</span>` : ''}
                         </div>
 
                         <div class="attendance-current">
@@ -29291,7 +29303,7 @@
                             </div>
                         </div>
 
-                        <div class="subject-stats" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="subject-stats" style="grid-template-columns: repeat(5, 1fr);">
                             <div class="subject-stat" title="Classes you sat in">
                                 <div class="subject-stat-label">Attended</div>
                                 <div class="subject-stat-value" style="color: #6bc49b;">${subject.currentPresent}</div>
@@ -29300,6 +29312,11 @@
                             <div class="subject-stat" title="Classes you weren't in — duty leaves stay counted here, they only lift the percentage">
                                 <div class="subject-stat-label">Missed</div>
                                 <div class="subject-stat-value" style="color: #d87b7b;">${Math.max(0, subject.currentTotal - subject.currentPresent)}</div>
+                            </div>
+
+                            <div class="subject-stat" title="Counted toward your percentage as if attended — Attended and Missed stay as they are, exactly how UMS reports it">
+                                <div class="subject-stat-label">Duty</div>
+                                <div class="subject-stat-value" style="color: #a78bfa;">${dutyCount}</div>
                             </div>
 
                             <div class="subject-stat">
@@ -29311,10 +29328,6 @@
                                 <div class="subject-stat-label">Upcoming</div>
                                 <div class="subject-stat-value" style="color: #5b8def;">${subject.futureTotal || 0}</div>
                             </div>
-                        </div>
-
-                        <div class="att-duty-line" title="Counted toward your percentage as if attended. Attended and Missed stay as they are, exactly how UMS reports it.">
-                            🏅 Duty Leaves: <strong>${dutyCount}</strong>${dutyCount ? `<span>counted toward your %</span>` : ''}
                         </div>
 
                         <div class="attendance-current">

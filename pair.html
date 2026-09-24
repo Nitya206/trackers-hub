@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trackers Hub — Device Pairing</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="sync-config.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#060810;--surface:rgba(255,255,255,.04);--border:rgba(255,255,255,.1);
+        --text:#e8eef8;--muted:#8593a8;--faint:#4a5568;--accent:#4f8ef7;--ok:#4ade80;--bad:#ff6b8a}
+  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;
+       min-height:100vh;padding:40px 20px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:600px}
+  h1{font-size:22px;font-weight:600;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:28px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:16px}
+  .step{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+        color:var(--accent);margin-bottom:10px}
+  h2{font-size:15px;font-weight:600;margin-bottom:8px}
+  p{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px}
+  label{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 5px}
+  input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;
+        padding:11px 13px;color:#fff;font-size:13px;font-family:'JetBrains Mono',monospace;outline:none}
+  input:focus{border-color:var(--accent)}
+  button{padding:11px 18px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);
+         color:#fff;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;margin-top:16px;transition:filter .15s}
+  button:hover{filter:brightness(1.12)}
+  button.ghost{background:transparent;color:var(--text);border-color:var(--border)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .msg{font-size:12.5px;line-height:1.6;margin-top:14px;padding:11px 13px;border-radius:9px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--ok)}
+  .msg.bad{background:rgba(255,107,138,.1);border:1px solid rgba(255,107,138,.3);color:var(--bad)}
+  .code{background:#0c0f18;border:1px solid rgba(79,142,247,.35);border-radius:10px;padding:14px;
+        font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all;line-height:1.6;
+        color:#9ec5ff;margin-top:14px;user-select:all}
+  .warn{font-size:11.5px;color:var(--faint);line-height:1.6;margin-top:12px}
+  a{color:var(--accent)}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Device Pairing</h1>
+  <p class="sub">Create your sync account once here, then paste the resulting code into each device you want kept in step.</p>
+
+  <div class="card" id="cfgCard">
+    <div class="step">Checking setup</div>
+    <h2 id="cfgTitle">…</h2>
+    <p id="cfgBody"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <div class="card">
+      <div class="step">Step 1 · Your sync account</div>
+      <h2>Create or sign in</h2>
+      <p>This is the account your devices share. Use any email you control and a strong password — the password becomes half of your pairing code, and it's what stands between the public internet and your data.</p>
+      <label>Email</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="username">
+      <label>Password</label>
+      <input id="pw" type="password" placeholder="At least 8 characters" autocomplete="current-password">
+      <div class="row">
+        <button id="createBtn">Create account</button>
+        <button id="signinBtn" class="ghost">I already have one</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="card hide" id="codeCard">
+      <div class="step">Step 2 · Your pairing code</div>
+      <h2>Paste this on every device</h2>
+      <p>Open any tracker on a device, click the sync chip in the corner, and paste this in. Do it once per device — phone, laptop, tablet.</p>
+      <div class="code" id="codeOut"></div>
+      <div class="row">
+        <button id="copyBtn">Copy code</button>
+        <button id="pairHereBtn" class="ghost">Pair this device now</button>
+      </div>
+      <div class="warn">This code contains your password. Treat it like one: don't post it anywhere public, and don't paste it on a device you don't control.</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const CFG = window.TRACKERS_SYNC_CONFIG || {};
+const $ = id => document.getElementById(id);
+
+function show(kind, html) {
+  const m = $('msg');
+  m.className = 'msg show ' + kind;
+  m.innerHTML = html;
+}
+
+// ── Gate on configuration before showing anything that would just fail ──
+if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
+  $('cfgTitle').textContent = 'Finish the Supabase setup first';
+  $('cfgBody').innerHTML =
+    'Open <code>sync-config.js</code> and fill in <code>supabaseUrl</code> and ' +
+    '<code>supabaseAnonKey</code>, then reload this page. Step-by-step instructions are in ' +
+    '<code>SYNC-SETUP.md</code>.';
+} else {
+  $('cfgCard').classList.add('hide');
+  $('main').classList.remove('hide');
+
+  const { createClient } = await import(CFG.sdkUrl || 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
+  const sb = createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+
+  const encodeCode = (e, p) => btoa(JSON.stringify({ e, p }));
+
+  function reveal(email, pw) {
+    const code = encodeCode(email, pw);
+    $('codeOut').textContent = code;
+    $('codeCard').classList.remove('hide');
+    $('codeCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    $('copyBtn').onclick = async () => {
+      try { await navigator.clipboard.writeText(code); $('copyBtn').textContent = 'Copied ✓'; }
+      catch { $('copyBtn').textContent = 'Select it manually'; }
+      setTimeout(() => { $('copyBtn').textContent = 'Copy code'; }, 2000);
+    };
+    $('pairHereBtn').onclick = () => {
+      try {
+        localStorage.setItem('__sync_cred_v1', code);
+        $('pairHereBtn').textContent = 'Paired ✓ — open a tracker';
+      } catch { $('pairHereBtn').textContent = 'Could not save here'; }
+    };
+  }
+
+  function creds() {
+    const email = $('email').value.trim();
+    const pw = $('pw').value;
+    if (!email || !email.includes('@')) { show('bad', 'Enter a valid email address.'); return null; }
+    if (pw.length < 8) { show('bad', 'Password must be at least 8 characters.'); return null; }
+    return { email, pw };
+  }
+
+  async function verifyTable() {
+    const { error } = await sb.from(CFG.table || 'sync_kv').select('k').limit(1);
+    if (error && /does not exist|schema cache|relation/i.test(error.message || '')) {
+      return 'The <code>sync_kv</code> table is missing. Run <code>supabase-schema.sql</code> in the Supabase SQL Editor, then try again.';
+    }
+    return null;
+  }
+
+  $('createBtn').onclick = async () => {
+    const c = creds(); if (!c) return;
+    $('createBtn').disabled = true;
+    show('ok', 'Creating account…');
+    const { data, error } = await sb.auth.signUp({ email: c.email, password: c.pw });
+    $('createBtn').disabled = false;
+
+    if (error) {
+      if (/already registered|already exists/i.test(error.message)) {
+        show('bad', 'That account already exists — click <b>I already have one</b> instead.');
+      } else {
+        show('bad', 'Could not create the account: ' + error.message);
+      }
+      return;
+    }
+    if (data.user && !data.session) {
+      show('ok', 'Account created. Supabase is set to require email confirmation — check your inbox, ' +
+                 'confirm, then click <b>I already have one</b>. (To skip this, turn off ' +
+                 '“Confirm email” in Supabase → Authentication → Sign In / Providers.)');
+      reveal(c.email, c.pw);
+      return;
+    }
+    const t = await verifyTable();
+    if (t) { show('bad', t); return; }
+    show('ok', 'Account created and signed in. Your pairing code is below.');
+    reveal(c.email, c.pw);
+  };
+
+  $('signinBtn').onclick = async () => {
+    const c = creds(); if (!c) return;
+    $('signinBtn').disabled = true;
+    show('ok', 'Signing in…');
+    const { error } = await sb.auth.signInWithPassword({ email: c.email, password: c.pw });
+    $('signinBtn').disabled = false;
+    if (error) { show('bad', 'Sign-in failed: ' + error.message); return; }
+    const t = await verifyTable();
+    if (t) { show('bad', t); return; }
+    show('ok', 'Signed in. Your pairing code is below.');
+    reveal(c.email, c.pw);
+  };
+}
+</script>
+</body>
+</html>

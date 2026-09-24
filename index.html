@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TRACKERS HUB</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#060810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trackers Hub">
+
+<!-- ══ PWA · installable web app ═══════════════════════════════════════════
+     iOS only treats a site as a real app — and only ever permits web push —
+     when it has a manifest AND a service worker, AND you add it to the Home
+     Screen. Add to Home Screen from Safari's share sheet to get the icon,
+     fullscreen and (later) notifications. -->
+<script>
+if ('serviceWorker' in navigator) {
+  addEventListener('load', function () {
+    // updateViaCache:'none' — the browser caches sw.js itself, which can leave
+    // an old worker running (and an old cache strategy with it) long after a
+    // deploy. This forces the worker script to always be revalidated.
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function (e) {
+      console.warn('[pwa] service worker registration failed', e);
+    });
+  });
+  // A new deploy: the new worker has already fetched the fresh pages, takes
+  // over, and says so. If you've only just opened the app (or left it idle),
+  // reload into the new version straight away; if you're mid-task, offer a
+  // one-tap refresh instead of pulling the page out from under you.
+  var swHadController = !!navigator.serviceWorker.controller;   // false on first install
+  var swLastInput = 0;
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (t) {
+    addEventListener(t, function () { swLastInput = Date.now(); }, true);
+  });
+  navigator.serviceWorker.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'sw-updated' || !swHadController) return;
+    var ae = document.activeElement;
+    var typing = ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable);
+    var busy = typing || (swLastInput && Date.now() - swLastInput < 30000) || document.querySelector('.scrim, .sched-modal-overlay, .auth-modal.active');
+    var last = 0; try { last = +sessionStorage.getItem('sw_reloaded_at') || 0; } catch (_) {}
+    if (!busy && Date.now() - last > 15000) {
+      try { sessionStorage.setItem('sw_reloaded_at', String(Date.now())); } catch (_) {}
+      location.reload();
+      return;
+    }
+    if (document.getElementById('sw-update-pill')) return;
+    var b = document.createElement('button');
+    b.id = 'sw-update-pill';
+    b.type = 'button';
+    b.textContent = '✨ Updated — tap to refresh';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:2147483646;' +
+      'padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(18,20,28,.94);color:#fff;' +
+      'font:600 13px system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;';
+    b.onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  });
+}
+</script>
+
+<!-- ── TRACKERS HUB · cross-device sync ──────────────────────────────────
+     Must load before any app script so localStorage writes are captured
+     from the very first one. Remove these two lines to disable sync
+     entirely; the app then behaves exactly as it did before. -->
+<script src="sync-config.js?v=20260924a"></script>
+<script src="sync-engine.js?v=20260924a"></script>
+<script src="push-client.js?v=20260924a"></script>
+<script src="zen-rules.js?v=20260924a"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #060810;
+  --surface: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.08);
+  --border-bright: rgba(255,255,255,0.15);
+  --text: #e8eef8;
+  --muted: #4a5568;
+  --muted2: #718096;
+
+  --study: #4f8ef7;
+  --study-g: rgba(79,142,247,0.12);
+  --study-rgb: 79,142,247;
+  --proc:  #00d9f5;
+  --proc-g: rgba(0,217,245,0.12);
+  --proc-rgb: 0,217,245;
+  --zen:   #4ade80;
+  --zen-g: rgba(74,222,128,0.12);
+  --zen-rgb: 74,222,128;
+  --care:  #e3a79a;
+  --care-g: rgba(227,167,154,0.12);
+  --care-rgb: 227,167,154;
+  --shop:  #f2b84b;
+  --shop-g: rgba(242,184,75,0.12);
+  --shop-rgb: 242,184,75;
+
+  --snap: cubic-bezier(.16,1,.3,1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+}
+
+html,body {
+  width:100%; height:100%;
+  background:#060810;
+  color:#e8eef8;
+  font-family:'Space Grotesk',sans-serif;
+  overflow-x:hidden;
+}
+
+/* ── CURSOR ── */
+*,*::before,*::after { cursor: none !important; }
+#cursor {
+  position:fixed; top:0; left:0;
+  pointer-events:none; z-index:2147483647;
+  will-change:transform;
+  color:rgba(200,215,255,0.5);
+  transition:color .2s ease, opacity .2s ease;
+}
+#cursor svg {
+  display:block; overflow:visible;
+  filter:drop-shadow(0 0 4px currentColor);
+  transition:filter .2s ease, transform .18s var(--snap);
+  transform-origin:center;
+}
+#cursor.on-card svg { transform:scale(1.25); }
+#cursor.on-card svg { filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 18px currentColor); }
+#cursor.hov-study { color:var(--study); }
+#cursor.hov-proc  { color:var(--proc); }
+#cursor.hov-zen   { color:var(--zen); }
+#cursor.hov-care   { color:var(--care); }
+#cursor.hov-shop   { color:var(--shop); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:100px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2);}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+
+/* ── BACKGROUND LAYERS ── */
+#bg-canvas { position:fixed;inset:0;z-index:0; }
+.grid-bg {
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 80%);
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 80%);
+}
+.aurora {
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+}
+.ab {
+  position:absolute;border-radius:50%;
+  filter:blur(120px);opacity:0.06;
+  animation:drift 20s ease-in-out infinite alternate;
+}
+.ab:nth-child(1){width:700px;height:700px;top:-200px;left:-150px;background:#4f8ef7;animation-duration:26s;}
+.ab:nth-child(2){width:600px;height:600px;top:10%;right:-200px;background:#00d9f5;animation-duration:19s;animation-delay:-7s;}
+.ab:nth-child(3){width:800px;height:800px;bottom:-300px;left:10%;background:#f5b800;animation-duration:31s;animation-delay:-14s;}
+.ab:nth-child(4){width:500px;height:500px;top:50%;left:0;background:#4ade80;animation-duration:22s;animation-delay:-10s;}
+@keyframes drift{from{transform:translate(0,0) scale(1);}to{transform:translate(60px,40px) scale(1.1);}}
+
+/* ── PAGE LAYOUT ──
+   Compact top bar, a "today" row with one live number per app, then a bento
+   grid where Study leads and the other four share the space around it. */
+.page {
+  position:relative;z-index:1;
+  min-height:100vh;
+  max-width:1180px;margin:0 auto;
+  display:flex;flex-direction:column;gap:16px;
+  padding:22px 26px 16px;
+}
+
+/* ── TOP BAR ── */
+.top {
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  animation:up .8s var(--snap) both;
+}
+.brand { display:flex;align-items:center;gap:14px;min-width:0; }
+.brand-mark {
+  width:46px;height:46px;border-radius:15px;flex-shrink:0;position:relative;
+  background:conic-gradient(from 210deg,var(--study),var(--proc),var(--zen),var(--care),var(--shop),var(--study));
+  box-shadow:0 6px 26px rgba(79,142,247,.25);
+}
+.brand-mark::after {
+  content:'TH';position:absolute;inset:2px;border-radius:13px;background:#0a0d17;
+  display:grid;place-items:center;
+  font-family:'Orbitron',sans-serif;font-weight:800;font-size:13px;letter-spacing:.08em;color:#e8eef8;
+}
+.brand h1 {
+  font-family:'Orbitron',sans-serif;font-weight:800;font-size:21px;letter-spacing:.14em;line-height:1.1;
+  background:linear-gradient(120deg,#fff 0%,#dbe6ff 55%,rgba(200,220,255,.55) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap;
+}
+.brand-meta {
+  display:flex;align-items:center;gap:8px;margin-top:5px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.05em;color:var(--muted2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.brand-meta b { color:#c9d6ee;font-weight:500; }
+.live-dot {
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:#4ade80;box-shadow:0 0 10px #4ade80;
+  animation:lp 2.2s ease infinite;
+}
+@keyframes lp{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.6);}}
+
+/* hub-nav.js drops its search pill in here */
+#hub-search-slot { flex-shrink:0; }
+#hub-search-slot > div { margin:0 !important;animation:none !important; }
+.date-pill {
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);
+  border-radius:100px;padding:9px 18px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted2);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+
+/* ── TODAY ROW ── */
+.glance {
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;
+  animation:up .8s .06s var(--snap) both;
+}
+.g-item {
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px 13px 16px;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  color:var(--text);text-decoration:none;
+  transition:border-color .25s ease,background .25s ease,transform .25s var(--spring);
+}
+.g-item::before {
+  content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--cc);box-shadow:0 0 10px var(--cc);
+}
+.g-item:hover { border-color:rgba(var(--cr),.45);background:rgba(var(--cr),.06);transform:translateY(-2px); }
+.g-ico { font-size:20px;line-height:1;flex-shrink:0; }
+.g-txt { min-width:0; }
+.g-val {
+  font-family:'Orbitron',sans-serif;font-weight:700;font-size:17px;line-height:1.1;
+  color:var(--cc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.g-lbl {
+  margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.g-item.good .g-val { color:#4ade80; }
+.g-item.bad  .g-val { color:#ff5d7a; }
+.g-item.bad::before { background:#ff5d7a;box-shadow:0 0 10px #ff5d7a; }
+
+/* ── BENTO GRID ── */
+.bento {
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;
+}
+.bento .card-wrap { min-width:0;grid-column:span 2; }
+.bento .card-wrap:nth-child(1) { grid-column:span 4; }
+.bento .card-wrap:nth-child(2) { grid-column:span 2; }
+
+/* ── CARD WRAP — each gets its own perspective ── */
+/* ── CARD WRAP — Higher perspective for better depth ── */
+.card-wrap {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+/* ── CARD — Critical 3D Fixes ── */
+.card {
+  position:relative;
+  height:100%;
+  box-sizing:border-box;
+  border-radius:26px;
+  padding:20px 22px 34px;
+  text-decoration:none;
+  display:block;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  
+  /* CRITICAL: This allows the text to "float" above the card */
+  transform-style: preserve-3d; 
+  
+  transform:rotateX(0deg) rotateY(0deg);
+  transition:transform 0.4s var(--snap), box-shadow 0.4s ease, border-color 0.4s ease;
+  animation:up .9s var(--snap) both;
+}
+
+/* ── INNER CONTENT — Makes text float (Parallax effect) ── */
+.c-inner { 
+  position:relative; 
+  z-index:2; 
+  /* This moves the text 40px closer to your eyes than the background */
+  transform: translateZ(40px); 
+  pointer-events: none; 
+}
+.card-wrap:nth-child(1) .card{animation-delay:.05s;}
+.card-wrap:nth-child(2) .card{animation-delay:.15s;}
+.card-wrap:nth-child(3) .card{animation-delay:.25s;}
+.card-wrap:nth-child(4) .card{animation-delay:.35s;}
+.card-wrap:nth-child(5) .card{animation-delay:.42s;}
+
+/* Card type accent vars */
+.card-study{--cc:var(--study);--cg:var(--study-g);--cr:var(--study-rgb);}
+.card-proc {--cc:var(--proc); --cg:var(--proc-g); --cr:var(--proc-rgb);}
+.card-zen  {--cc:var(--zen);  --cg:var(--zen-g);  --cr:var(--zen-rgb);}
+.card-care  {--cc:var(--care);  --cg:var(--care-g);  --cr:var(--care-rgb);}
+.card-shop  {--cc:var(--shop);  --cg:var(--shop-g);  --cr:var(--shop-rgb);}
+
+/* Mouse-tracking glow */
+.card::before {
+  content:'';position:absolute;inset:0;border-radius:26px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+    rgba(var(--cr),0.18) 0%,
+    rgba(var(--cr),0.07) 35%,
+    transparent 65%);
+  opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:0;
+}
+/* Top edge beam */
+.card::after {
+  content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cc),transparent);
+  opacity:0;transition:opacity .4s ease;z-index:0;
+}
+
+/* Active (hovering) state */
+.card.is-tilting::before { opacity:1; }
+.card.is-tilting::after  { opacity:.7; }
+
+.card-study.is-tilting {
+  border-color:rgba(79,142,247,.5);
+  box-shadow:0 28px 70px rgba(79,142,247,.22),0 0 0 1px rgba(79,142,247,.3),inset 0 1px 0 rgba(79,142,247,.15);
+}
+.card-proc.is-tilting {
+  border-color:rgba(0,217,245,.5);
+  box-shadow:0 28px 70px rgba(0,217,245,.22),0 0 0 1px rgba(0,217,245,.3),inset 0 1px 0 rgba(0,217,245,.15);
+}
+.card-zen.is-tilting {
+  border-color:rgba(74,222,128,.5);
+  box-shadow:0 28px 70px rgba(74,222,128,.22),0 0 0 1px rgba(74,222,128,.3),inset 0 1px 0 rgba(74,222,128,.15);
+}
+.card-care.is-tilting {
+  border-color:rgba(227,167,154,.5);
+  box-shadow:0 28px 70px rgba(227,167,154,.22),0 0 0 1px rgba(227,167,154,.3),inset 0 1px 0 rgba(227,167,154,.15);
+}
+.card-shop.is-tilting {
+  border-color:rgba(242,184,75,.5);
+  box-shadow:0 28px 70px rgba(242,184,75,.22),0 0 0 1px rgba(242,184,75,.3),inset 0 1px 0 rgba(242,184,75,.15);
+}
+
+/* Clip mask — wraps visual-only elements so they don't bleed out */
+.card-clip {
+  position:absolute;inset:0;border-radius:26px;
+  overflow:hidden;pointer-events:none;z-index:0;
+}
+
+/* Backdrop blur REMOVED — backdrop-filter creates a stacking context
+   that completely flattens 3D perspective transforms on the parent */
+.card-blur {
+  display: none;
+}
+
+/* Shine overlay tracks mouse */
+.card-shine {
+  position:absolute;inset:0;border-radius:26px;pointer-events:none;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+    rgba(255,255,255,.12) 0%,
+    rgba(255,255,255,.04) 25%,
+    transparent 55%);
+  opacity:0;transition:opacity .2s ease;z-index:1;
+}
+.card.is-tilting .card-shine { opacity:1; }
+
+/* Watermark letter */
+.wm {
+  position:absolute;bottom:-18px;right:6px;
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:130px;line-height:1;letter-spacing:-.05em;
+  color:var(--cc);opacity:.032;
+  pointer-events:none;user-select:none;
+  transition:opacity .4s ease, transform .4s ease;
+}
+.card.is-tilting .card-clip .wm { opacity:.075; transform:scale(1.04); }
+
+/* ── CARD CONTENT ── */
+.c-inner { position:relative;z-index:2; }
+
+.c-head {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:14px;
+}
+.c-icon {
+  width:54px;height:54px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  transition:transform .3s var(--spring), box-shadow .3s ease;
+}
+.card-study .c-icon{background:rgba(79,142,247,.1);box-shadow:0 0 0 1px rgba(79,142,247,.2),0 6px 20px rgba(79,142,247,.1);}
+.card-proc  .c-icon{background:rgba(0,217,245,.1); box-shadow:0 0 0 1px rgba(0,217,245,.2), 0 6px 20px rgba(0,217,245,.1);}
+.card-zen   .c-icon{background:rgba(74,222,128,.1);box-shadow:0 0 0 1px rgba(74,222,128,.2),0 6px 20px rgba(74,222,128,.1);}
+.card-care   .c-icon{background:rgba(227,167,154,.1);box-shadow:0 0 0 1px rgba(227,167,154,.2),0 6px 20px rgba(227,167,154,.1);}
+.card-shop   .c-icon{background:rgba(242,184,75,.1);box-shadow:0 0 0 1px rgba(242,184,75,.2),0 6px 20px rgba(242,184,75,.1);}
+.card:hover .c-icon { transform:scale(1.08) rotate(-4deg); }
+.card-study:hover .c-icon{box-shadow:0 0 0 1px rgba(79,142,247,.4),0 10px 30px rgba(79,142,247,.25);}
+.card-proc:hover  .c-icon{box-shadow:0 0 0 1px rgba(0,217,245,.4), 0 10px 30px rgba(0,217,245,.25);}
+.card-zen:hover   .c-icon{box-shadow:0 0 0 1px rgba(74,222,128,.4),0 10px 30px rgba(74,222,128,.25);}
+.card-care:hover   .c-icon{box-shadow:0 0 0 1px rgba(227,167,154,.4),0 10px 30px rgba(227,167,154,.25);}
+.card-shop:hover   .c-icon{box-shadow:0 0 0 1px rgba(242,184,75,.4),0 10px 30px rgba(242,184,75,.25);}
+
+.c-badge {
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.25em;text-transform:uppercase;
+  padding:5px 12px;border-radius:100px;border:1px solid;
+}
+.card-study .c-badge{color:var(--study);background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.28);}
+.card-proc  .c-badge{color:var(--proc); background:rgba(0,217,245,.08); border-color:rgba(0,217,245,.28);}
+.card-zen   .c-badge{color:var(--zen);  background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.28);}
+.card-care   .c-badge{color:var(--care);  background:rgba(227,167,154,.08);border-color:rgba(227,167,154,.28);}
+.card-shop   .c-badge{color:var(--shop);  background:rgba(242,184,75,.08);border-color:rgba(242,184,75,.28);}
+
+.c-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: .02em;
+  color: var(--text);
+  margin-bottom: 0; /* Changed from 9px to 0 */
+  line-height: 1.25;
+}
+
+.bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 14px; /* tighter to keep full page in viewport */
+}
+
+.c-pct {
+  position: absolute;
+  top: -18px;             /* Sits perfectly above the bar */
+  right: 0;               /* Aligns to the right side */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--muted2);   /* Dimmer color so it doesn't distract */
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.c-desc { font-size:13px;color:var(--muted);line-height:1.7;font-weight:300; }
+
+/* Progress bar */
+.c-bar {
+  height: 4px;            /* Back to thin and sleek */
+  background: rgba(255,255,255,0.06);
+  margin: 24px 0 14px 0;  /* compact spacing for one-screen layout */
+  border-radius: 100px;
+  position: relative;
+  overflow: visible;      /* Allow the label to float outside the bar */
+  border: none;           /* Remove clunky borders */
+}
+.c-fill {
+  position: absolute;
+  left: 0; top: 0; height: 100%;
+  background: linear-gradient(90deg, var(--cc), #fff);
+  box-shadow: 0 0 12px var(--cc); /* Subtle glow */
+  width: 0%; 
+  transition: width 1.8s var(--snap);
+  border-radius: 100px;
+}
+
+/* Stats */
+/* ── STATS SECTION (Border Removed for cleaner look) ── */
+.c-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 0; /* Changed from 24px to 0 */
+  padding-top: 0px;
+  padding-right: 54px; /* keep last stat clear of the circular launch button */
+  border-top: none !important;
+}
+.s-item { display:flex;flex-direction:column;gap:4px; }
+.s-val {
+  font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;line-height:1;
+  white-space:nowrap;
+}
+.s-lbl {
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.15em;color:var(--muted);text-transform:uppercase;
+}
+.card-study .s-val{color:var(--study);}
+.card-proc  .s-val{color:var(--proc);}
+.card-zen   .s-val{color:var(--zen);}
+.card-care   .s-val{color:var(--care);}
+.card-shop   .s-val{color:var(--shop);}
+
+/* Launch button */
+.c-launch {
+  position:absolute;bottom:18px;right:18px;z-index:3;
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border-bright);
+  color:var(--muted2);font-size:16px;
+  transition:all .3s var(--spring);
+  background:rgba(255,255,255,.04);
+}
+.card-study:hover .c-launch{background:var(--study);border-color:var(--study);color:#fff;box-shadow:0 0 28px rgba(79,142,247,.6);transform:rotate(-45deg);}
+.card-proc:hover  .c-launch{background:var(--proc); border-color:var(--proc); color:#000;box-shadow:0 0 28px rgba(0,217,245,.6); transform:rotate(-45deg);}
+.card-zen:hover   .c-launch{background:var(--zen);  border-color:var(--zen);  color:#000;box-shadow:0 0 28px rgba(74,222,128,.6);transform:rotate(-45deg);}
+.card-care:hover   .c-launch{background:var(--care);  border-color:var(--care);  color:#000;box-shadow:0 0 28px rgba(227,167,154,.6);transform:rotate(-45deg);}
+.card-shop:hover   .c-launch{background:var(--shop);  border-color:var(--shop);  color:#000;box-shadow:0 0 28px rgba(242,184,75,.6);transform:rotate(-45deg);}
+
+/* ── RIPPLE ── */
+.ripple {
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,.09);
+  transform:scale(0);
+  animation:rip .65s ease-out forwards;
+  pointer-events:none;z-index:10;
+}
+@keyframes rip{to{transform:scale(4);opacity:0;}}
+/* ── FOOTER ── */
+.hub-footer {
+  margin-top:auto;padding-top:10px;
+  display:flex;align-items:center;gap:8px;
+  animation:up .9s .55s var(--snap) both;
+}
+.fd { width:8px;height:8px;border-radius:50%;transition:transform .3s var(--spring); }
+.fd:hover{transform:scale(1.7);}
+.fd.study{background:var(--study);box-shadow:0 0 10px var(--study);}
+.fd.proc {background:var(--proc); box-shadow:0 0 10px var(--proc);}
+.fd.zen  {background:var(--zen);  box-shadow:0 0 10px var(--zen);}
+.fd.care  {background:var(--care);  box-shadow:0 0 10px var(--care);}
+.fd.shop  {background:var(--shop);  box-shadow:0 0 10px var(--shop);}
+.fsep{width:20px;height:1px;background:var(--border);}
+.flbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-left:6px;}
+
+/* ── ANIM ── */
+@keyframes up{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+/* Study leads the grid, so it reads bigger */
+.card-study .c-icon { width:62px;height:62px;font-size:28px;border-radius:18px; }
+.card-study .c-title { font-size:22px; }
+.card-study .c-stats { gap:40px; }
+.card-study .s-val { font-size:24px; }
+.card-study .s-lbl { font-size:10px; }
+.card-study .wm { font-size:190px; }
+.c-stats { flex-wrap:wrap;row-gap:12px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:1023px){
+  .bento { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .bento .card-wrap, .bento .card-wrap:nth-child(2) { grid-column:span 1; }
+  .bento .card-wrap:nth-child(1) { grid-column:span 2; }
+  .glance { grid-template-columns:repeat(5,minmax(150px,1fr));overflow-x:auto;scrollbar-width:none; }
+  .glance::-webkit-scrollbar { display:none; }
+}
+@media(max-width:700px){
+  .page { padding:20px 16px 40px;gap:14px; }
+  .brand-mark { width:40px;height:40px;border-radius:13px; }
+  .brand-mark::after { border-radius:11px;font-size:11px; }
+  .brand h1 { font-size:16px;letter-spacing:.1em; }
+  .brand-meta { font-size:10px; }
+  .glance {
+    display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+    margin:0 -16px;padding:2px 16px 4px;scroll-padding:0 16px;
+  }
+  .g-item { flex:0 0 auto;min-width:148px;scroll-snap-align:start; }
+  .bento { grid-template-columns:1fr;gap:12px; }
+  .bento .card-wrap, .bento .card-wrap:nth-child(1), .bento .card-wrap:nth-child(2) { grid-column:span 1; }
+  .card-wrap { perspective:none; }
+  .card { padding:18px 18px 26px; }
+  .c-title, .card-study .c-title { font-size:16px; }
+  .s-val { font-size:14px; }
+  .card-study .s-val { font-size:18px; }
+  .card-study .c-stats { gap:22px; }
+  .c-icon, .card-study .c-icon { width:44px;height:44px;font-size:20px;border-radius:14px; }
+  .c-head { margin-bottom:10px; }
+  .c-bar { margin:22px 0 12px; }
+  .c-launch { width:36px;height:36px;font-size:14px; }
+}
+@media(max-width:560px){
+  /* Search collapses to its icon so the brand keeps the room */
+  #hub-search-slot .date-pill { padding:11px 12px !important; }
+  #hub-search-slot .date-pill span, #hub-search-slot .date-pill kbd { display:none; }
+}
+
+/* Touch devices — disable custom cursor and 3D tilt */
+@media(hover:none),(pointer:coarse){
+  /* Hide the sci-fi cursor entirely */
+  #cursor{display:none !important;}
+  /* Restore default cursor for all elements */
+  *,*::before,*::after{cursor:auto !important;}
+  a,button,[role=button]{cursor:pointer !important;}
+  /* Disable 3D tilt — use simple press feedback instead */
+  .card{transform:none !important;transition:opacity .15s ease !important;}
+  .card:active{opacity:.85;}
+  .card::before{opacity:0 !important;}
+  .card::after{opacity:0 !important;}
+  .card-wrap{perspective:none !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- Sci-fi targeting cursor -->
+<div id="cursor">
+  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3,14 L3,3 L14,3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28,3 L39,3 L39,14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M39,28 L39,39 L28,39" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14,39 L3,39 L3,28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="21" cy="21" r="2.2" fill="currentColor"/>
+    <line x1="21" y1="14.5" x2="21" y2="17.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="21" y1="24.5" x2="21" y2="27.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="14.5" y1="21" x2="17.5" y2="21" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+    <line x1="24.5" y1="21" x2="27.5" y2="21" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.55"/>
+  </svg>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"><div class="ab"></div><div class="ab"></div><div class="ab"></div><div class="ab"></div></div>
+<div class="grid-bg"></div>
+
+<div class="page">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div style="min-width:0">
+        <h1>TRACKERS HUB</h1>
+        <div class="brand-meta"><span class="live-dot"></span><b id="greet">Hello</b><span id="ld">—</span><span id="lt"></span></div>
+      </div>
+    </div>
+    <div id="hub-search-slot"></div>
+  </header>
+
+  <!-- One live number per app. syncHubData fills these. -->
+  <nav class="glance" aria-label="Today at a glance">
+    <a class="g-item card-study" href="Study-Schedule-Pro.html" data-g="study"><span class="g-ico">📚</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Studied today</div></span></a>
+    <a class="g-item card-proc" href="Procrastination-Hub.html" data-g="proc"><span class="g-ico">⚡</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Break time</div></span></a>
+    <a class="g-item card-zen" href="zen-garden-tracker.html" data-g="zen"><span class="g-ico">🌿</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Day streak</div></span></a>
+    <a class="g-item card-care" href="rituals-tracker.html" data-g="care"><span class="g-ico">🧴</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Rituals kept</div></span></a>
+    <a class="g-item card-shop" href="Shopping-List.html" data-g="shop"><span class="g-ico">💰</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Free today</div></span></a>
+  </nav>
+
+  <main class="bento">
+    <!-- STUDY TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-study" href="Study-Schedule-Pro.html">
+        <div class="card-clip"><div class="wm">S</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">📚</div><div class="c-badge">Academics</div></div>
+          <div class="c-title">Study Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+    <div class="s-item">
+        <span class="s-val">0 / 0h</span>
+        <span class="s-lbl">Daily Progress</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">0%</span>
+        <span class="s-lbl">Aggregate Attendance</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">Exams</span>
+        <span class="s-lbl">Countdown</span>
+    </div>
+</div>
+        </div>
+        <div class="c-launch">↗︎</div>
+      </a>
+    </div>
+
+    <!-- PROCRASTINATION TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-proc" href="Procrastination-Hub.html">
+        <div class="card-clip"><div class="wm">P</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">⚡</div><div class="c-badge">Productivity</div></div>
+          <div class="c-title">Procrastination Tracker</div>
+          <!-- Bar now tracks Daily Budget -->
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+    <div class="s-item">
+        <span class="s-val">0 / 0h</span>
+        <span class="s-lbl">Daily Budget</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">0</span>
+        <span class="s-lbl">0 Entries Total</span> <!-- This will show your 982 entries -->
+    </div>
+    <div class="s-item">
+        <span class="s-val">0</span>
+        <span class="s-lbl">0 Entries Done</span> <!-- This will show your finished episodes -->
+    </div>
+</div>
+        </div>
+        <div class="c-launch">↗︎</div>
+      </a>
+    </div>
+
+    <!-- ZEN GARDEN TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-zen" href="zen-garden-tracker.html">
+        <div class="card-clip"><div class="wm">Z</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">🌿</div><div class="c-badge">Wellness</div></div>
+          <div class="c-title">Zen Garden Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">0% SYNCHRONIZED</span>
+</div>
+          <div class="c-stats">
+            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">Day Streak</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Current Month</span></div>
+            <div class="s-item"><span class="s-val">Seeds</span><span class="s-lbl">Milestones</span></div>
+          </div>
+        </div>
+        <div class="c-launch">↗︎</div>
+      </a>
+    </div>
+
+    <!-- RITUALS TRACKER -->
+    <div class="card-wrap">
+      <a class="card card-care" href="rituals-tracker.html">
+        <div class="card-clip"><div class="wm">R</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">🧴</div><div class="c-badge">Self-care</div></div>
+          <div class="c-title">Rituals Tracker</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">NO RITUALS YET</span>
+</div>
+          <div class="c-stats">
+            <div class="s-item"><span class="s-val">0 / 0</span><span class="s-lbl">Kept Today</span></div>
+            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">Best Streak</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Next Up</span></div>
+          </div>
+        </div>
+        <div class="c-launch">↗︎</div>
+      </a>
+    </div>
+
+    <!-- SHOPPING LIST -->
+    <div class="card-wrap">
+      <a class="card card-shop" href="Shopping-List.html">
+        <div class="card-clip"><div class="wm">$</div><div class="card-shine"></div></div>
+        <div class="c-inner">
+          <div class="c-head"><div class="c-icon">💰</div><div class="c-badge">Money</div></div>
+          <div class="c-title">Budget</div>
+<div class="c-bar">
+  <div class="c-fill"></div>
+  <span class="c-pct">SET UP MONTH</span>
+</div>
+          <div class="c-stats">
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Free Today</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Month Left</span></div>
+            <div class="s-item"><span class="s-val">0</span><span class="s-lbl">To Buy</span></div>
+          </div>
+        </div>
+        <div class="c-launch">↗︎</div>
+      </a>
+    </div>
+
+  </main>
+
+  <div class="hub-footer">
+    <span class="fd study"></span><span class="fsep"></span>
+    <span class="fd proc"></span><span class="fsep"></span>
+    <span class="fd zen"></span><span class="fsep"></span>
+    <span class="fd care"></span>
+    <span class="fsep"></span>
+    <span class="fd shop"></span>
+    <span class="fsep"></span>
+    <span class="flbl">5 trackers online</span>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════
+   CLOCK
+══════════════════════════════ */
+(function clock() {
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function tick() {
+    const d = new Date(), h = d.getHours();
+    document.getElementById('greet').textContent =
+      h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+    document.getElementById('ld').textContent = '· ' + DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONS[d.getMonth()];
+    document.getElementById('lt').textContent = '· ' + String(h).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  tick(); setInterval(tick, 10000);
+})();
+
+/* ══════════════════════════════
+   STAR FIELD
+   (A coloured twinkling star loop used to live here. A second loop further
+   down draws on the same canvas and clears it first, so every frame this one
+   drew was erased before it was seen — pure wasted work, 60 times a second.
+   The visible stars are the ones drawn below.)
+══════════════════════════════ */
+
+/* ══════════════════════════════
+   CUSTOM CURSOR
+══════════════════════════════ */
+(function cursor() {
+  const el = document.getElementById('cursor');
+  if (!el) return;
+  // Disable on touch devices
+  if (window.matchMedia('(hover:none),(pointer:coarse)').matches) {
+    el.style.display = 'none';
+    return;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    el.style.transform = 'translate(' + (e.clientX - 21) + 'px,' + (e.clientY - 21) + 'px)';
+    const card = e.target.closest('.card');
+    if (card) {
+      const m = card.className.match(/card-(\w+)/);
+      el.className = 'on-card hov-' + (m ? m[1] : '');
+    } else {
+      el.className = '';
+    }
+  });
+
+  document.addEventListener('mouseleave', function() { el.style.opacity = '0'; });
+  document.addEventListener('mouseenter', function() { el.style.opacity = '1'; });
+})();
+
+/* ══════════════════════════════
+   3D CARD TILT  ← rebuilt from scratch
+   Strategy: perspective is on .card-wrap (CSS).
+   JS applies rotateX/rotateY + scale directly on .card.
+   No perspective() in the JS transform string to avoid conflicts.
+══════════════════════════════ */
+(function tilt() {
+  // Skip tilt entirely on touch/pointer-coarse devices
+  if (window.matchMedia('(hover:none),(pointer:coarse)').matches) return;
+
+  const MAX_ROT = 12;
+
+  let raf = null;
+
+  function applyTilt(card, clientX, clientY) {
+    const r = card.getBoundingClientRect();
+    const x = (clientX - r.left) / r.width  - 0.5;
+    const y = (clientY - r.top)  / r.height - 0.5;
+
+    // A wide card tilts less, so its far edge doesn't swing out
+    const rot = MAX_ROT * Math.min(1, 420 / r.width);
+    const rx = -y * rot;
+    const ry =  x * rot;
+
+    card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale(1.02)';
+
+    card.style.setProperty('--mx', ((x + 0.5) * 100) + '%');
+    card.style.setProperty('--my', ((y + 0.5) * 100) + '%');
+    const shine = card.querySelector('.card-shine');
+    if (shine) {
+      shine.style.setProperty('--mx', ((x + 0.5) * 100) + '%');
+      shine.style.setProperty('--my', ((y + 0.5) * 100) + '%');
+    }
+  }
+
+  function resetCard(card) {
+    card.style.transition = 'transform 400ms cubic-bezier(.16,1,.3,1), box-shadow 400ms ease, border-color 400ms ease';
+    card.style.transform  = 'rotateX(0deg) rotateY(0deg) scale(1)';
+    card.classList.remove('is-tilting');
+  }
+
+  // Attach listeners to each card individually for reliability
+  document.querySelectorAll('.bento .card').forEach(function(card) {
+
+    card.addEventListener('mouseenter', function() {
+      card.style.transition = 'none';
+      card.classList.add('is-tilting');
+    });
+
+    card.addEventListener('mousemove', function(e) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function() {
+        applyTilt(card, e.clientX, e.clientY);
+        raf = null;
+      });
+    });
+
+    card.addEventListener('mouseleave', function() {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      resetCard(card);
+    });
+  });
+})();
+
+/* ══════════════════════════════
+   RIPPLE ON CLICK
+══════════════════════════════ */
+document.querySelectorAll('.card').forEach(function(card) {
+  card.addEventListener('click', function(e) {
+    const r  = card.getBoundingClientRect();
+    const sz = Math.max(r.width, r.height);
+    const rp = document.createElement('span');
+    rp.className = 'ripple';
+    rp.style.cssText =
+      'width:' + sz + 'px;height:' + sz + 'px;' +
+      'left:' + (e.clientX - r.left - sz / 2) + 'px;' +
+      'top:'  + (e.clientY - r.top  - sz / 2) + 'px;';
+    // append into clip container so it stays within card bounds
+    const clip = card.querySelector('.card-clip') || card;
+    clip.appendChild(rp);
+    setTimeout(function() { rp.remove(); }, 700);
+  });
+});
+
+/* ══════════════════════════════
+   ANIMATE PROGRESS BARS
+══════════════════════════════ */
+setTimeout(function() {
+  document.querySelectorAll('.c-fill').forEach(function(el) {
+    el.style.width = el.dataset.w + '%';
+  });
+}, 500);
+/* ══════════════════════════════════════════════════════════════
+   TRACKERS HUB - SYSTEM SYNC ENGINE (v12.0 - EXAM FIX)
+   Verified: Exams, Attendance, Streaks, and cumulative Entries.
+══════════════════════════════════════════════════════════════ */
+
+function syncHubData() {
+    try {
+        /* ── SHARED HELPERS ── */
+        // Today row: one number per app, with an optional good/bad tint
+        function glance(key, val, lbl, state) {
+            const g = document.querySelector('.g-item[data-g="' + key + '"]');
+            if (!g) return;
+            g.querySelector('.g-val').textContent = val;
+            if (lbl) g.querySelector('.g-lbl').textContent = lbl;
+            g.classList.toggle('good', state === 'good');
+            g.classList.toggle('bad', state === 'bad');
+        }
+        function todayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        function fmtMinsLeft(mins) {
+            const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+            if (h > 0) return h + 'h ' + m + 'm';
+            return m + 'm';
+        }
+
+        // --- 1. STUDY TRACKER (Academics) ---
+        const sSettings = JSON.parse(localStorage.getItem('settings_v4') || '{"dailyGoal": 8}');
+        const sData = JSON.parse(localStorage.getItem('todosState_v4') || '{"todayStats":{"studied":0}}');
+        const sAtt = JSON.parse(localStorage.getItem('attendanceState_v1') || '{"subjects":[]}');
+        const sExams = JSON.parse(localStorage.getItem('exams_v1') || '[]');
+        const sCard = document.querySelector('.card.card-study');
+
+        // Get studied seconds with date guard
+        let studiedSecs = 0;
+        if (sData.todayStats) {
+            const ts = sData.todayStats;
+            if (!ts.date || ts.date === new Date().toDateString()) {
+                studiedSecs = parseFloat(ts.studied) || 0;
+            }
+        }
+        const studiedHrs = studiedSecs / 3600;
+
+        if(sCard) {
+            // Use today's specific goal from dailyGoalByDay if available
+            const todayDow = new Date().getDay(); // 0=Sun
+            const goalHrs = (sSettings.dailyGoalByDay && sSettings.dailyGoalByDay[todayDow])
+                ? parseFloat(sSettings.dailyGoalByDay[todayDow])
+                : parseFloat(sSettings.dailyGoal) || 8;
+            const sPct = Math.min(100, Math.round((studiedHrs / goalHrs) * 100));
+
+            // Must match the Study tracker exactly: duty leaves count toward the
+            // percentage as if attended, so it's (present + duty) / total. Without the
+            // duty term this always read low and could never agree with the app.
+            // Also note `??` rather than `||` — a subject with 0 attended is a real 0,
+            // not a reason to fall back to the legacy field.
+            let totalP = 0, totalHeld = 0, totalDuty = 0;
+            (sAtt.subjects || []).forEach(s => {
+                if (s.archived) return;
+                const pres = parseInt(s.currentPresent ?? s.present ?? 0) || 0;
+                const held = parseInt(s.currentTotal ?? s.total ?? 0) || 0;
+                const duty = (s.history || []).filter(h => h && h.type === 'duty').length;
+                totalP += pres;
+                totalHeld += held;
+                totalDuty += duty;
+            });
+            // One decimal, same as the tracker's own cards
+            const attPct = totalHeld > 0 ? (((totalP + totalDuty) / totalHeld) * 100).toFixed(1) : '0.0';
+
+            let examText = "No Exams";
+            if (sExams.length > 0) {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const upcoming = sExams
+                    .map(e => ({...e, ts: new Date(e.date + 'T00:00:00').getTime()}))
+                    .filter(e => e.ts >= today.getTime())
+                    .sort((a, b) => a.ts - b.ts);
+                if (upcoming.length > 0) {
+                    const diffDays = Math.ceil((upcoming[0].ts - today.getTime()) / 86400000);
+                    if (diffDays === 0) examText = "TODAY";
+                    else if (diffDays === 1) examText = "Tomorrow";
+                    else examText = `${diffDays} Days`;
+                }
+            }
+
+            sCard.querySelector('.c-fill').style.width = sPct + '%';
+            sCard.querySelector('.c-pct').textContent = sPct + '% OF DAILY GOAL';
+            const sVals = sCard.querySelectorAll('.s-val');
+            sVals[0].textContent = `${studiedHrs.toFixed(1)} / ${goalHrs}h`;
+            sVals[1].textContent = `${attPct}%`;
+            sVals[2].textContent = examText;
+            glance('study', studiedHrs.toFixed(1) + ' / ' + goalHrs + 'h', 'Studied today', sPct >= 100 ? 'good' : null);
+        }
+
+        // --- 2. PROCRASTINATION TRACKER — Study Gate lock aware ---
+        // Must mirror the STUDY GATE engine in Procrastination-Hub.html. These had
+        // drifted (3h15m / 5h30m here vs 4h / 6h there), so the card promised an
+        // unlock the proc hub wouldn't actually give.
+        const STUDY_SECS_CYCLE = 3.5 * 3600;               // 3.5h per cycle
+        const BUDGET_MINS      = 60;                       // 60 min per cycle
+        const BONUS_SECS       = 5.5 * 3600;               // 5.5h → 2hr bonus
+        const BONUS_BUDGET_MINS= 120;
+        const BONUS_MAX_USED   = 5;
+        const FREE_BUDGET_MINS = 60;                       // daily free hour, no study needed
+        // The Zen Garden streak can make today's free hour and first earned break bigger or smaller —
+        // same file the Proc Hub reads, so the two can't disagree.
+        const zenAdj = (() => { try { return window.ZenRules ? ZenRules.adjustments() : null; } catch (e) { return null; } })();
+        const freeCapToday = Math.max(0, FREE_BUDGET_MINS + (zenAdj ? zenAdj.freeDelta : 0));
+        const cycleCap = ci => Math.max(0, BUDGET_MINS + (ci === 0 && zenAdj ? zenAdj.nextDelta : 0));
+
+        // Load gate lock state
+        let lockState = { date: todayStr(), cyclesDone: 0, procMinUsed: [], unlockedAt: null };
+        try {
+            const lRaw = localStorage.getItem('phub_lock_v1');
+            if (lRaw) {
+                const l = JSON.parse(lRaw);
+                if (l.date === todayStr()) lockState = l;
+            }
+        } catch(e) {}
+
+        const totalCycles      = Math.floor(studiedSecs / STUDY_SECS_CYCLE);
+        const secsIntoCycle    = studiedSecs - (totalCycles * STUDY_SECS_CYCLE);
+        const cycleProgressPct = Math.min(100, Math.round(secsIntoCycle / STUDY_SECS_CYCLE * 100));
+
+        // Find active budget slot (earned study cycles)
+        let activeMinsLeft = 0;
+        let isGateUnlocked = false;
+        for (let ci = 0; ci < lockState.procMinUsed.length; ci++) {
+            const mLeft = cycleCap(ci) - (lockState.procMinUsed[ci] || 0);
+            if (mLeft > 0) { activeMinsLeft = mLeft; isGateUnlocked = true; break; }
+        }
+
+        const pLib   = JSON.parse(localStorage.getItem('phub_library') || '[]');
+        const pTasks = JSON.parse(localStorage.getItem('phub_tasks') || '[]');
+        const pCard  = document.querySelector('.card.card-proc');
+
+        if(pCard) {
+            const fill     = pCard.querySelector('.c-fill');
+            const pctLabel = pCard.querySelector('.c-pct');
+            const pVals    = pCard.querySelectorAll('.s-val');
+            const pLbls    = pCard.querySelectorAll('.s-lbl');
+
+            const seriesCount     = pLib.filter(i => i.status !== 'graveyard' && i.status !== 'on-hold').length;
+            const completedSeries = pLib.filter(i => i.status === 'completed').length;
+            let totalEntries = 0, watchedEntries = 0;
+            pLib.forEach(item => {
+                if (item.status === 'graveyard' || item.status === 'on-hold') return;
+                if (item.type === 'social') {
+                    const vids = item.socialVideos || [];
+                    totalEntries += vids.length;
+                    watchedEntries += vids.filter(v => v.watched).length;
+                } else {
+                    totalEntries += (parseInt(item.totalEpisodes) || 0);
+                    if (Array.isArray(item.watchedEpisodes)) watchedEntries += item.watchedEpisodes.length;
+                }
+            });
+            const taskDoneCount = pTasks.filter(t => t.completed).length;
+
+            // Check S3 bonus
+            const s1MinsUsed = lockState.procMinUsed.length > 0 ? (lockState.procMinUsed[0] || 0) : 0;
+            const bonusGranted = lockState.bonusUnlockGranted;
+            const bonusMinsLeft = bonusGranted ? Math.max(0, BONUS_BUDGET_MINS - (lockState.bonusMinsUsed || 0)) : 0;
+            // Check S2 goal
+            const goalGranted = lockState.goalUnlockGranted;
+            const goalMinsLeft = goalGranted ? Math.max(0, BUDGET_MINS - (lockState.goalMinsUsed || 0)) : 0;
+
+            // Free hour is spent first, same order as the proc hub.
+            const freeMinsLeft = Math.max(0, freeCapToday - (lockState.freeHourMinsUsed || 0));
+            const activeSituation = freeMinsLeft > 0 ? 4 : bonusMinsLeft > 0 ? 3 : goalMinsLeft > 0 ? 2 : isGateUnlocked ? 1 : 0;
+            const activeMinsLeftFinal = activeSituation === 4 ? freeMinsLeft : activeSituation === 3 ? bonusMinsLeft : activeSituation === 2 ? goalMinsLeft : activeMinsLeft;
+            const maxBudget = activeSituation === 3 ? BONUS_BUDGET_MINS : activeSituation === 4 ? Math.max(freeCapToday, 1) : BUDGET_MINS;
+
+            if (activeSituation > 0) {
+                const budgetPct = Math.min(100, Math.round((activeMinsLeftFinal / maxBudget) * 100));
+                fill.style.width = budgetPct + '%';
+                fill.style.background = activeMinsLeftFinal < 15 ? '#ff3b6b' : activeSituation === 3 ? 'linear-gradient(90deg,#f5b800,#4ade80)' : 'linear-gradient(90deg,#4ade80,#00e5ff)';
+                const label = activeSituation === 4 ? '🎁 FREE ' : activeSituation === 3 ? '🏆 BONUS ' : activeSituation === 2 ? '🎯 GOAL ' : '🔓 ';
+                if (pctLabel) pctLabel.textContent = label + fmtMinsLeft(activeMinsLeftFinal) + ' LEFT';
+                pVals[0].textContent = fmtMinsLeft(activeMinsLeftFinal);
+                pLbls[0].textContent = activeSituation === 4 ? 'Free Hour' : activeSituation === 3 ? 'Discipline Bonus' : activeSituation === 2 ? 'Goal Unlock' : 'Budget Left';
+                glance('proc', fmtMinsLeft(activeMinsLeftFinal), 'Break time left', activeMinsLeftFinal < 15 ? 'bad' : 'good');
+            } else {
+                fill.style.width      = cycleProgressPct + '%';
+                fill.style.background = 'linear-gradient(90deg, #4f8ef7, #00d9f5)';
+                const secsNeeded = Math.max(0, STUDY_SECS_CYCLE - secsIntoCycle);
+                const hN = Math.floor(secsNeeded/3600), mN = Math.floor((secsNeeded%3600)/60);
+                const neededStr = hN > 0 ? hN + 'h ' + mN + 'm' : mN + 'm';
+                if (pctLabel) pctLabel.textContent = '🔒 STUDY ' + neededStr + ' MORE';
+                pVals[0].textContent = studiedHrs.toFixed(1) + 'h / ' + (STUDY_SECS_CYCLE / 3600) + 'h';
+                pLbls[0].textContent = 'Study Progress';
+                glance('proc', '🔒 ' + neededStr, 'Study to unlock', 'bad');
+            }
+
+            pVals[1].textContent = seriesCount + pTasks.length;
+            pLbls[1].textContent = `${totalEntries + pTasks.length} Entries Total`;
+            pVals[2].textContent = completedSeries + taskDoneCount;
+            pLbls[2].textContent = `${watchedEntries + taskDoneCount} Entries Done`;
+        }
+
+        // --- 3. ZEN GARDEN TRACKER (Wellness) ---
+const zData = JSON.parse(localStorage.getItem('zen_garden_data') || '{"days":{}}');
+const zCard = document.querySelector('.card.card-zen');
+
+if(zCard) {
+    let streak = 0;
+    let checkDate = new Date();
+    // Use local date to avoid UTC timezone shift
+    const localDate = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const todayStr = localDate(checkDate);
+    if (!zData.days[todayStr]) checkDate.setDate(checkDate.getDate() - 1);
+
+    while (true) {
+        const key = localDate(checkDate);
+        if (zData.days[key]) { streak++; checkDate.setDate(checkDate.getDate() - 1); } 
+        else { break; }
+    }
+
+    // NEW: Dynamic Milestone Scaling
+    let streakGoal = 30; // Default goal
+    let milestoneLabel = "HARVEST READY";
+
+    if (streak > 30 && streak <= 100) {
+        streakGoal = 100;
+        milestoneLabel = "ELITE STREAK";
+    } else if (streak > 100) {
+        streakGoal = 365;
+        milestoneLabel = "ZEN MASTER";
+    }
+
+    const zPct = Math.min(100, Math.round((streak / streakGoal) * 100));
+    const totalSeeds = Object.values(zData.days).filter(val => val === true).length;
+    
+    // Update the line
+    zCard.querySelector('.c-fill').style.width = zPct + '%';
+    
+    // Update the label to show your current milestone progress
+    zCard.querySelector('.c-pct').textContent = `${zPct}% TO ${streakGoal} DAYS (${milestoneLabel})`;
+    
+    const zVals = zCard.querySelectorAll('.s-val');
+    zVals[0].textContent = streak;
+    zVals[1].textContent = new Date().toLocaleString('en-us', { month: 'short' }).toUpperCase();
+    zVals[2].textContent = totalSeeds;
+    glance('zen', streak + (streak === 1 ? ' day' : ' days'), 'Zen streak', streak ? 'good' : null);
+}
+
+        // --- 4. RITUALS TRACKER (Self-care) ---
+        // Same rules as rituals-tracker.html: a routine is due on its weekdays, or
+        // every N days from its start; no set time = one "anytime" slot; skipped
+        // slots don't count against you.
+        (function ritualsCard() {
+            const rCard = document.querySelector('.card.card-care');
+            if (!rCard) return;
+            const R = JSON.parse(localStorage.getItem('rituals_v1') || '{"routines":[],"log":{}}');
+            const routines = R.routines || [], log = R.log || {};
+            const ymd = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            const parseD = s => { const p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12); };
+            const addD = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); return ymd(d); };
+            const due = (r, d) => {
+                if (r.paused || (r.created && d < r.created)) return false;
+                const sc = r.schedule || {};
+                if (sc.type === 'every') { const n = Math.round((parseD(d) - parseD(sc.start || r.created || d)) / 86400000); return n >= 0 && n % Math.max(1, sc.every || 1) === 0; }
+                return (sc.days || []).includes(parseD(d).getDay());
+            };
+            const slots = r => (r.times && r.times.length) ? r.times.length : 1;
+            const ent = (d, r, i) => (log[d] || {})[r.id + '|' + i];
+            // Same day boundary as the tracker: until 4 am it's still last night.
+            const rawM = new Date().getHours() * 60 + new Date().getMinutes();
+            const tStr = rawM < 240 ? addD(ymd(new Date()), -1) : ymd(new Date());
+            const nowM = rawM < 240 ? rawM + 1440 : rawM;
+            // Rituals are set in day windows; ranges match the tracker's defaults unless changed there.
+            const PARTS = { dawn: ['Early morning', 360, 480], morning: ['Morning', 480, 720], afternoon: ['Afternoon', 720, 1020], evening: ['Evening', 1020, 1260], night: ['Night', 1260, 1440] };
+            const win = t => {
+                if (/^\d{1,2}:\d{2}$/.test(t)) { const m = +t.split(':')[0] * 60 + +t.split(':')[1]; return { name: t, from: m, to: m + 1 }; }
+                const d = PARTS[t]; if (!d) return null;
+                const o = (R.parts || {})[t] || {};
+                let from = o.from != null ? o.from : d[1], to = o.to != null ? o.to : d[2];
+                if (to <= from) to += 1440;
+                return { name: d[0], from, to };
+            };
+
+            let kept = 0, owed = 0, next = null;
+            routines.forEach(r => {
+                if (!due(r, tStr)) return;
+                for (let i = 0; i < slots(r); i++) {
+                    const e = ent(tStr, r, i);
+                    if (e && e.s === 'skip') continue;
+                    owed++;
+                    if (e && e.s === 'done') { kept++; continue; }
+                    if (e && e.s === 'miss') continue;               // marked ✕ — not "next up"
+                    const w = win((r.times || [])[i]);
+                    // First open ritual whose window hasn't closed; one already open reads "Now".
+                    if (w && w.to > nowM && (!next || w.from < next.from)) next = { from: w.from, t: w.from <= nowM ? 'Now' : w.name, name: r.name };
+                }
+            });
+            // best current streak (skips neutral, today doesn't break it)
+            let best = 0;
+            routines.forEach(r => {
+                let n = 0, d = tStr;
+                for (let k = 0; k < 400; k++, d = addD(d, -1)) {
+                    if (r.created && d < r.created) break;
+                    if (!due(r, d)) continue;
+                    let done = 0, skip = 0, miss = 0;
+                    for (let i = 0; i < slots(r); i++) { const e = ent(d, r, i); if (e && e.s === 'done') done++; else if (e && e.s === 'skip') skip++; else if (e && e.s === 'miss') miss++; }
+                    if (done + skip === slots(r)) { if (done) n++; continue; }
+                    if (d === tStr && done + skip + miss < slots(r)) continue;   // today still open
+                    break;
+                }
+                best = Math.max(best, n);
+            });
+
+            const pct = owed ? Math.round(kept / owed * 100) : 0;
+            rCard.querySelector('.c-fill').style.width = pct + '%';
+            rCard.querySelector('.c-pct').textContent = !routines.length ? 'NO RITUALS YET'
+                : !owed ? 'NOTHING DUE TODAY' : pct + '% OF TODAY KEPT';
+            const v = rCard.querySelectorAll('.s-val'), l = rCard.querySelectorAll('.s-lbl');
+            v[0].textContent = kept + ' / ' + owed;
+            v[1].textContent = best;
+            v[2].textContent = next ? next.t : (owed && kept === owed ? 'All done' : '—');
+            l[2].textContent = next ? next.name : 'Next Up';
+            glance('care', routines.length ? kept + ' / ' + owed : '—', !routines.length ? 'No rituals yet' : next ? 'Next · ' + next.name : 'Rituals kept', owed && kept === owed ? 'good' : null);
+        })();
+
+        // --- 5. BUDGET (same math as Shopping-List.html) ---
+        (function budgetCard() {
+            const sCard = document.querySelector('.card.card-shop');
+            if (!sCard) return;
+            let items = [], bd = {};
+            try { items = JSON.parse(localStorage.getItem('shopping_list_v1')) || []; } catch (_) {}
+            try { bd = JSON.parse(localStorage.getItem('budget_v1')) || {}; } catch (_) {}
+            const todo = items.filter(i => !i.done && i.kind !== 'wish');
+            const v = sCard.querySelectorAll('.s-val');
+            v[2].textContent = todo.length;
+            const d = new Date(), pad = n => String(n).padStart(2, '0');
+            const today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()), ym = today.slice(0, 7);
+            const m = (bd.months || {})[ym];
+            const rs = n => (n < 0 ? '−₹' : '₹') + Math.round(Math.abs(n)).toLocaleString('en-IN');
+            if (!m || !m.income) { sCard.querySelector('.c-fill').style.width = '0%'; sCard.querySelector('.c-pct').textContent = 'SET UP MONTH'; glance('shop', 'Set up', 'Budget this month'); return; }
+            const spendable = m.income - Math.round(m.income * (m.savePct != null ? m.savePct : (bd.savePct || 0)) / 100) + (m.topUp || 0);
+            const exp = (bd.expenses || []).filter(e => (e.date || '').slice(0, 7) === ym);
+            const spent = exp.reduce((s, e) => s + e.amt, 0);
+            const todayExp = exp.filter(e => e.date === today), spentToday = todayExp.reduce((s, e) => s + e.amt, 0);
+            const daily = (bd.usuals || []).filter(u => u.daily), fixed = daily.reduce((s, u) => s + u.amt, 0);
+            const fixedSpent = daily.reduce((s, u) => s + Math.min(u.amt, todayExp.filter(e => e.usualId === u.id).reduce((a, e) => a + e.amt, 0)), 0);
+            const daysLeft = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
+            const left = spendable - spent;
+            const free = (left + spentToday - fixed * daysLeft) / daysLeft - (spentToday - fixedSpent);
+            const pct = Math.min(100, Math.round(spent / Math.max(1, spendable) * 100));
+            sCard.querySelector('.c-fill').style.width = pct + '%';
+            sCard.querySelector('.c-pct').textContent = left < 0 ? 'OVER BUDGET' : pct + '% OF MONTH SPENT';
+            v[0].textContent = rs(free);
+            v[1].textContent = rs(left);
+            glance('shop', rs(free), free < 0 ? 'Over today' : 'Free today', free < 0 ? 'bad' : null);
+        })();
+
+    } catch(err) { console.error("Sync Logic Error:", err); }
+}
+
+(function engine() {
+    const cv = document.getElementById('bg-canvas'), cx = cv.getContext('2d');
+    let S = [];
+    const res = () => { cv.width=innerWidth; cv.height=innerHeight; S=[]; for(let i=0;i<120;i++) S.push({x:Math.random()*cv.width, y:Math.random()*cv.height, r:Math.random()*1.1, sp:Math.random()*0.1+0.05}); };
+    // ~30fps with time-based movement (same drift speed as the old per-frame
+    // step at 60fps), and every star in one path with a single fill() instead
+    // of 120 separate fills. The stars move a fraction of a pixel per frame, so
+    // it looks the same at half the frames.
+    let lastT = 0;
+    const draw = (t) => {
+      requestAnimationFrame(draw);
+      if (t - lastT < 32) return;
+      const step = lastT ? Math.min((t - lastT) / 16.67, 4) : 1;
+      lastT = t;
+      cx.clearRect(0,0,cv.width,cv.height); cx.fillStyle='#fff'; cx.globalAlpha=0.3;
+      cx.beginPath();
+      S.forEach(s=>{ s.y-=s.sp*step; if(s.y<0) s.y=cv.height; cx.moveTo(s.x+s.r,s.y); cx.arc(s.x,s.y,s.r,0,Math.PI*2); });
+      cx.fill();
+    };
+    addEventListener('resize', res); res(); requestAnimationFrame(draw);
+
+    syncHubData();
+    setInterval(syncHubData, 3000); 
+})();
+</script>
+<script src="hub-nav.js?v=20260924a"></script>
+
+<!-- ══ CARD TRANSITION ══════════════════════════════════════════════════════
+     Why this exists: clicking a card felt like the hub froze for a few seconds
+     and then snapped to the new app. Nothing was actually stuck — a browser
+     keeps the OLD page on screen until the NEW one is ready to paint, and
+     parsing Study's 1.8MB takes a phone a second or two. So you sat looking at
+     a frozen hub with no feedback.
+
+     The page is already cached, so this isn't download time and can't be fixed
+     by caching. What it needs is for the wait to be VISIBLE. Painting an
+     overlay before navigating turns "is it broken?" into an obvious loading
+     state, and it blends into the target app's own dark boot screen.
+-->
+<style id="hub-transition-css">
+#hub-transition{
+  position:fixed;inset:0;z-index:2147483600;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:#060810;opacity:0;pointer-events:none;
+  transition:opacity .14s ease;
+  font-family:'Space Grotesk',system-ui,sans-serif;
+}
+#hub-transition.on{opacity:1;pointer-events:all}
+#hub-transition .ht-icon{font-size:38px;line-height:1}
+#hub-transition .ht-name{
+  font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:.18em;
+  text-transform:uppercase;color:rgba(232,238,248,.55);
+}
+#hub-transition .ht-bar{
+  width:120px;height:2px;border-radius:2px;overflow:hidden;
+  background:rgba(255,255,255,.08);
+}
+#hub-transition .ht-bar i{
+  display:block;height:100%;width:40%;border-radius:2px;
+  background:var(--ht-accent,#4f8ef7);
+  animation:htSlide 1s ease-in-out infinite;
+}
+@keyframes htSlide{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(350%)}
+}
+</style>
+<script>
+(function () {
+  'use strict';
+  var el = document.createElement('div');
+  el.id = 'hub-transition';
+  el.innerHTML = '<div class="ht-icon"></div><div class="ht-name"></div>' +
+                 '<div class="ht-bar"><i></i></div>';
+  document.body.appendChild(el);
+
+  var META = {
+    'Study-Schedule-Pro.html':  { icon: '📚', name: 'Study Tracker',           accent: '#4f8ef7' },
+    'Procrastination-Hub.html': { icon: '⚡', name: 'Procrastination Tracker', accent: '#00d9f5' },
+    'zen-garden-tracker.html':  { icon: '🌿', name: 'Zen Garden',              accent: '#4ade80' },
+    'rituals-tracker.html':     { icon: '🧴', name: 'Rituals',                 accent: '#e3a79a' },
+    'Shopping-List.html':       { icon: '💰', name: 'Budget',                  accent: '#f2b84b' }
+  };
+
+  document.querySelectorAll('.card, .g-item').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      var href = card.getAttribute('href');
+      var meta = META[href];
+      if (!meta) return;                       // unknown target: behave as before
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // open-in-new-tab
+
+      e.preventDefault();
+      el.querySelector('.ht-icon').textContent = meta.icon;
+      el.querySelector('.ht-name').textContent = meta.name;
+      el.style.setProperty('--ht-accent', meta.accent);
+      el.classList.add('on');
+
+      // Paint the overlay before handing the main thread to the next document
+      // (one frame isn't reliably enough for the paint to land), but NEVER let
+      // navigation depend on rAF: it's paused entirely while a tab is hidden or
+      // backgrounded, which would leave the click doing nothing at all.
+      var went = false;
+      function go() { if (went) return; went = true; location.href = href; }
+      requestAnimationFrame(function () { requestAnimationFrame(go); });
+      setTimeout(go, 250);          // hard guarantee if frames never come
+    });
+  });
+
+  // Coming back via the back button must not leave the overlay stuck on.
+  window.addEventListener('pageshow', function () { el.classList.remove('on'); });
+})();
+</script>
+
+
+<!-- ══ SAFE AREA ════════════════════════════════════════════════════════════
+     Every app declares apple-mobile-web-app-status-bar-style=black-translucent,
+     which in an installed PWA makes the web view fill the WHOLE screen —
+     including the strip behind the clock, signal and battery. Without a top
+     inset the first row of UI sits underneath the status bar and can't be
+     tapped, which is exactly what happened to the sub-tab strip.
+
+     env(safe-area-inset-top) is 0 in a normal browser tab, so this is inert
+     everywhere except the installed app, where it's ~47-59px. -->
+<style id="safe-area-fix">
+.page { padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important; }
+@media (max-width: 700px){ .page { padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important; } }
+</style>
+
+<!-- The "opening…" overlay's loading bar only runs while the overlay is shown -->
+<style id="perf-v1">
+#hub-transition:not(.on) .ht-bar i { animation-play-state: paused; }
+</style>
+
+</body>
+</html>

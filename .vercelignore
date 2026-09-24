@@ -1,0 +1,8 @@
+# Edge Function source is deployed to Supabase, not to the web
+supabase/
+# setup notes don't need to be publicly readable
+*.md
+supabase-schema.sql
+supabase-push-schema.sql
+# local env files hold tokens — never serve them
+.env*

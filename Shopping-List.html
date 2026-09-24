@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Budget</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-title" content="Budget">
+
+<!-- PWA · same service-worker setup as the other trackers -->
+<script>
+if ('serviceWorker' in navigator) {
+  addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function (e) {
+      console.warn('[pwa] service worker registration failed', e);
+    });
+  });
+  var swHadController = !!navigator.serviceWorker.controller;
+  var swLastInput = 0;
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (t) {
+    addEventListener(t, function () { swLastInput = Date.now(); }, true);
+  });
+  navigator.serviceWorker.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'sw-updated' || !swHadController) return;
+    var ae = document.activeElement;
+    var typing = ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable);
+    var busy = typing || (swLastInput && Date.now() - swLastInput < 30000);
+    var last = 0; try { last = +sessionStorage.getItem('sw_reloaded_at') || 0; } catch (_) {}
+    if (!busy && Date.now() - last > 15000) {
+      try { sessionStorage.setItem('sw_reloaded_at', String(Date.now())); } catch (_) {}
+      location.reload();
+      return;
+    }
+    if (document.getElementById('sw-update-pill')) return;
+    var b = document.createElement('button');
+    b.id = 'sw-update-pill';
+    b.type = 'button';
+    b.textContent = '✨ Updated — tap to refresh';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:2147483646;' +
+      'padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(18,20,28,.94);color:#fff;' +
+      'font:600 13px system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;';
+    b.onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  });
+}
+</script>
+
+<!-- Cross-device sync. Must load before any app script. -->
+<script src="sync-config.js?v=20260924a"></script>
+<script src="sync-engine.js?v=20260924a"></script>
+<script src="push-client.js?v=20260924a"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #12151d;
+    --surface2: #171b25;
+    --border: #262b38;
+    --text: #e7e9ee;
+    --text-dim: #8b94a8;
+    --text-faint: #565f74;
+    --accent: #f2b84b;
+    --accent-dim: #5c4a26;
+    --accent-glow: rgba(242, 184, 75, 0.15);
+    --good: #7fd99a;
+    --good-dim: rgba(127, 217, 154, 0.12);
+    --danger: #e2726f;
+    --danger-dim: rgba(226, 114, 111, 0.12);
+    --blue: #7fa1e0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mono { font-family: 'DM Mono', ui-monospace, monospace; }
+
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 18px 24px;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 760px) {
+    body {
+      background:
+        radial-gradient(ellipse 900px 500px at 15% -10%, rgba(242,184,75,.05), transparent 60%),
+        radial-gradient(ellipse 700px 600px at 100% 100%, rgba(127,217,154,.035), transparent 55%),
+        var(--bg);
+    }
+    .app { max-width: 760px; padding-top: 56px; }
+  }
+
+  /* ── Header ──
+     Switch App, Search, Sync and Alerts are baked in here, so hub-nav.js hides
+     its floating pill on this page and sync/push skip their own fallbacks. */
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .header-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent-glow); border: 1px solid var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .header-text { flex: 1; min-width: 0; }
+  .header-text h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .header-text span { font-size: 12px; color: var(--text-faint); }
+  .header-icons { display: flex; gap: 8px; flex-shrink: 0; }
+  .icon-chip {
+    flex-shrink: 0; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 50%; cursor: pointer; font-size: 13px;
+  }
+  .icon-chip:hover { color: var(--text); border-color: var(--accent-dim); }
+  .tsync-dot { width: 8px; height: 8px; border-radius: 50%; background: #4a5568; flex-shrink: 0; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px; margin-bottom: 16px;
+  }
+  .tab {
+    background: none; border: none; color: var(--text-dim);
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 9px 4px; border-radius: 9px; cursor: pointer;
+  }
+  .tab.on { background: var(--surface2); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+
+  /* ── Cards & common bits ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 12px;
+  }
+  .section-label {
+    font-size: 11px; font-weight: 700; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin: 18px 0 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .link-btn {
+    background: none; border: none; color: var(--text-dim);
+    font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer;
+    text-transform: none; letter-spacing: normal; padding: 2px 4px;
+  }
+  .link-btn:hover { color: var(--accent); }
+  .bar { height: 7px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 99px; background: var(--accent); transition: width .3s ease; }
+  .bar.good > div { background: var(--good); }
+  .bar.over > div { background: var(--danger); }
+  .muted { color: var(--text-dim); }
+  .faint { color: var(--text-faint); }
+
+  .btn {
+    background: var(--accent); color: #201404; border: none; border-radius: 10px;
+    padding: 11px 18px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(226,114,111,.35); }
+
+  input.field, select.field {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 11px 12px; font-family: inherit; font-size: 14.5px; min-width: 0;
+    color-scheme: dark;
+  }
+  input.field:focus, select.field:focus { outline: none; border-color: var(--accent-dim); }
+  input.field::placeholder { color: var(--text-faint); }
+
+  /* ── Today hero ── */
+  .hero { text-align: center; padding: 22px 16px 18px; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ''; position: absolute; inset: -40% -20% auto; height: 180px;
+    background: radial-gradient(ellipse at center, var(--hero-glow, rgba(127,217,154,.14)), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-lbl { font-size: 12px; color: var(--text-dim); font-weight: 600; letter-spacing: .02em; position: relative; }
+  .hero-num { font-size: 46px; font-weight: 700; letter-spacing: -0.03em; margin: 4px 0 2px; position: relative; }
+  .hero-num.good { color: var(--good); }
+  .hero-num.over { color: var(--danger); }
+  .hero-sub { font-size: 12.5px; color: var(--text-dim); position: relative; line-height: 1.55; }
+  .hero-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin-top: 16px; position: relative;
+  }
+  .hs { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 6px; }
+  .hs b { display: block; font-size: 15px; font-weight: 700; }
+  .hs span { font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ── Usuals (one-tap expenses) ── */
+  .usuals { display: flex; flex-wrap: wrap; gap: 8px; }
+  .usual {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 8px 13px 8px 10px;
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    transition: transform .1s ease, border-color .15s ease;
+  }
+  .usual:active { transform: scale(0.95); }
+  .usual .amt { color: var(--good); font-weight: 500; font-size: 12px; }
+  .usual.logged { border-color: rgba(127,217,154,.4); background: var(--good-dim); }
+  .usual.logged::after { content: '✓'; color: var(--good); font-size: 11px; }
+  .usual .daily { font-size: 9.5px; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 99px; padding: 0 5px; }
+  .usual.add { color: var(--text-dim); border-style: dashed; padding: 8px 13px; }
+  .hint { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+
+  /* ── Quick add ── */
+  .qa-row { display: flex; gap: 8px; }
+  .qa-row .field { width: auto; flex: 1; }
+  .qa-row .qa-amt { flex: 0 0 110px; width: 110px; font-size: 18px !important; font-weight: 700; }
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .cat {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 999px; padding: 6px 11px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .cat.on { color: var(--text); border-color: var(--c, var(--accent)); background: color-mix(in srgb, var(--c, var(--accent)) 16%, transparent); }
+  .qa-foot { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .qa-foot input[type=date] { flex: 1; }
+
+  /* ── Rows (expenses & items) ── */
+  .list { display: flex; flex-direction: column; gap: 6px; }
+  .row {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .row.click { cursor: pointer; user-select: none; }
+  .row.click:active { background: var(--surface2); }
+  .row-ico {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent);
+  }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { font-size: 14px; word-break: break-word; }
+  .row-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+  .row-amt { font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .x {
+    background: none; border: none; color: var(--text-faint);
+    font-size: 16px; line-height: 1; padding: 4px 6px; cursor: pointer; flex-shrink: 0;
+  }
+  .x:hover { color: var(--danger); }
+  .day-head { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-dim); margin: 12px 2px 6px; font-weight: 600; }
+
+  /* Shopping items */
+  .add-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .add-extra { display: flex; gap: 8px; margin-bottom: 6px; }
+  .kind-toggle {
+    flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 9px; padding: 0 12px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .kind-toggle.wish { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-glow); }
+  .add-extra input.field { padding: 9px 10px; font-size: 13px; }
+  #addPrice { width: 84px; flex-shrink: 0; }
+  .check {
+    width: 21px; height: 21px; border-radius: 50%; border: 1.5px solid var(--border);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: transparent; transition: all .15s ease;
+  }
+  .row.done .check { background: var(--accent); border-color: var(--accent); color: #201404; }
+  .row.done .row-title { color: var(--text-faint); text-decoration: line-through; }
+  .badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .badge {
+    font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border);
+  }
+  .badge.price { color: var(--good); border-color: rgba(127,217,154,.3); background: var(--good-dim); }
+  .badge.date { color: var(--blue); border-color: rgba(127,161,224,.3); background: rgba(127,161,224,.08); }
+  .badge.date.overdue, .badge.nofit { color: var(--danger); border-color: rgba(226,114,111,.35); background: var(--danger-dim); }
+  .badge.fit { color: var(--good); border-color: rgba(127,217,154,.3); background: var(--good-dim); }
+  .badge.goal { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-glow); }
+  .mini-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 8px; padding: 5px 9px; font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  }
+  .mini-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+  /* ── Goals ── */
+  .goal-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .goal-name { font-size: 15px; font-weight: 700; }
+  .goal-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .goal-nums { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-top: 7px; }
+  .goal-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .pool { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .pool b { font-size: 22px; color: var(--good); }
+
+  /* ── Emergency fund ── */
+  .ef-card { border-color: rgba(127,161,224,.35); background: linear-gradient(160deg, rgba(127,161,224,.08), var(--surface) 60%); }
+  .ef-ico { --c: #7fa1e0; width: 38px !important; height: 38px !important; font-size: 19px !important; }
+  .ef-empty .btn { margin-top: 4px; }
+  .bar.ef > div { background: var(--blue); }
+  .ef-log { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .ef-log > div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--text-dim); }
+  .ef-prompt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; font-size: 13px;
+    border-color: rgba(127,161,224,.35); }
+  .ef-prompt .btn { padding: 8px 12px; font-size: 13px; background: var(--blue); color: #0b1020; white-space: nowrap; }
+
+  /* ── Insights ── */
+  .chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 6px; }
+  .chart .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
+  .chart .col > div { background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .85; }
+  .chart .col.over > div { background: var(--danger); }
+  .chart .col.today > div { opacity: 1; box-shadow: 0 0 0 1px var(--text); }
+  .chart .col.future > div { background: var(--surface2); }
+  .chart-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--text-faint); pointer-events: none; }
+  .chart-wrap { position: relative; }
+  .chart-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-faint); margin-top: 5px; }
+  .cat-line { margin-bottom: 11px; }
+  .cat-line-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; }
+  .stat b { display: block; font-size: 17px; }
+  .stat span { font-size: 11px; color: var(--text-faint); }
+
+  .empty { text-align: center; padding: 26px 16px; color: var(--text-faint); font-size: 13px; line-height: 1.6; }
+
+  /* ── Sheet (modal) ── */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 99990;
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: fade .15s ease;
+  }
+  @media (min-width: 600px) { .sheet-bg { align-items: center; } }
+  .sheet {
+    width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+    animation: up .2s ease;
+  }
+  @media (min-width: 600px) { .sheet { border-radius: 18px; } }
+  .sheet h3 { font-size: 17px; margin-bottom: 4px; }
+  .sheet p.sd { font-size: 12.5px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5; }
+  .sheet label { display: block; font-size: 11.5px; color: var(--text-dim); font-weight: 600; margin: 10px 0 5px; }
+  .sheet .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13.5px; cursor: pointer; }
+  .sheet .toggle-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .sheet-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .sheet-actions .btn { flex: 1; }
+  .sheet-actions .btn.danger { flex: 0 0 auto; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes up { from { transform: translateY(30px); opacity: 0; } }
+
+  #toast-host {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%); z-index: 999999;
+    display: flex; flex-direction: column; gap: 8px; align-items: center;
+  }
+  .toast {
+    background: rgba(23, 27, 37, 0.97); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 10px; font-size: 12.5px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4); animation: up .2s ease; max-width: 92vw;
+  }
+  .toast button { background: none; border: none; color: var(--accent); font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+
+  @media (max-width: 420px) {
+    .header-text h1 { font-size: 17px; }
+    .hero-num { font-size: 40px; }
+    .tab { font-size: 12px; }
+    .qa-row .qa-amt { flex-basis: 96px; width: 96px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+<div id="toast-host"></div>
+
+<script>
+// ═══════════════════════════ DATA ═══════════════════════════
+// shopping_list_v1 keeps its shape because Study todos and the Hub read it.
+const SHOP_KEY = 'shopping_list_v1';
+const BUDGET_KEY = 'budget_v1';
+const TAB_KEY = 'budget_tab';
+
+const CATS = [
+  { id: 'food',     icon: '🍱', label: 'Food',     c: '#f2b84b' },
+  { id: 'travel',   icon: '🛺', label: 'Travel',   c: '#7fa1e0' },
+  { id: 'shopping', icon: '🛍️', label: 'Shopping', c: '#d98fd0' },
+  { id: 'fun',      icon: '🎮', label: 'Fun',      c: '#7fd99a' },
+  { id: 'bills',    icon: '📱', label: 'Bills',    c: '#e2726f' },
+  { id: 'other',    icon: '💸', label: 'Other',    c: '#8b94a8' },
+];
+const catOf = id => CATS.find(c => c.id === id) || CATS[CATS.length - 1];
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function localDate(d) {
+  const dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+const monthKey = (ds) => (ds || localDate()).slice(0, 7);
+function fmtDate(s) { return new Date(s + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); }
+function fmtDay(s) {
+  const t = localDate(), y = localDate(new Date(Date.now() - 864e5));
+  if (s === t) return 'Today';
+  if (s === y) return 'Yesterday';
+  return new Date(s + 'T12:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+function money(n) {
+  const neg = n < 0; n = Math.abs(Math.round(n * 100) / 100);
+  const s = n.toLocaleString('en-IN', { maximumFractionDigits: n % 1 ? 2 : 0 });
+  return (neg ? '−₹' : '₹') + s;
+}
+function num(v) { const n = parseFloat(v); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null; }
+
+function loadShop() {
+  try { const d = JSON.parse(localStorage.getItem(SHOP_KEY)); return Array.isArray(d) ? d : []; } catch (_) { return []; }
+}
+function saveShop(items) { localStorage.setItem(SHOP_KEY, JSON.stringify(items)); }
+
+function blankBudget() {
+  return { months: {}, savePct: 20, expenses: [], usuals: [], goals: [], savedOut: 0, migrated: false };
+}
+function loadBudget() {
+  let b;
+  try { b = JSON.parse(localStorage.getItem(BUDGET_KEY)); } catch (_) {}
+  b = Object.assign(blankBudget(), b && typeof b === 'object' ? b : {});
+  return b;
+}
+function saveBudget(b) { localStorage.setItem(BUDGET_KEY, JSON.stringify(b)); }
+
+// ═══════════════════════ SHOPPING ↔ EXPENSES ═══════════════════════
+// A bought shopping item with a price becomes a Shopping expense, and un-ticking
+// it removes that expense. This runs on every render, so ticks made from Study
+// todos on another device get logged too. Items already bought before the
+// budget existed are marked once and never logged.
+function reconcileShop() {
+  const b = loadBudget(), items = loadShop();
+  let bChanged = false, sChanged = false;
+
+  if (!b.migrated) {
+    items.forEach(it => { if (it.done && !it.expenseId) { it.expenseId = 'pre'; sChanged = true; } });
+    b.migrated = true; bChanged = true;
+  }
+
+  items.forEach(it => {
+    if (it.done && it.price != null && !it.expenseId) {
+      const e = { id: uid(), amt: it.price, cat: 'shopping', note: it.text, date: localDate(), ts: Date.now(), shopId: it.id };
+      b.expenses.push(e);
+      it.expenseId = e.id; bChanged = sChanged = true;
+    } else if (!it.done && it.expenseId) {
+      if (it.expenseId !== 'pre') b.expenses = b.expenses.filter(e => e.id !== it.expenseId);
+      delete it.expenseId; bChanged = sChanged = true;
+    }
+  });
+
+  if (sChanged) saveShop(items);
+  if (bChanged) saveBudget(b);
+}
+
+// ═══════════════════════════ MATH ═══════════════════════════
+// Pay yourself first. Savings come off the month's money up front, and what's
+// left is spread across the remaining days. Daily usuals (lunch, chai) are
+// reserved for every remaining day, so "free today" is money you can actually use.
+function monthPlan(b, ym) {
+  const m = b.months[ym];
+  if (!m || !m.income) return null;
+  const pct = m.savePct != null ? m.savePct : b.savePct;
+  const save = Math.round(m.income * pct / 100);
+  const topUp = m.topUp || 0;
+  return { income: m.income, pct, save, topUp, spendable: m.income - save + topUp };
+}
+
+function calc(b) {
+  const today = localDate(), ym = monthKey(today);
+  const now = new Date();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = dim - now.getDate() + 1;
+  const plan = monthPlan(b, ym);
+
+  const monthExp = b.expenses.filter(e => monthKey(e.date) === ym);
+  const spent = monthExp.reduce((s, e) => s + e.amt, 0);
+  const todayExp = monthExp.filter(e => e.date === today);
+  const spentToday = todayExp.reduce((s, e) => s + e.amt, 0);
+
+  const daily = b.usuals.filter(u => u.daily);
+  const fixedPerDay = daily.reduce((s, u) => s + u.amt, 0);
+  // Money already spent today on each daily usual, capped at its planned amount
+  const fixedSpentToday = daily.reduce((s, u) => {
+    const got = todayExp.filter(e => e.usualId === u.id).reduce((a, e) => a + e.amt, 0);
+    return s + Math.min(got, u.amt);
+  }, 0);
+
+  if (!plan) return { today, ym, dim, daysLeft, plan: null, spent, spentToday, monthExp, fixedPerDay };
+
+  const left = plan.spendable - spent;
+  const startOfToday = left + spentToday;
+  const flexPerDay = (startOfToday - fixedPerDay * daysLeft) / daysLeft;
+  const freeToday = flexPerDay - (spentToday - fixedSpentToday);
+  const reservedAhead = fixedPerDay * (daysLeft - 1) + (fixedPerDay - fixedSpentToday);
+  const freeMonth = left - reservedAhead;
+
+  return { today, ym, dim, daysLeft, plan, spent, spentToday, monthExp, left, flexPerDay, freeToday, freeMonth, fixedPerDay, fixedSpentToday };
+}
+
+// Everything set aside so far: each month's savings, minus what went into goals
+function savingsPool(b) {
+  const total = Object.keys(b.months).filter(ym => ym <= monthKey()).reduce((s, ym) => {
+    const p = monthPlan(b, ym); return s + (p ? p.save : 0);
+  }, 0);
+  const inGoals = b.goals.reduce((s, g) => s + (g.saved || 0), 0);
+  const inEF = efDeposits(b);
+  return { total, inGoals, inEF, free: total - inGoals - inEF - (b.savedOut || 0) };
+}
+
+// ═══════════════════════ EMERGENCY FUND ═══════════════════════
+// A ledger of deposits (+) and uses (−). Money taken out tops up that month's
+// budget, so an emergency doesn't eat into your daily spending money.
+const EF_BLANK = { months: 3, custom: null, autoPct: 50, log: [] };
+const efOn = b => !!b.ef;
+const efBalance = b => efOn(b) ? b.ef.log.reduce((s, x) => s + x.amt, 0) : 0;
+const efDeposits = b => efOn(b) ? b.ef.log.filter(x => x.amt > 0).reduce((s, x) => s + x.amt, 0) : 0;
+
+// Average spend of up to three past months, or this month's plan when there's no history yet
+function efMonthlyBase(b) {
+  const ym = monthKey();
+  const totals = {};
+  b.expenses.forEach(e => { const m = monthKey(e.date); if (m < ym) totals[m] = (totals[m] || 0) + e.amt; });
+  const past = Object.keys(totals).sort().slice(-3);
+  if (past.length) return past.reduce((s, m) => s + totals[m], 0) / past.length;
+  const p = monthPlan(b, ym);
+  return p ? p.income - p.save : 0;
+}
+function efTarget(b) {
+  if (!efOn(b)) return 0;
+  if (b.ef.custom) return b.ef.custom;
+  return Math.ceil(efMonthlyBase(b) * b.ef.months / 100) * 100;
+}
+
+// This month's automatic deposit: autoPct of the month's savings, capped at what the fund still needs
+function applyAutoEF() {
+  const b = loadBudget();
+  if (!efOn(b)) return;
+  const ym = monthKey(), p = monthPlan(b, ym);
+  const idx = b.ef.log.findIndex(x => x.kind === 'auto' && x.ym === ym);
+  const cur = idx === -1 ? 0 : b.ef.log[idx].amt;
+  let want = 0;
+  if (p && b.ef.autoPct > 0) {
+    const room = Math.max(0, efTarget(b) - (efBalance(b) - cur));
+    const free = savingsPool(b).free + cur;
+    want = Math.max(0, Math.min(Math.round(p.save * b.ef.autoPct / 100), room, free));
+  }
+  if (want === cur) return;
+  if (idx === -1) b.ef.log.push({ id: uid(), amt: want, kind: 'auto', ym, date: localDate(), note: 'Auto from savings' });
+  else if (want) b.ef.log[idx].amt = want;
+  else b.ef.log.splice(idx, 1);
+  saveBudget(b);
+}
+
+function editEF() {
+  const b = loadBudget(), ef = b.ef || EF_BLANK;
+  const base = efMonthlyBase(b);
+  const opt = m => `<option value="${m}"${!ef.custom && ef.months === m ? ' selected' : ''}>${m} month${m === 1 ? '' : 's'} of spending${base ? ' · ' + money(Math.ceil(base * m / 100) * 100) : ''}</option>`;
+  openSheet({
+    title: efOn(b) ? 'Emergency fund settings' : '🛟 Start an emergency fund',
+    desc: 'Money you keep for surprises, like a broken phone, a doctor visit or a trip home. You only touch it in a real emergency. Most people aim for 3 months of their normal spending.',
+    body: `
+      <label>Target</label>
+      <select class="field" name="months" onchange="this.form.custom.parentElement.style.display = this.value === 'custom' ? '' : 'none'">
+        ${[1, 3, 6].map(opt).join('')}
+        <option value="custom"${ef.custom ? ' selected' : ''}>Custom amount</option>
+      </select>
+      <div style="display:${ef.custom ? '' : 'none'}"><label>Custom target (₹)</label>
+        <input class="field mono" name="custom" type="number" inputmode="decimal" min="0" step="100" value="${ef.custom || ''}"></div>
+      <label>Put this % of each month's savings in first</label>
+      <input class="field mono" name="auto" type="number" inputmode="numeric" min="0" max="100" step="5" value="${ef.autoPct}">
+      <p class="hint">${base ? `Based on about ${money(base)} of spending a month.` : 'Set this month\'s money on Today to size the target.'} Auto-saving stops once the fund is full, and the rest of your savings go to goals.</p>`,
+    saveLabel: efOn(b) ? 'Save' : 'Start fund',
+    onSave: f => {
+      const custom = f.months.value === 'custom' ? num(f.custom.value) : null;
+      if (f.months.value === 'custom' && !custom) { f.custom.focus(); return false; }
+      const bb = loadBudget();
+      bb.ef = Object.assign({}, EF_BLANK, bb.ef || {}, {
+        months: custom ? (bb.ef ? bb.ef.months : 3) : +f.months.value,
+        custom,
+        autoPct: Math.max(0, Math.min(100, parseInt(f.auto.value, 10) || 0)),
+      });
+      saveBudget(bb); refresh();
+    },
+    onDelete: efOn(b) ? () => {
+      if (!confirm('Close the emergency fund?\n\nIts balance goes back to your free savings.')) return;
+      const bb = loadBudget(); delete bb.ef; saveBudget(bb); refresh();
+    } : null
+  });
+}
+
+function addToEF() {
+  const b = loadBudget(), pool = savingsPool(b), need = Math.max(0, efTarget(b) - efBalance(b));
+  openSheet({
+    title: '🛟 Add to emergency fund',
+    desc: `You have ${money(pool.free)} of savings not in a goal.${need ? ` ${money(need)} more fills the fund.` : ''}`,
+    body: `<input class="field mono" name="amt" type="number" inputmode="decimal" min="0" step="1" value="${Math.round(Math.max(0, Math.min(need, pool.free))) || ''}" placeholder="₹">`,
+    saveLabel: 'Add',
+    onSave: f => {
+      const amt = num(f.amt.value);
+      if (!amt) { f.amt.focus(); return false; }
+      const bb = loadBudget();
+      bb.ef.log.push({ id: uid(), amt, kind: 'add', date: localDate(), note: 'Added' });
+      saveBudget(bb); render();
+    }
+  });
+}
+
+// Taking money out adds it to this month's budget. Logging the emergency as an
+// expense in the same step leaves "free today" where it was.
+function useEF(prefill, alreadyLogged) {
+  const b = loadBudget(), bal = efBalance(b);
+  if (bal <= 0) { showToast('The emergency fund is empty'); return; }
+  openSheet({
+    title: '🛟 Use emergency fund',
+    desc: `${money(bal)} available. The money is added to this month's budget.`,
+    body: `
+      <label>Amount (₹)</label>
+      <input class="field mono" name="amt" type="number" inputmode="decimal" min="0" max="${bal}" step="1" value="${prefill ? Math.round(Math.min(prefill, bal)) : ''}" required>
+      <label>What happened?</label>
+      <input class="field" name="note" placeholder="e.g. Phone screen repair" maxlength="60" value="${alreadyLogged ? 'Covered overspending' : ''}">
+      <label class="toggle-row"><input type="checkbox" name="log"${alreadyLogged ? '' : ' checked'} onchange="this.form.cat.parentElement.style.display = this.checked ? '' : 'none'"> Also log it as an expense</label>
+      <div style="${alreadyLogged ? 'display:none' : ''}"><label>Category</label>${catSelect('other')}</div>
+      <p class="hint">Untick this if you already logged the spending and only need to cover it.</p>`,
+    saveLabel: 'Use it',
+    onSave: f => {
+      const amt = num(f.amt.value);
+      if (!amt || amt > bal) { f.amt.focus(); return false; }
+      const note = f.note.value.trim() || 'Emergency';
+      const bb = loadBudget(), ym = monthKey();
+      bb.ef.log.push({ id: uid(), amt: -amt, kind: 'use', date: localDate(), note });
+      bb.months[ym] = Object.assign({}, bb.months[ym], { topUp: ((bb.months[ym] || {}).topUp || 0) + amt });
+      if (f.log.checked) bb.expenses.push({ id: uid(), amt, cat: f.cat.value, note, date: localDate(), ts: Date.now(), fromEF: true });
+      saveBudget(bb); render();
+      showToast(`🛟 ${money(amt)} moved into this month`);
+    }
+  });
+}
+
+function monthsUntil(dateStr) {
+  const now = new Date(), d = new Date(dateStr + 'T12:00:00');
+  return Math.max(1, (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth()));
+}
+
+// ═══════════════════════════ UI HELPERS ═══════════════════════════
+function showToast(message, action, ms) {
+  const host = document.getElementById('toast-host');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span>${message}</span>` + (action ? `<button type="button">${action.label}</button>` : '');
+  if (action) t.querySelector('button').onclick = () => { action.fn(); t.remove(); };
+  host.appendChild(t);
+  setTimeout(() => t.remove(), ms || (action ? 5000 : 2200));
+}
+
+// A bottom sheet with a form. onSave gets the form element and returns false to stay open.
+function openSheet({ title, desc, body, saveLabel, onSave, onDelete }) {
+  closeSheet();
+  const bg = document.createElement('div');
+  bg.className = 'sheet-bg'; bg.id = 'sheet';
+  bg.innerHTML = `
+    <form class="sheet" autocomplete="off">
+      <h3>${title}</h3>
+      ${desc ? `<p class="sd">${desc}</p>` : ''}
+      ${body}
+      <div class="sheet-actions">
+        ${onDelete ? '<button type="button" class="btn danger" data-del>Delete</button>' : ''}
+        <button type="button" class="btn ghost" data-cancel>Cancel</button>
+        <button type="submit" class="btn">${saveLabel || 'Save'}</button>
+      </div>
+    </form>`;
+  const form = bg.querySelector('form');
+  bg.addEventListener('click', e => { if (e.target === bg) closeSheet(); });
+  bg.querySelector('[data-cancel]').onclick = closeSheet;
+  if (onDelete) bg.querySelector('[data-del]').onclick = () => { onDelete(); closeSheet(); };
+  form.onsubmit = e => { e.preventDefault(); if (onSave(form) !== false) closeSheet(); };
+  document.body.appendChild(bg);
+  const first = form.querySelector('input, select');
+  if (first && matchMedia('(pointer:fine)').matches) first.focus();
+}
+function closeSheet() { const s = document.getElementById('sheet'); if (s) s.remove(); }
+
+function catSelect(sel) {
+  return `<select class="field" name="cat">${CATS.map(c => `<option value="${c.id}"${c.id === sel ? ' selected' : ''}>${c.icon} ${c.label}</option>`).join('')}</select>`;
+}
+
+// ═══════════════════════════ STATE ═══════════════════════════
+let tab = 'today';
+try { tab = localStorage.getItem(TAB_KEY) || 'today'; } catch (_) {}
+if (!['today', 'list', 'goals', 'insights'].includes(tab)) tab = 'today';
+let qaCat = 'food';
+let addKind = 'shop';
+
+function setTab(t) {
+  tab = t;
+  try { localStorage.setItem(TAB_KEY, t); } catch (_) {}
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+// ═══════════════════════════ ACTIONS · MONEY ═══════════════════════════
+function editMonth() {
+  const b = loadBudget(), ym = monthKey();
+  const cur = b.months[ym] || {};
+  // New month: prefill from the most recent month you set up
+  const prev = Object.keys(b.months).filter(k => k < ym).sort().pop();
+  const income = cur.income || (prev && b.months[prev].income) || '';
+  const pct = cur.savePct != null ? cur.savePct : b.savePct;
+  const monthName = new Date().toLocaleDateString('en-IN', { month: 'long' });
+  openSheet({
+    title: `${monthName} money`,
+    desc: 'Enter everything you have to spend this month (pocket money, salary, etc.). Your savings come off first, and the rest is spread over the days left.',
+    body: `
+      <label>Money for ${monthName} (₹)</label>
+      <input class="field mono" name="income" type="number" inputmode="decimal" min="0" step="1" value="${income}" placeholder="e.g. 8000" required>
+      <label>Save first (%)</label>
+      <input class="field mono" name="pct" type="number" inputmode="numeric" min="0" max="90" step="1" value="${pct}">
+      <p class="hint">20% is a common starting point. Even 10% adds up.</p>`,
+    onSave: f => {
+      const inc = num(f.income.value);
+      if (!inc) { f.income.focus(); return false; }
+      const p = Math.max(0, Math.min(90, parseInt(f.pct.value, 10) || 0));
+      const bb = loadBudget();
+      bb.months[ym] = Object.assign({}, bb.months[ym], { income: inc, savePct: p });
+      bb.savePct = p;
+      saveBudget(bb); refresh();
+    }
+  });
+}
+
+function addExpense(amt, cat, note, date, extra) {
+  const b = loadBudget();
+  const e = Object.assign({ id: uid(), amt, cat, note: (note || '').trim(), date: date || localDate(), ts: Date.now() }, extra || {});
+  b.expenses.push(e);
+  saveBudget(b);
+  render();
+  return e;
+}
+
+function deleteExpense(id) {
+  const b = loadBudget();
+  const idx = b.expenses.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  const [removed] = b.expenses.splice(idx, 1);
+  saveBudget(b);
+  // A bought shopping item goes back on the list when its expense is removed
+  if (removed.shopId) {
+    const items = loadShop(), it = items.find(i => i.id === removed.shopId);
+    if (it) { it.done = false; delete it.expenseId; saveShop(items); }
+  }
+  render();
+  showToast(`Removed ${money(removed.amt)}${removed.note ? ' · ' + escapeHtml(removed.note) : ''}`, { label: 'Undo', fn: () => {
+    const bb = loadBudget(); bb.expenses.push(removed); saveBudget(bb);
+    if (removed.shopId) {
+      const items = loadShop(), it = items.find(i => i.id === removed.shopId);
+      if (it) { it.done = true; it.expenseId = removed.id; saveShop(items); }
+    }
+    render();
+  } });
+}
+
+function submitQuick() {
+  const a = document.getElementById('qaAmt'), n = document.getElementById('qaNote'), d = document.getElementById('qaDate');
+  const amt = num(a.value);
+  if (!amt) { a.focus(); return; }
+  const note = n.value.trim();
+  const e = addExpense(amt, qaCat, note, d.value || localDate());
+  maybeSuggestUsual(e);
+  showToast(`Logged ${money(amt)} · ${catOf(qaCat).label}`, { label: 'Undo', fn: () => deleteExpenseSilently(e.id) });
+}
+function deleteExpenseSilently(id) {
+  const b = loadBudget(); b.expenses = b.expenses.filter(e => e.id !== id); saveBudget(b); render();
+}
+
+// Three of the same note at the same price means it's a habit, so offer a one-tap button
+function maybeSuggestUsual(e) {
+  if (!e.note) return;
+  const b = loadBudget(), key = e.note.toLowerCase();
+  if (b.usuals.some(u => u.name.toLowerCase() === key)) return;
+  if ((b.dismissedUsuals || []).includes(key)) return;
+  const same = b.expenses.filter(x => !x.usualId && (x.note || '').toLowerCase() === key && x.amt === e.amt).length;
+  if (same < 3) return;
+  setTimeout(() => showToast(`You've logged "${escapeHtml(e.note)}" ${same}× — save it as a one-tap usual?`, {
+    label: 'Save', fn: () => editUsual(null, { name: e.note, amt: e.amt, cat: e.cat })
+  }, 8000), 400);
+  b.dismissedUsuals = (b.dismissedUsuals || []).concat(key);
+  saveBudget(b);
+}
+
+// ═══════════════════════════ ACTIONS · USUALS ═══════════════════════════
+function tapUsual(id) {
+  const b = loadBudget(), u = b.usuals.find(x => x.id === id);
+  if (!u) return;
+  const e = addExpense(u.amt, u.cat, u.name, localDate(), { usualId: u.id });
+  if (navigator.vibrate) try { navigator.vibrate(12); } catch (_) {}
+  showToast(`${escapeHtml(u.emoji || catOf(u.cat).icon)} ${escapeHtml(u.name)} · ${money(u.amt)}`, { label: 'Undo', fn: () => deleteExpenseSilently(e.id) });
+}
+
+function editUsual(id, preset) {
+  const b = loadBudget();
+  const u = id ? b.usuals.find(x => x.id === id) : Object.assign({ name: '', amt: '', cat: 'food', emoji: '', daily: false }, preset || {});
+  if (!u) return;
+  openSheet({
+    title: id ? 'Edit usual' : 'New usual',
+    desc: 'A usual is something you buy often. Tap it once to log it.',
+    body: `
+      <label>Name</label>
+      <input class="field" name="name" value="${escapeHtml(u.name)}" placeholder="e.g. Lunch thali" maxlength="40" required>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label>Price (₹)</label><input class="field mono" name="amt" type="number" inputmode="decimal" min="0" step="0.5" value="${u.amt}" required></div>
+        <div style="width:84px"><label>Emoji</label><input class="field" name="emoji" value="${escapeHtml(u.emoji || '')}" placeholder="${catOf(u.cat).icon}" maxlength="4"></div>
+      </div>
+      <label>Category</label>
+      ${catSelect(u.cat)}
+      <label class="toggle-row"><input type="checkbox" name="daily"${u.daily ? ' checked' : ''}> I buy this every day</label>
+      <p class="hint">Every-day usuals are set aside for each day left in the month, so your "free today" number is money you can actually spend.</p>`,
+    onSave: f => {
+      const name = f.name.value.trim(), amt = num(f.amt.value);
+      if (!name) { f.name.focus(); return false; }
+      if (!amt) { f.amt.focus(); return false; }
+      const bb = loadBudget();
+      const data = { name, amt, cat: f.cat.value, emoji: f.emoji.value.trim(), daily: f.daily.checked };
+      if (id) Object.assign(bb.usuals.find(x => x.id === id), data);
+      else bb.usuals.push(Object.assign({ id: uid() }, data));
+      saveBudget(bb); render();
+    },
+    onDelete: id ? () => {
+      const bb = loadBudget(); bb.usuals = bb.usuals.filter(x => x.id !== id); saveBudget(bb); render();
+    } : null
+  });
+}
+
+// Tap logs it. Long-press or right-click edits it.
+let lpTimer = null, lpFired = false;
+function usualDown(id) { lpFired = false; clearTimeout(lpTimer); lpTimer = setTimeout(() => { lpFired = true; editUsual(id); }, 500); }
+function usualUp(id) { clearTimeout(lpTimer); if (!lpFired) tapUsual(id); lpFired = false; }
+function usualCancel() { clearTimeout(lpTimer); }
+
+// ═══════════════════════════ ACTIONS · SHOPPING ═══════════════════════════
+function toggleAddKind() {
+  addKind = addKind === 'shop' ? 'wish' : 'shop';
+  const btn = document.getElementById('kindToggle');
+  if (btn) { btn.textContent = addKind === 'wish' ? '⭐ Wishlist' : '🛒 To buy'; btn.classList.toggle('wish', addKind === 'wish'); }
+}
+function submitAdd() {
+  const t = document.getElementById('addInput'), p = document.getElementById('addPrice'), d = document.getElementById('addDate');
+  const text = t.value.trim();
+  if (!text) { t.focus(); return; }
+  const items = loadShop();
+  items.unshift({ id: uid(), text, done: false, addedAt: Date.now(), kind: addKind, price: num(p.value), date: d.value || null });
+  saveShop(items);
+  render();
+  const t2 = document.getElementById('addInput'); if (t2) t2.focus();
+}
+function toggleItem(id) {
+  const items = loadShop(), it = items.find(i => i.id === id);
+  if (!it) return;
+  if (!it.done && it.price == null && it.kind !== 'wish') {
+    // No price yet, so ask what it cost before logging it
+    return askPrice(id);
+  }
+  it.done = !it.done;
+  saveShop(items);
+  reconcileShop();
+  render();
+  if (it.done && it.price != null) showToast(`Bought · ${money(it.price)} logged`);
+}
+function askPrice(id) {
+  const it = loadShop().find(i => i.id === id);
+  openSheet({
+    title: 'What did it cost?',
+    desc: `${escapeHtml(it.text)} gets logged as a Shopping expense. Leave it blank to tick it off without logging anything.`,
+    body: `<input class="field mono" name="amt" type="number" inputmode="decimal" min="0" step="0.5" placeholder="₹">`,
+    saveLabel: 'Bought',
+    onSave: f => {
+      const items = loadShop(), x = items.find(i => i.id === id);
+      if (!x) return;
+      const amt = num(f.amt.value);
+      x.done = true;
+      if (amt) x.price = amt; else x.expenseId = 'none';
+      saveShop(items); reconcileShop(); render();
+      if (amt) showToast(`Bought · ${money(amt)} logged`);
+    }
+  });
+}
+function deleteItem(id) {
+  const items = loadShop(), idx = items.findIndex(i => i.id === id);
+  if (idx === -1) return;
+  const [removed] = items.splice(idx, 1);
+  saveShop(items); render();
+  showToast(`Removed "${escapeHtml(removed.text)}"`, { label: 'Undo', fn: () => {
+    const cur = loadShop(); cur.splice(Math.min(idx, cur.length), 0, removed); saveShop(cur); render();
+  } });
+}
+// Clearing bought items keeps their expenses, because the money was still spent
+function clearBought() {
+  const items = loadShop(), bought = items.filter(i => i.done);
+  if (!bought.length) return;
+  const b = loadBudget();
+  bought.forEach(i => { const e = b.expenses.find(x => x.id === i.expenseId); if (e) delete e.shopId; });
+  saveBudget(b);
+  saveShop(items.filter(i => !i.done)); render();
+  showToast(`Cleared ${bought.length} bought item${bought.length === 1 ? '' : 's'}`);
+}
+
+// ═══════════════════════════ ACTIONS · GOALS ═══════════════════════════
+function editGoal(id, preset) {
+  const b = loadBudget();
+  const g = id ? b.goals.find(x => x.id === id) : Object.assign({ name: '', target: '', date: '', emoji: '🎯' }, preset || {});
+  if (!g) return;
+  openSheet({
+    title: id ? 'Edit goal' : 'New savings goal',
+    desc: 'Pick a target and an optional date. The app works out how much to put aside each month.',
+    body: `
+      <div style="display:flex;gap:8px">
+        <div style="width:70px"><label>Emoji</label><input class="field" name="emoji" value="${escapeHtml(g.emoji || '🎯')}" maxlength="4"></div>
+        <div style="flex:1"><label>Name</label><input class="field" name="name" value="${escapeHtml(g.name)}" placeholder="e.g. New headphones" maxlength="40" required></div>
+      </div>
+      <label>Target (₹)</label>
+      <input class="field mono" name="target" type="number" inputmode="decimal" min="0" step="1" value="${g.target}" required>
+      <label>Want it by (optional)</label>
+      <input class="field" name="date" type="date" value="${g.date || ''}">`,
+    onSave: f => {
+      const name = f.name.value.trim(), target = num(f.target.value);
+      if (!name) { f.name.focus(); return false; }
+      if (!target) { f.target.focus(); return false; }
+      const bb = loadBudget();
+      const data = { name, target, date: f.date.value || null, emoji: f.emoji.value.trim() || '🎯' };
+      if (id) Object.assign(bb.goals.find(x => x.id === id), data);
+      else bb.goals.push(Object.assign({ id: uid(), saved: 0, createdAt: Date.now(), wishId: g.wishId || null }, data));
+      saveBudget(bb);
+      if (!id && g.wishId) setTab('goals'); else render();
+    },
+    onDelete: id ? () => {
+      const bb = loadBudget(); bb.goals = bb.goals.filter(x => x.id !== id); saveBudget(bb); render();
+    } : null
+  });
+}
+function moveToGoal(id, dir) {
+  const b = loadBudget(), g = b.goals.find(x => x.id === id);
+  if (!g) return;
+  const pool = savingsPool(b);
+  const need = Math.max(0, g.target - (g.saved || 0));
+  const suggest = dir > 0 ? Math.min(need, Math.max(0, pool.free)) : (g.saved || 0);
+  openSheet({
+    title: dir > 0 ? `Add to ${escapeHtml(g.name)}` : `Take from ${escapeHtml(g.name)}`,
+    desc: dir > 0
+      ? `You have ${money(pool.free)} of savings not yet in a goal. ${money(need)} more reaches this goal.`
+      : `${money(g.saved || 0)} is in this goal. Taking money out returns it to your free savings.`,
+    body: `<input class="field mono" name="amt" type="number" inputmode="decimal" min="0" step="1" value="${suggest > 0 ? Math.round(suggest) : ''}" placeholder="₹">`,
+    saveLabel: dir > 0 ? 'Add' : 'Take out',
+    onSave: f => {
+      const amt = num(f.amt.value);
+      if (!amt) { f.amt.focus(); return false; }
+      const bb = loadBudget(), gg = bb.goals.find(x => x.id === id);
+      gg.saved = Math.max(0, (gg.saved || 0) + dir * amt);
+      saveBudget(bb); render();
+      if (dir > 0 && gg.saved >= gg.target) showToast(`🎉 ${escapeHtml(gg.name)} is fully saved!`, null, 3500);
+    }
+  });
+}
+// Spending a finished goal logs it as an expense paid from savings, not from this month's money
+function completeGoal(id) {
+  const b = loadBudget(), g = b.goals.find(x => x.id === id);
+  if (!g) return;
+  if (!confirm(`Mark "${g.name}" as bought?\n\nIts ${money(g.saved || 0)} leaves your savings and the goal is removed. This month's spending money isn't touched.`)) return;
+  b.savedOut = (b.savedOut || 0) + (g.saved || 0);
+  b.goals = b.goals.filter(x => x.id !== id);
+  (b.history = b.history || []).push({ name: g.name, amt: g.saved || 0, date: localDate() });
+  saveBudget(b);
+  if (g.wishId) {
+    const items = loadShop(), it = items.find(i => i.id === g.wishId);
+    if (it) { it.done = true; it.expenseId = 'goal'; saveShop(items); }
+  }
+  render();
+  showToast(`🎉 Bought ${escapeHtml(g.name)} with your savings`, null, 3500);
+}
+function wishToGoal(itemId) {
+  const it = loadShop().find(i => i.id === itemId);
+  if (!it) return;
+  const b = loadBudget();
+  if (b.goals.some(g => g.wishId === itemId)) { setTab('goals'); return; }
+  editGoal(null, { name: it.text, target: it.price || '', date: it.date || '', emoji: '⭐', wishId: itemId });
+}
+
+// ═══════════════════════════ RENDER ═══════════════════════════
+function header(sub) {
+  return `
+    <div class="header">
+      <div class="header-icon">💰</div>
+      <div class="header-text">
+        <h1>Budget</h1>
+        <span>${sub}</span>
+      </div>
+      <div class="header-icons">
+        <button class="icon-chip" onclick="window.hubNavSwitch && window.hubNavSwitch(event)" title="Switch app" aria-label="Switch app">⬡</button>
+        <button class="icon-chip" onclick="window.hubNavSearch && window.hubNavSearch()" title="Search (⌘K)" aria-label="Search">🔍</button>
+        <button class="icon-chip" data-tsync data-tsync-baked title="Sync status — click to sync now"
+                onclick="window.TrackersSync && window.TrackersSync.forceSync()">
+          <span class="tsync-dot"></span>
+        </button>
+        <button class="icon-chip" data-tpush-baked title="Notification settings" aria-label="Notification settings"
+                onclick="window.TrackersPush && window.TrackersPush.openSettings()">🔔</button>
+      </div>
+    </div>
+    <div class="tabs">
+      ${[['today', '💸 Today'], ['list', '🛒 List'], ['goals', '🎯 Goals'], ['insights', '📊 Insights']]
+        .map(([k, l]) => `<button class="tab${tab === k ? ' on' : ''}" onclick="setTab('${k}')">${l}</button>`).join('')}
+    </div>`;
+}
+
+function expenseRow(e) {
+  const c = catOf(e.cat);
+  const b = loadBudget();
+  const u = e.usualId && b.usuals.find(x => x.id === e.usualId);
+  const icon = (u && u.emoji) || c.icon;
+  const time = new Date(e.ts).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  return `
+    <div class="row">
+      <div class="row-ico" style="--c:${c.c}">${escapeHtml(icon)}</div>
+      <div class="row-main">
+        <div class="row-title">${escapeHtml(e.note || c.label)}</div>
+        <div class="row-sub">${c.label}${e.shopId ? ' · from list' : ''}${e.fromEF ? ' · 🛟 emergency fund' : ''} · ${time}</div>
+      </div>
+      <div class="row-amt mono">${money(e.amt)}</div>
+      <button class="x" onclick="deleteExpense('${e.id}')" title="Remove" aria-label="Remove">×</button>
+    </div>`;
+}
+
+function renderToday(b, k) {
+  let hero;
+  if (!k.plan) {
+    hero = `
+      <div class="card hero">
+        <div class="hero-lbl">Set up ${new Date().toLocaleDateString('en-IN', { month: 'long' })}</div>
+        <div class="hero-sub" style="margin:10px 0 14px">Tell the app how much money you have this month. It saves your chosen % first and shows what you can spend each day.</div>
+        <button class="btn" onclick="editMonth()">Set my money</button>
+        ${k.spent ? `<div class="hero-sub" style="margin-top:12px">Spent so far this month: <b class="mono">${money(k.spent)}</b></div>` : ''}
+      </div>`;
+  } else {
+    const over = k.freeToday < 0;
+    const monthPct = Math.min(100, k.spent / Math.max(1, k.plan.spendable) * 100);
+    const reservedNote = k.fixedPerDay
+      ? `<br>${money(k.fixedPerDay)}/day set aside for your daily usuals`
+      : '';
+    hero = `
+      <div class="card hero" style="--hero-glow:${over ? 'rgba(226,114,111,.16)' : 'rgba(127,217,154,.14)'}">
+        <div class="hero-lbl">${over ? 'Over today by' : 'Free to spend today'}</div>
+        <div class="hero-num mono ${over ? 'over' : 'good'}">${money(over ? Math.ceil(-k.freeToday) : Math.floor(k.freeToday))}</div>
+        <div class="hero-sub">
+          ${over ? 'Tomorrow\'s amount shrinks a little to cover it.' : `${money(k.spentToday)} spent today`}${reservedNote}
+        </div>
+        <div class="hero-stats">
+          <div class="hs"><b class="mono">${money(k.left)}</b><span>Left in month</span></div>
+          <div class="hs"><b class="mono">${k.daysLeft}</b><span>Days left</span></div>
+          <div class="hs" onclick="setTab('goals')" style="cursor:pointer"><b class="mono" style="color:var(--good)">${money(k.plan.save)}</b><span>Saved ${k.plan.pct}%</span></div>
+        </div>
+        <div class="bar ${k.left < 0 ? 'over' : ''}" style="margin-top:14px"><div style="width:${monthPct}%"></div></div>
+        <div class="hero-sub" style="margin-top:6px;font-size:11.5px">${money(k.spent)} of ${money(k.plan.spendable)} spent${k.plan.topUp ? ` (incl. ${money(k.plan.topUp)} 🛟)` : ''} · <button class="link-btn" onclick="editMonth()">Edit month</button></div>
+      </div>`;
+  }
+
+  const efBal = efBalance(b);
+  if (k.plan && k.left < 0 && efBal > 0) {
+    const gap = Math.min(-k.left, efBal);
+    hero += `
+      <div class="card ef-prompt">
+        <span>You're ${money(-k.left)} over this month.</span>
+        <button class="btn" onclick="useEF(${Math.ceil(gap)}, true)">🛟 Cover ${money(Math.ceil(gap))}</button>
+      </div>`;
+  }
+
+  const loggedToday = new Set(b.expenses.filter(e => e.date === k.today && e.usualId).map(e => e.usualId));
+  const usuals = `
+    <div class="section-label"><span>⚡ Usuals · one tap</span></div>
+    <div class="usuals">
+      ${b.usuals.map(u => `
+        <button class="usual${loggedToday.has(u.id) ? ' logged' : ''}"
+          onpointerdown="usualDown('${u.id}')" onpointerup="usualUp('${u.id}')"
+          onpointerleave="usualCancel()" onpointercancel="usualCancel()"
+          oncontextmenu="event.preventDefault(); usualCancel(); editUsual('${u.id}')">
+          <span>${escapeHtml(u.emoji || catOf(u.cat).icon)}</span>${escapeHtml(u.name)}
+          <span class="amt mono">${money(u.amt)}</span>${u.daily ? '<span class="daily">daily</span>' : ''}
+        </button>`).join('')}
+      <button class="usual add" onclick="editUsual(null)">＋ ${b.usuals.length ? 'Add' : 'Add a usual, e.g. lunch'}</button>
+    </div>
+    ${b.usuals.length ? '<div class="hint">Tap to log. Long-press or right-click to edit.</div>' : ''}`;
+
+  const quick = `
+    <div class="section-label"><span>✍️ Log spending</span></div>
+    <div class="card" style="padding:12px">
+      <div class="qa-row">
+        <input id="qaAmt" class="field mono qa-amt" type="number" inputmode="decimal" min="0" step="0.5" placeholder="₹0"
+          onkeydown="if(event.key==='Enter'){ submitQuick(); }">
+        <input id="qaNote" class="field" type="text" placeholder="What was it? (optional)" maxlength="60"
+          onkeydown="if(event.key==='Enter'){ submitQuick(); }">
+      </div>
+      <div class="cats">
+        ${CATS.map(c => `<button class="cat${qaCat === c.id ? ' on' : ''}" style="--c:${c.c}" onclick="qaCat='${c.id}'; document.querySelectorAll('.cat').forEach(x=>x.classList.toggle('on', x===this))">${c.icon} ${c.label}</button>`).join('')}
+      </div>
+      <div class="qa-foot">
+        <input id="qaDate" class="field" type="date" value="${k.today}" max="${k.today}" title="Change to log a past day">
+        <button class="btn" onclick="submitQuick()">Log</button>
+      </div>
+    </div>`;
+
+  // Last 7 days of spending, newest first
+  const since = localDate(new Date(Date.now() - 6 * 864e5));
+  const recent = b.expenses.filter(e => e.date >= since).sort((a, c) => (c.date + c.ts) > (a.date + a.ts) ? 1 : -1);
+  const byDay = {};
+  recent.forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+  const days = Object.keys(byDay).sort().reverse();
+  const list = `
+    <div class="section-label"><span>🧾 Recent</span></div>
+    ${days.length ? days.map(d => `
+      <div class="day-head"><span>${fmtDay(d)}</span><span class="mono">${money(byDay[d].reduce((s, e) => s + e.amt, 0))}</span></div>
+      <div class="list">${byDay[d].sort((a, c) => c.ts - a.ts).map(expenseRow).join('')}</div>`).join('')
+      : '<div class="empty">Nothing logged this week yet.</div>'}`;
+
+  return hero + usuals + quick + list;
+}
+
+function renderList(b, k) {
+  const items = loadShop();
+  const todo = items.filter(i => !i.done && i.kind !== 'wish');
+  const wish = items.filter(i => !i.done && i.kind === 'wish');
+  const bought = items.filter(i => i.done);
+  const today = k.today;
+  const todoTotal = todo.reduce((s, i) => s + (i.price || 0), 0);
+  const save = k.plan ? k.plan.save : 0;
+
+  const row = (i) => {
+    const badges = [];
+    if (i.price != null) badges.push(`<span class="badge price">${money(i.price)}</span>`);
+    if (i.date) badges.push(`<span class="badge date${(!i.done && i.date < today) ? ' overdue' : ''}">📅 ${fmtDate(i.date)}</span>`);
+    let extra = '';
+    if (i.kind === 'wish' && !i.done) {
+      const goal = b.goals.find(g => g.wishId === i.id);
+      if (goal) {
+        badges.push(`<span class="badge goal">🎯 ${Math.round((goal.saved || 0) / goal.target * 100)}% saved</span>`);
+      } else if (i.price != null && k.plan) {
+        if (i.price <= k.freeMonth) badges.push('<span class="badge fit">Fits this month</span>');
+        else if (save > 0) {
+          const m = Math.ceil(i.price / save);
+          badges.push(`<span class="badge nofit">~${m} month${m === 1 ? '' : 's'} of saving</span>`);
+        } else badges.push('<span class="badge nofit">Over budget</span>');
+      }
+      extra = goal ? '' : `<button class="mini-btn" onclick="event.stopPropagation(); wishToGoal('${i.id}')">🎯 Save for it</button>`;
+    }
+    return `
+      <div class="row click ${i.done ? 'done' : ''}" onclick="toggleItem('${i.id}')">
+        <div class="check">${i.done ? '✓' : ''}</div>
+        <div class="row-main">
+          <div class="row-title">${escapeHtml(i.text)}</div>
+          ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
+        </div>
+        ${extra}
+        <button class="x" onclick="event.stopPropagation(); deleteItem('${i.id}')" title="Remove" aria-label="Remove">×</button>
+      </div>`;
+  };
+
+  return `
+    <div class="add-row">
+      <input id="addInput" class="field" type="text" placeholder="Add an item… e.g. Milk x2" onkeydown="if(event.key==='Enter'){ submitAdd(); }">
+      <button class="btn" onclick="submitAdd()">Add</button>
+    </div>
+    <div class="add-extra">
+      <button type="button" id="kindToggle" class="kind-toggle${addKind === 'wish' ? ' wish' : ''}" onclick="toggleAddKind()" title="To buy = need it now. Wishlist = want it someday.">${addKind === 'wish' ? '⭐ Wishlist' : '🛒 To buy'}</button>
+      <input id="addPrice" class="field mono" type="number" inputmode="decimal" min="0" step="0.5" placeholder="₹">
+      <input id="addDate" class="field" type="date" title="Optional — when you need it by">
+    </div>
+    <div class="hint">Ticking an item logs its price as a Shopping expense.</div>
+
+    <div class="section-label"><span>🛒 To buy · ${todo.length}</span>${todoTotal ? `<span class="mono" style="text-transform:none">${money(todoTotal)}</span>` : ''}</div>
+    ${todo.length ? `<div class="list">${todo.map(row).join('')}</div>` : '<div class="empty">Nothing to buy right now.</div>'}
+
+    ${wish.length ? `
+      <div class="section-label"><span>⭐ Wishlist · ${wish.length}</span></div>
+      <div class="list">${wish.map(row).join('')}</div>` : ''}
+
+    ${bought.length ? `
+      <div class="section-label"><span>Bought · ${bought.length}</span><button class="link-btn" onclick="clearBought()">Clear</button></div>
+      <div class="list">${bought.map(row).join('')}</div>` : ''}`;
+}
+
+function renderEF(b, k) {
+  if (!efOn(b)) {
+    return `
+      <div class="card ef-card ef-empty">
+        <div class="goal-top">
+          <div class="row-ico ef-ico">🛟</div>
+          <div style="flex:1;min-width:0">
+            <div class="goal-name">Emergency fund</div>
+            <div class="goal-meta">A cushion for surprises, like a broken phone, a doctor visit or a trip home. Aim for 3 months of spending.</div>
+          </div>
+        </div>
+        <button class="btn" style="width:100%" onclick="editEF()">Start one</button>
+      </div>`;
+  }
+  const bal = efBalance(b), target = efTarget(b), base = efMonthlyBase(b);
+  const pct = target ? Math.min(100, bal / target * 100) : 0;
+  const covered = base ? bal / base : 0;
+  const span = covered >= 1 ? `${covered.toFixed(1)} months` : `${Math.round(covered * 30)} day${Math.round(covered * 30) === 1 ? '' : 's'}`;
+  const goalMonths = b.ef.custom ? (target / Math.max(1, base)).toFixed(1) : b.ef.months;
+  const full = target && bal >= target;
+  const auto = b.ef.log.find(x => x.kind === 'auto' && x.ym === k.ym);
+  let meta;
+  if (!target) meta = 'Set this month\'s money to size the target.';
+  else if (full) meta = `Full · covers about ${span} of spending`;
+  else meta = `Covers ${span} of spending · goal is ${goalMonths} month${goalMonths == 1 ? '' : 's'}${auto ? ` · ${money(auto.amt)} auto-saved this month` : ''}`;
+  const hist = b.ef.log.filter(x => x.kind !== 'auto' || x.amt).slice(-4).reverse();
+  return `
+    <div class="card ef-card">
+      <div class="goal-top">
+        <div class="row-ico ef-ico">🛟</div>
+        <div style="flex:1;min-width:0">
+          <div class="goal-name">Emergency fund</div>
+          <div class="goal-meta">${meta}</div>
+        </div>
+        <button class="mini-btn" onclick="editEF()">Edit</button>
+      </div>
+      <div class="bar ef"><div style="width:${pct}%"></div></div>
+      <div class="goal-nums"><span class="mono">${money(bal)}</span><span class="mono">${target ? money(target) : '—'}</span></div>
+      <div class="goal-actions">
+        ${full ? '' : '<button class="btn" style="flex:1;padding:9px" onclick="addToEF()">＋ Add money</button>'}
+        <button class="btn ghost" style="${full ? 'flex:1;' : ''}padding:9px 14px" onclick="useEF()">Use it</button>
+      </div>
+      ${hist.length ? `<div class="ef-log">${hist.map(x => `
+        <div><span>${x.amt < 0 ? '↘' : '↗'} ${escapeHtml(x.note || '')} <span class="faint">· ${fmtDate(x.date)}</span></span>
+        <span class="mono" style="color:${x.amt < 0 ? 'var(--danger)' : 'var(--blue)'}">${x.amt < 0 ? '−' : '+'}${money(Math.abs(x.amt))}</span></div>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+function renderGoals(b, k) {
+  const pool = savingsPool(b);
+  const goals = b.goals.slice().sort((a, c) => (a.date || '9999') < (c.date || '9999') ? -1 : 1);
+  const goalCard = g => {
+    const saved = g.saved || 0, pct = Math.min(100, saved / g.target * 100), need = Math.max(0, g.target - saved);
+    let pace = '';
+    if (need > 0 && g.date) {
+      const m = monthsUntil(g.date);
+      const days = Math.max(1, Math.round((new Date(g.date + 'T12:00:00') - new Date()) / 864e5));
+      pace = `Save ${money(Math.ceil(need / m))}/month (${money(Math.ceil(need / days))}/day) to get it by ${fmtDate(g.date)}`;
+    } else if (need > 0 && k.plan && k.plan.save > 0) {
+      const m = Math.ceil(need / k.plan.save);
+      pace = `About ${m} month${m === 1 ? '' : 's'} at your current savings`;
+    } else if (need <= 0) pace = 'Fully saved 🎉';
+    return `
+      <div class="card">
+        <div class="goal-top">
+          <div class="row-ico" style="--c:#f2b84b;width:38px;height:38px;font-size:19px">${escapeHtml(g.emoji || '🎯')}</div>
+          <div style="flex:1;min-width:0">
+            <div class="goal-name">${escapeHtml(g.name)}</div>
+            <div class="goal-meta">${pace}</div>
+          </div>
+          <button class="mini-btn" onclick="editGoal('${g.id}')">Edit</button>
+        </div>
+        <div class="bar good"><div style="width:${pct}%"></div></div>
+        <div class="goal-nums"><span class="mono">${money(saved)} saved</span><span class="mono">${money(g.target)}</span></div>
+        <div class="goal-actions">
+          ${need > 0 ? `<button class="btn" style="flex:1;padding:9px" onclick="moveToGoal('${g.id}', 1)">＋ Add money</button>` : `<button class="btn" style="flex:1;padding:9px" onclick="completeGoal('${g.id}')">🛍️ I bought it</button>`}
+          ${saved > 0 ? `<button class="btn ghost" style="padding:9px 14px" onclick="moveToGoal('${g.id}', -1)">Take out</button>` : ''}
+        </div>
+      </div>`;
+  };
+
+  const hist = (b.history || []).slice(-5).reverse();
+  return `
+    <div class="card">
+      <div class="pool">
+        <div>
+          <div class="muted" style="font-size:12px;font-weight:600">Savings not in a goal</div>
+          <b class="mono">${money(pool.free)}</b>
+        </div>
+        <div style="text-align:right;font-size:12px" class="muted">
+          ${k.plan ? `${money(k.plan.save)} set aside this month<br>` : ''}${money(pool.inGoals)} in goals${efOn(b) ? `<br>${money(efBalance(b))} in emergency fund` : ''}
+        </div>
+      </div>
+      ${!k.plan ? `<div class="hint" style="margin-top:10px">Set this month's money on the Today tab to start saving automatically.</div>` : ''}
+    </div>
+
+    ${renderEF(b, k)}
+
+    <div class="section-label"><span>🎯 Goals · ${goals.length}</span><button class="link-btn" onclick="editGoal(null)">＋ New goal</button></div>
+    ${goals.length ? goals.map(goalCard).join('') : `
+      <div class="empty">
+        No goals yet. Save toward something you want, or tap "🎯 Save for it" on a wishlist item.
+        <div style="margin-top:12px"><button class="btn" onclick="editGoal(null)">＋ New goal</button></div>
+      </div>`}
+
+    ${hist.length ? `
+      <div class="section-label"><span>🏆 Bought with savings</span></div>
+      <div class="list">${hist.map(h => `
+        <div class="row"><div class="row-main"><div class="row-title">${escapeHtml(h.name)}</div><div class="row-sub">${fmtDate(h.date)}</div></div><div class="row-amt mono">${money(h.amt)}</div></div>`).join('')}
+      </div>` : ''}`;
+}
+
+function renderInsights(b, k) {
+  const exp = k.monthExp;
+  if (!exp.length) return '<div class="empty">Log a few expenses and your charts show up here.</div>';
+
+  // Daily bars for the month, with the plain daily budget as a dashed line
+  const perDay = new Array(k.dim).fill(0);
+  exp.forEach(e => { perDay[+e.date.slice(8) - 1] += e.amt; });
+  const todayN = +k.today.slice(8);
+  const avgBudget = k.plan ? k.plan.spendable / k.dim : 0;
+  const max = Math.max(...perDay, avgBudget, 1);
+  const bars = perDay.map((v, i) => {
+    const cls = i + 1 > todayN ? 'future' : (avgBudget && v > avgBudget ? 'over' : '');
+    return `<div class="col ${cls}${i + 1 === todayN ? ' today' : ''}" title="${i + 1}: ${money(v)}"><div style="height:${v / max * 100}%"></div></div>`;
+  }).join('');
+
+  // Category split
+  const byCat = {};
+  exp.forEach(e => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amt; });
+  const catRows = Object.entries(byCat).sort((a, c) => c[1] - a[1]).map(([id, v]) => {
+    const c = catOf(id);
+    return `
+      <div class="cat-line">
+        <div class="cat-line-top"><span>${c.icon} ${c.label}</span><span class="mono">${money(v)} <span class="faint">· ${Math.round(v / k.spent * 100)}%</span></span></div>
+        <div class="bar"><div style="width:${v / k.spent * 100}%;background:${c.c}"></div></div>
+      </div>`;
+  }).join('');
+
+  // Compare with the same point last month
+  const now = new Date();
+  const lastYM = localDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
+  const lastSame = b.expenses.filter(e => monthKey(e.date) === lastYM && +e.date.slice(8) <= todayN).reduce((s, e) => s + e.amt, 0);
+  const food = byCat.food || 0;
+  const topUsual = (() => {
+    const cnt = {};
+    exp.filter(e => e.usualId).forEach(e => { cnt[e.usualId] = (cnt[e.usualId] || 0) + e.amt; });
+    const top = Object.entries(cnt).sort((a, c) => c[1] - a[1])[0];
+    const u = top && b.usuals.find(x => x.id === top[0]);
+    return u ? { u, amt: top[1] } : null;
+  })();
+
+  const monthName = now.toLocaleDateString('en-IN', { month: 'long' });
+  return `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b>${monthName}</b><span class="mono muted" style="font-size:13px">${money(k.spent)}${k.plan ? ' / ' + money(k.plan.spendable) : ''}</span>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart">${bars}</div>
+        ${avgBudget ? `<div class="chart-line" style="bottom:${avgBudget / max * 100}%"></div>` : ''}
+      </div>
+      <div class="chart-axis"><span>1</span><span>${Math.ceil(k.dim / 2)}</span><span>${k.dim}</span></div>
+      ${avgBudget ? `<div class="hint">Dashed line is an even ${money(avgBudget)}/day. Red bars went over it.</div>` : ''}
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><b class="mono">${money(k.spent / todayN)}</b><span>Average per day</span></div>
+      <div class="stat"><b class="mono">${money(food / todayN)}</b><span>Food per day</span></div>
+      <div class="stat"><b class="mono" style="color:${lastSame && k.spent > lastSame ? 'var(--danger)' : 'var(--good)'}">${lastSame ? (k.spent > lastSame ? '+' : '−') + money(Math.abs(k.spent - lastSame)).replace('−', '') : '—'}</b><span>vs last month by day ${todayN}</span></div>
+      <div class="stat"><b class="mono">${topUsual ? money(topUsual.amt) : '—'}</b><span>${topUsual ? escapeHtml(topUsual.u.name) + ' this month' : 'Top usual'}</span></div>
+    </div>
+
+    <div class="section-label"><span>By category</span></div>
+    <div class="card">${catRows}</div>`;
+}
+
+function render() {
+  const b = loadBudget(), k = calc(b);
+  let sub;
+  if (k.plan) sub = `${money(k.left)} left · ${k.daysLeft} day${k.daysLeft === 1 ? '' : 's'} to go`;
+  else sub = 'Set this month\'s money to start';
+
+  const view = tab === 'list' ? renderList(b, k) : tab === 'goals' ? renderGoals(b, k) : tab === 'insights' ? renderInsights(b, k) : renderToday(b, k);
+
+  // Keep typed-but-unsent text across re-renders (sync can redraw at any moment)
+  const keep = {};
+  ['qaAmt', 'qaNote', 'addInput', 'addPrice', 'addDate'].forEach(id => { const el = document.getElementById(id); if (el && el.value) keep[id] = el.value; });
+  const focused = document.activeElement && document.activeElement.id;
+
+  document.getElementById('app').innerHTML = header(sub) + view;
+
+  Object.entries(keep).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+  if (focused) { const el = document.getElementById(focused); if (el) el.focus(); }
+}
+
+// After a submit, clear the fields that were just used
+const _submitQuick = submitQuick;
+submitQuick = function () {
+  const before = loadBudget().expenses.length;
+  _submitQuick();
+  if (loadBudget().expenses.length > before) {
+    ['qaAmt', 'qaNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const d = document.getElementById('qaDate'); if (d) d.value = localDate();
+    const a = document.getElementById('qaAmt'); if (a && matchMedia('(pointer:fine)').matches) a.focus();
+  }
+};
+const _submitAdd = submitAdd;
+submitAdd = function () {
+  const before = loadShop().length;
+  _submitAdd();
+  if (loadShop().length > before) ['addInput', 'addPrice', 'addDate'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+};
+
+function refresh() { reconcileShop(); applyAutoEF(); render(); }
+
+// Another device or tab changed the data
+window.addEventListener('storage', e => { if (e.key === SHOP_KEY || e.key === BUDGET_KEY) refresh(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+// Roll over to a new day while the app stays open
+let lastDay = localDate();
+setInterval(() => { if (localDate() !== lastDay) { lastDay = localDate(); refresh(); } }, 60000);
+
+refresh();
+</script>
+<script src="hub-nav.js?v=20260924a"></script>
+
+</body>
+</html>

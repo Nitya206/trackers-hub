@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#151d31"/><stop offset="100%" stop-color="#05070d"/>
+    </radialGradient>
+    <!-- userSpaceOnUse, not the default objectBoundingBox: a perfectly vertical
+         line has a zero-width bbox, which makes a bounding-box gradient
+         unresolvable and the shape invisible. It also keeps one continuous
+         sweep across the whole mark instead of restarting on every path. -->
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse"
+                    x1="2" y1="5" x2="22" y2="19">
+      <stop offset="0%" stop-color="#4f8ef7"/><stop offset="50%" stop-color="#00d9f5"/>
+      <stop offset="100%" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(244,258) scale(16.6) translate(-12,-11.5)">
+    <g fill="none" stroke="url(#ink)" stroke-width="1.9"
+       stroke-linecap="round" stroke-linejoin="round">
+      <!-- mortarboard + band: Lucide `graduation-cap` (ISC) -->
+      <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
+      <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+      <path d="M22.1 11.4 L22.1 16.2"/>
+    </g>
+    <circle cx="22.1" cy="17.6" r="1.35" fill="url(#ink)"/>
+  </g>
+</svg>

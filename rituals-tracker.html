@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Rituals — Body Care &amp; Home Routines</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0e0a0c">
+<meta name="apple-mobile-web-app-title" content="Rituals">
+
+<!-- ══ PWA · installable web app (same as the other trackers) ══ -->
+<script>
+if ('serviceWorker' in navigator) {
+  addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function (e) {
+      console.warn('[pwa] service worker registration failed', e);
+    });
+  });
+  // A new deploy: the new worker has already fetched the fresh pages, takes
+  // over, and says so. If you've only just opened the app (or left it idle),
+  // reload into the new version straight away; if you're mid-task, offer a
+  // one-tap refresh instead of pulling the page out from under you.
+  var swHadController = !!navigator.serviceWorker.controller;   // false on first install
+  var swLastInput = 0;
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (t) {
+    addEventListener(t, function () { swLastInput = Date.now(); }, true);
+  });
+  navigator.serviceWorker.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'sw-updated' || !swHadController) return;
+    var ae = document.activeElement;
+    var typing = ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable);
+    var busy = typing || (swLastInput && Date.now() - swLastInput < 30000) || document.querySelector('.scrim, .sched-modal-overlay, .auth-modal.active');
+    var last = 0; try { last = +sessionStorage.getItem('sw_reloaded_at') || 0; } catch (_) {}
+    if (!busy && Date.now() - last > 15000) {
+      try { sessionStorage.setItem('sw_reloaded_at', String(Date.now())); } catch (_) {}
+      location.reload();
+      return;
+    }
+    if (document.getElementById('sw-update-pill')) return;
+    var b = document.createElement('button');
+    b.id = 'sw-update-pill';
+    b.type = 'button';
+    b.textContent = '✨ Updated — tap to refresh';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:2147483646;' +
+      'padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(18,20,28,.94);color:#fff;' +
+      'font:600 13px system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;';
+    b.onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  });
+}
+</script>
+
+<!-- ══ TRACKERS HUB · cross-device sync + notifications ══
+     Must load before any app script so localStorage writes are captured. -->
+<script src="sync-config.js?v=20260924a"></script>
+<script src="sync-engine.js?v=20260924a"></script>
+<script src="push-client.js?v=20260924a"></script>
+<script src="zen-rules.js?v=20260924a"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   RITUALS — evening vanity. Aubergine black, candle glow, ivory ink,
+   rose-gold accents. Serif for the moments, geometric sans for the work.
+════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0e0a0c;
+  --bg-2:      #150f12;
+  --ink:       #f3ebe5;
+  --ink-2:     #c2b3ad;
+  --ink-3:     #8a7a76;
+  --ink-4:     #5b4f4d;
+  --line:      rgba(243, 228, 220, 0.085);
+  --line-2:    rgba(243, 228, 220, 0.16);
+  --glass:     rgba(255, 240, 234, 0.035);
+  --glass-2:   rgba(255, 240, 234, 0.06);
+  --rose:      #e3a79a;
+  --champagne: #e6cf9e;
+  --sage:      #a8c0a3;
+  --danger:    #e08c86;
+  --serif:     'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --sans:      'Manrope', 'Avenir Next', 'Segoe UI', sans-serif;
+  --r-lg:      22px;
+  --r-md:      14px;
+  --ease:      cubic-bezier(.22, 1, .36, 1);
+  --spring:    cubic-bezier(.34, 1.56, .64, 1);
+  --safe-b:    env(safe-area-inset-bottom, 0px);
+  --safe-t:    env(safe-area-inset-top, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+::selection { background: rgba(227, 167, 154, 0.3); }
+
+/* ── atmosphere: candle glows, a faint vanity arch, grain ── */
+.atmos { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.atmos::before {
+  content: ''; position: absolute; inset: -20%;
+  background:
+    radial-gradient(40% 35% at 88% 6%,  rgba(227, 167, 154, 0.16), transparent 70%),
+    radial-gradient(38% 40% at 4% 100%, rgba(230, 207, 158, 0.10), transparent 70%),
+    radial-gradient(30% 30% at 50% 55%, rgba(139, 106, 134, 0.07), transparent 70%);
+  animation: breathe 14s ease-in-out infinite alternate;
+}
+@keyframes breathe { to { transform: translate3d(-2%, 1.5%, 0) scale(1.04); } }
+.atmos .arch {
+  position: absolute; right: -6vw; top: 8vh; width: 46vw; max-width: 620px; aspect-ratio: 3 / 4;
+  border: 1px solid rgba(243, 228, 220, 0.05); border-bottom: none;
+  border-radius: 999px 999px 0 0;
+}
+.atmos .arch::after {
+  content: ''; position: absolute; inset: 18px; border: 1px solid rgba(243, 228, 220, 0.035);
+  border-bottom: none; border-radius: inherit;
+}
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── layout ── */
+.shell {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 330px minmax(0, 1fr);
+  min-height: 100vh; max-width: 1320px; margin: 0 auto;
+}
+.side {
+  position: sticky; top: 0; height: 100vh;
+  padding: calc(34px + var(--safe-t)) 30px 28px;
+  display: flex; flex-direction: column; gap: 22px;
+  border-right: 1px solid var(--line);
+}
+.main { padding: calc(38px + var(--safe-t)) clamp(20px, 4vw, 56px) 120px; min-width: 0; }
+
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font: italic 500 40px/1 var(--serif); letter-spacing: -0.01em; }
+.brand span { font: 600 9.5px var(--sans); letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-3); }
+.date-line .late-tag { color: var(--rose); }
+.date-line { font: 400 13px var(--sans); color: var(--ink-3); margin-top: -12px; letter-spacing: 0.02em; }
+
+/* ── the 24-hour dial ── */
+.dial-wrap { position: relative; width: 100%; max-width: 262px; margin: 2px auto 0; aspect-ratio: 1; }
+/* The sidebar is a fixed 100vh column holding ~900px of content, so on a
+   laptop at 100% zoom its foot (Search, Sync, Alerts) fell off the bottom.
+   Shorter windows get a smaller dial and tighter rhythm; scrolling is only
+   the last resort for very short ones. */
+.side { overflow-y: auto; scrollbar-width: none; }
+.side::-webkit-scrollbar { display: none; }
+@media (min-width: 861px) and (max-height: 940px) {
+  .side { gap: 14px; padding-top: calc(24px + var(--safe-t)); padding-bottom: 18px; }
+  .side .dial-wrap { max-width: 196px; }
+  .side .dial .hour { display: none; }
+  .side .next { padding: 10px 13px; }
+  .side .next p { font-size: 18px; }
+  .nav { gap: 1px; }
+  .nav button { padding: 7px 12px; }
+  .nav .sep { margin: 5px 4px; }
+}
+/* Laptop at 100% zoom (~625px tall): dial and "next" card share a row. */
+.side-top { display: contents; }
+@media (min-width: 861px) and (max-height: 760px) {
+  .side .brand h1 { font-size: 34px; }
+  .side-top { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; align-items: center; }
+  .side-top .dial-wrap { max-width: none; margin: 0; }
+  .side-top .dial-center b { font-size: 26px; }
+  .side-top .dial-center b small { font-size: 15px; }
+  .side-top .dial-center span { font-size: 7px; letter-spacing: 0.18em; }
+  .side-top .next p { font-size: 16px; }
+}
+.dial { width: 100%; height: 100%; overflow: visible; }
+.dial .ring { fill: none; stroke: var(--line-2); stroke-width: 1; }
+.dial .ring-in { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 1 5; }
+.dial .tick { stroke: var(--ink-4); stroke-width: 1; }
+.dial .tick.major { stroke: var(--ink-3); }
+.dial .hour { fill: var(--ink-4); font: 500 8px var(--sans); letter-spacing: 0.08em; }
+.dial .arc { fill: none; stroke: var(--rose); stroke-width: 2; stroke-linecap: round; opacity: 0.9;
+  transition: stroke-dashoffset 1s var(--ease); }
+.dial .hand { stroke: var(--champagne); stroke-width: 1.2; stroke-linecap: round; opacity: 0.85; }
+.dial .hand-dot { fill: var(--champagne); }
+.dial .dot { stroke-width: 1.4; transition: r 0.3s var(--spring), fill 0.3s; cursor: pointer; }
+.dial .dot.pending { fill: var(--bg); }
+.dial .dot.overdue { fill: var(--bg); stroke-dasharray: 2 2; }
+.dial .dot.skip { fill: var(--bg); opacity: 0.45; }
+.dial .win-arc { fill: none; stroke: rgba(243, 228, 220, 0.13); stroke-width: 7; stroke-linecap: round; }
+.dial .win-arc.live { stroke: rgba(227, 167, 154, 0.3); }
+.dial-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none; text-align: center;
+}
+.dial-center b { font: 500 48px/1 var(--serif); letter-spacing: -0.02em; }
+.dial-center b small { font-size: 26px; color: var(--ink-3); }
+.dial-center span { margin-top: 4px; font: 600 9px var(--sans); letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-3); }
+
+.next {
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px 15px;
+  background: linear-gradient(135deg, rgba(227, 167, 154, 0.09), rgba(227, 167, 154, 0.02));
+}
+.next small { display: block; font: 600 9px var(--sans); letter-spacing: 0.24em; text-transform: uppercase; color: var(--rose); }
+.next p { font: italic 500 21px/1.25 var(--serif); margin-top: 4px; }
+.next em { font: 400 12px var(--sans); font-style: normal; color: var(--ink-3); }
+.next .more-n { font: 500 11px var(--sans); font-style: normal; color: var(--ink-3); margin-left: 4px; }
+.next.live { border-color: rgba(227, 167, 154, 0.35); }
+
+.nav { display: flex; flex-direction: column; gap: 3px; margin-top: auto; }
+.nav button {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+  color: var(--ink-3); font-weight: 500; font-size: 13.5px; text-align: left;
+  transition: color .2s, background .2s;
+}
+.nav button:hover { color: var(--ink); background: var(--glass); }
+.nav button.on { color: var(--ink); background: var(--glass-2); }
+.nav button.on .k { border-color: var(--rose); color: var(--rose); }
+.nav .k { width: 22px; height: 22px; border-radius: 7px; border: 1px solid var(--line-2); display: grid; place-items: center;
+  font: 500 10px var(--sans); color: var(--ink-4); flex-shrink: 0; }
+.nav .sep { height: 1px; background: var(--line); margin: 8px 4px; }
+
+/* ── sync + alerts: part of the template (data-tsync-baked / data-tpush-baked),
+   so sync-engine and push-client paint these instead of floating their own
+   dot and bell over the page. ── */
+.util { display: flex; gap: 6px; margin-top: -8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.util button {
+  flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--ink-3); font: 500 11.5px var(--sans); letter-spacing: 0.02em; white-space: nowrap;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.util button:hover { color: var(--ink); border-color: var(--line-2); background: var(--glass); }
+.util button svg { width: 13px; height: 13px; flex-shrink: 0; }
+.util button.on svg { color: var(--rose); }
+.util .tsync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-4); flex-shrink: 0; transition: background .3s, box-shadow .3s; }
+.util button[data-s="online"] .tsync-dot { background: #7fd6a0; box-shadow: 0 0 8px rgba(127, 214, 160, 0.7); }
+.util button[data-s="connecting"] .tsync-dot, .util button[data-s="init"] .tsync-dot { background: #e9c27a; box-shadow: 0 0 8px rgba(233, 194, 122, 0.7); animation: utilPulse 1.2s ease infinite; }
+.util button[data-s="offline"] .tsync-dot, .util button[data-s="error"] .tsync-dot { background: #ee8a8a; box-shadow: 0 0 8px rgba(238, 138, 138, 0.6); }
+.util button[data-s="unpaired"] .tsync-dot, .util button[data-s="unconfigured"] .tsync-dot { background: var(--ink-4); box-shadow: none; }
+@keyframes utilPulse { 50% { opacity: 0.35; } }
+
+/* ── section headers ── */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
+.page-head h2 { font: italic 400 44px/1 var(--serif); letter-spacing: -0.01em; }
+.page-head h2 .muted { color: var(--ink-3); }
+.eyebrow { font: 600 9.5px var(--sans); letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--ink-2); font-weight: 600; font-size: 12.5px; letter-spacing: 0.01em;
+  transition: all .2s var(--ease); white-space: nowrap;
+}
+.btn:hover { color: var(--ink); border-color: rgba(227, 167, 154, 0.5); background: rgba(227, 167, 154, 0.06); }
+.btn.primary { background: var(--rose); color: #2a1712; border-color: var(--rose); }
+.btn.primary:hover { background: #ecb6aa; color: #2a1712; }
+.btn.ghost { border-color: transparent; }
+.btn.small { height: 30px; padding: 0 12px; font-size: 11.5px; }
+.btn.danger { color: var(--danger); border-color: rgba(224, 140, 134, 0.35); }
+.icon-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center;
+  color: var(--ink-2); transition: all .2s; }
+.icon-btn:hover { color: var(--ink); border-color: rgba(227, 167, 154, 0.5); }
+
+.day-nav { display: flex; align-items: center; gap: 8px; }
+.day-nav .lbl { font: 500 13px var(--sans); color: var(--ink-2); min-width: 118px; text-align: center; }
+
+.progress-line { height: 2px; background: var(--line); border-radius: 2px; margin: -8px 0 30px; overflow: hidden; }
+.wk { margin: -14px 0 30px; padding: 14px 16px 13px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--glass); }
+.wk-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.wk-top span { font: 600 9.5px var(--sans); letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-3); }
+.wk-top b { font: 500 22px var(--serif); font-style: italic; color: var(--ink); }
+.wk-top b small { font-size: 14px; color: var(--ink-3); }
+.wk-bar { position: relative; height: 4px; margin: 10px 0 10px; background: var(--line); border-radius: 4px; }
+.wk-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--champagne), var(--rose)); transition: width .8s var(--ease); }
+.wk-bar em { position: absolute; top: -4px; width: 1.5px; height: 12px; background: var(--ink-3); border-radius: 1px; }
+.wk p { font-size: 12px; line-height: 1.55; color: var(--ink-3); }
+.wk p b { color: var(--ink-2); font-weight: 600; }
+.wk .wk-today { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--ink-2); }
+.wk .wk-today.penalty { color: var(--danger); }
+.wk .wk-today.reward { color: var(--sage); }
+.progress-line i { display: block; height: 100%; background: linear-gradient(90deg, var(--champagne), var(--rose)); border-radius: 2px;
+  transition: width 0.8s var(--ease); }
+
+/* ── Today: slots ── */
+.bucket { margin-bottom: 30px; }
+.bucket-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.bucket-head h3 { font: italic 500 24px/1 var(--serif); }
+.bucket-head .rule { flex: 1; height: 1px; background: var(--line); transform: translateY(-4px); }
+.bucket-head small { font: 600 9px var(--sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-4); }
+
+.bucket-head .now { color: var(--rose); font-weight: 700; }
+/* each window: a time rail on the left spanning its rituals */
+.bucket-body { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 14px; }
+.bucket-list { min-width: 0; }
+.win { display: flex; flex-direction: column; align-items: flex-end; padding: 12px 0 14px; }
+.win .t { font: 500 22px/1 var(--serif); color: var(--ink-3); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+.win .t small { font: 600 8.5px var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); margin-left: 3px; }
+.win .line { position: relative; flex: 1; min-height: 12px; width: 1px; margin: 9px 12px 9px 0; background: var(--line-2); }
+.win .line i { position: absolute; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--rose);
+  transform: translate(-50%, -50%); box-shadow: 0 0 0 3px rgba(227, 167, 154, 0.18), 0 0 12px var(--rose); }
+.win.any .t { font: italic 400 17px/1 var(--serif); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.win.any .t small { margin: 0; }
+.bucket.live .win .t { color: var(--ink); }
+.bucket.live .win .line { background: linear-gradient(to bottom, var(--rose), rgba(227, 167, 154, 0.15)); }
+.bucket.past .win { opacity: 0.55; }
+.slot { margin-bottom: 10px; }
+#view.enter .slot { animation: rise .6s var(--ease) both; }
+.slot-meta .late { color: var(--ink-3); font-style: italic; }
+.slot-card {
+  position: relative; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass);
+  padding: 14px 14px 14px 16px; transition: border-color .25s, background .25s, transform .25s var(--ease);
+  overflow: hidden;
+}
+.slot-card::before { content: ''; position: absolute; left: 0; top: 16px; bottom: 16px; width: 2px; border-radius: 2px;
+  background: var(--c); opacity: 0.55; }
+.slot-card:hover { border-color: var(--line-2); background: var(--glass-2); }
+.slot-row { display: flex; align-items: center; gap: 14px; }
+.slot.done .slot-card { background: linear-gradient(100deg, color-mix(in srgb, var(--c) 9%, transparent), transparent 70%); }
+.slot.done .slot-name { color: var(--ink-3); }
+.slot.skip .slot-card { opacity: 0.55; }
+.slot.skip .slot-name { text-decoration: line-through; text-decoration-color: var(--ink-4); }
+
+.check {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--c) 55%, var(--ink-4)); display: grid; place-items: center;
+  transition: background .3s, border-color .3s, transform .25s var(--spring);
+}
+.check:hover { transform: scale(1.06); border-color: var(--c); }
+.check svg { width: 17px; height: 17px; }
+/* The tick is always drawn (faint) so the button says what it does; it
+   darkens onto the filled circle once done. */
+.check path { fill: none; stroke: color-mix(in srgb, var(--c) 60%, var(--ink-3)); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke .25s; }
+.slot.done .check { background: var(--c); border-color: var(--c); }
+.slot.done .check path { stroke: #1b1210; }
+.slot.skip .check, .slot.skip .cross { border-style: dashed; }
+
+/* ✓ done / ✕ not done, side by side */
+.marks { display: flex; gap: 6px; flex-shrink: 0; }
+.cross {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; position: relative;
+  border: 1.5px solid var(--line-2); display: grid; place-items: center;
+  transition: background .3s, border-color .3s, transform .25s var(--spring);
+}
+.cross svg { width: 15px; height: 15px; }
+.cross path { fill: none; stroke: var(--ink-3); stroke-width: 2.2; stroke-linecap: round; transition: stroke .25s; }
+.cross:hover { transform: scale(1.06); border-color: var(--danger); }
+.cross:hover path { stroke: var(--danger); }
+.slot.miss .cross { background: var(--danger); border-color: var(--danger); }
+.slot.miss .cross path { stroke: #1b1210; }
+.slot.miss .slot-card::before { background: var(--danger); }
+.slot.miss .slot-name { color: var(--ink-3); }
+.slot-meta .missed { color: var(--danger); }
+.dial .dot.miss { fill: var(--danger); stroke: var(--danger); opacity: 0.85; }
+.check.pop::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid var(--c);
+  animation: bloom .6s var(--ease) forwards; }
+@keyframes bloom { from { opacity: .9; transform: scale(.8); } to { opacity: 0; transform: scale(1.7); } }
+
+.emoji { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 22%, transparent); }
+.slot-body { flex: 1; min-width: 0; }
+.slot-name { font-weight: 600; font-size: 15px; letter-spacing: -0.005em; transition: color .3s; }
+.slot-meta { font-size: 12px; color: var(--ink-3); margin-top: 1px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.slot-meta .dotsep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+.streak { color: var(--champagne); }
+.more { width: 32px; height: 32px; border-radius: 50%; color: var(--ink-3); display: grid; place-items: center; flex-shrink: 0; font-size: 18px; line-height: 1; }
+.more:hover { background: var(--glass-2); color: var(--ink); }
+
+.checklist { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 2px 52px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid var(--line-2); font-size: 12px; color: var(--ink-2); transition: all .2s;
+}
+.chip:hover { border-color: color-mix(in srgb, var(--c, var(--rose)) 60%, transparent); }
+.chip.on { background: color-mix(in srgb, var(--c, var(--rose)) 18%, transparent); border-color: color-mix(in srgb, var(--c, var(--rose)) 50%, transparent); color: var(--ink); }
+.chip.on::before { content: '✓'; font-size: 10px; color: var(--c, var(--rose)); }
+
+.note-preview { margin: 10px 0 0 52px; font: italic 400 15px/1.4 var(--serif); color: var(--ink-2); padding-left: 12px; border-left: 1px solid var(--line-2); }
+.slot-actions { display: flex; gap: 6px; margin: 12px 0 0 52px; flex-wrap: wrap; animation: rise .3s var(--ease) both; }
+.note-edit { margin: 12px 0 0 52px; animation: rise .3s var(--ease) both; }
+.note-edit textarea {
+  width: 100%; min-height: 64px; resize: vertical; background: rgba(0,0,0,0.25); border: 1px solid var(--line-2); border-radius: 12px;
+  padding: 10px 12px; font: italic 400 16px/1.4 var(--serif); color: var(--ink); outline: none;
+}
+.note-edit textarea:focus { border-color: rgba(227, 167, 154, 0.5); }
+.note-edit .row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── empty states ── */
+.empty { text-align: center; padding: 56px 20px 40px; border: 1px dashed var(--line-2); border-radius: var(--r-lg); }
+.empty h3 { font: italic 400 34px/1.1 var(--serif); margin-bottom: 8px; }
+.empty p { color: var(--ink-3); max-width: 420px; margin: 0 auto 22px; }
+.templates { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.templates .chip { height: 34px; padding: 0 14px; font-size: 12.5px; }
+
+/* ── Week ── */
+.week { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass); overflow: hidden; }
+.week-scroll { overflow-x: auto; }
+.week table { width: 100%; border-collapse: collapse; min-width: 640px; }
+.week th, .week td { padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.week tr:last-child td { border-bottom: none; }
+.week th { font: 600 9.5px var(--sans); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); }
+.week th b { display: block; font: 500 22px/1.1 var(--serif); letter-spacing: 0; color: var(--ink-2); text-transform: none; margin-top: 3px; }
+.week th.today b { color: var(--rose); }
+.week td.name { text-align: left; padding-left: 18px; white-space: nowrap; }
+.week td.name span { font-size: 13.5px; font-weight: 600; margin-left: 8px; }
+.week td.cell { cursor: pointer; transition: background .2s; }
+.week td.cell:hover { background: var(--glass-2); }
+.week td.today { background: rgba(227, 167, 154, 0.04); }
+.pips { display: inline-flex; gap: 4px; }
+.pip { width: 9px; height: 9px; border-radius: 50%; border: 1.3px solid var(--ink-4); }
+.pip.done { background: var(--c); border-color: var(--c); }
+.pip.skip { border-style: dashed; border-color: var(--ink-3); }
+.pip.missed { border-color: var(--danger); background: rgba(224, 140, 134, 0.15); }
+.pip.planned { border-color: color-mix(in srgb, var(--c) 45%, transparent); }
+.off { color: var(--ink-4); font-size: 12px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; font-size: 12px; color: var(--ink-3); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ── Routines ── */
+.cat { margin-bottom: 28px; }
+.cat h3 { font: italic 500 22px/1 var(--serif); margin-bottom: 12px; color: var(--ink-2); }
+.rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.rcard {
+  text-align: left; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass); padding: 16px;
+  display: flex; gap: 14px; align-items: flex-start; transition: all .25s var(--ease);
+}
+#view.enter .rcard { animation: rise .5s var(--ease) both; }
+.rcard:hover { border-color: color-mix(in srgb, var(--c) 45%, transparent); transform: translateY(-2px); background: var(--glass-2); }
+.rcard .t { font-weight: 600; font-size: 15px; }
+.rcard .s { font-size: 12px; color: var(--ink-3); margin-top: 3px; line-height: 1.5; }
+.rcard .badge { display: inline-block; margin-top: 8px; font: 600 9px var(--sans); letter-spacing: 0.2em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--ink-3); }
+.rcard.paused { opacity: 0.55; }
+
+/* ── Stats ── */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 26px; }
+.kpi { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass); padding: 18px 18px 16px; }
+.kpi b { display: block; font: 500 46px/1 var(--serif); letter-spacing: -0.02em; }
+.kpi b small { font-size: 22px; color: var(--ink-3); }
+.kpi span { font: 600 9px var(--sans); letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
+.scard { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass); padding: 18px; margin-bottom: 12px; }
+#view.enter .scard { animation: rise .5s var(--ease) both; }
+.scard-top { display: flex; align-items: center; gap: 14px; }
+.scard-top .t { font-weight: 600; font-size: 15px; flex: 1; }
+.scard-nums { display: flex; gap: 22px; text-align: right; }
+.scard-nums b { display: block; font: 500 30px/1 var(--serif); }
+.scard-nums span { font: 600 8.5px var(--sans); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); }
+.strip { display: grid; grid-template-columns: repeat(28, minmax(0, 1fr)); gap: 3px; margin-top: 16px; }
+.strip i { aspect-ratio: 1; border-radius: 3px; background: var(--line); }
+.strip i.done { background: var(--c); }
+.strip i.part { background: color-mix(in srgb, var(--c) 45%, transparent); }
+.strip i.skip { background: transparent; border: 1px dashed var(--ink-4); }
+.strip i.missed { background: rgba(224, 140, 134, 0.28); }
+.strip i.none { background: transparent; }
+.notes { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+.notes div { display: grid; grid-template-columns: 70px 1fr; gap: 10px; font: italic 400 15px/1.35 var(--serif); color: var(--ink-2); }
+.notes time { font: 600 9.5px var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); padding-top: 4px; font-style: normal; }
+
+/* ── the add / edit sheet ── */
+.scrim { position: fixed; inset: 0; z-index: 50; background: rgba(8, 5, 7, 0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .25s; }
+.scrim.in { opacity: 1; }
+.sheet {
+  width: min(560px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; overscroll-behavior: contain;
+  background: linear-gradient(180deg, #1a1316, #130e11); border: 1px solid var(--line-2); border-radius: 26px;
+  padding: 26px 26px 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  transform: translateY(18px) scale(.98); transition: transform .35s var(--ease);
+}
+.scrim.in .sheet { transform: none; }
+.sheet h2 { font: italic 400 34px/1 var(--serif); margin-bottom: 20px; }
+.field { margin-bottom: 18px; }
+.field > label, .field > .lbl { display: block; font: 600 9.5px var(--sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.input {
+  width: 100%; height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--line-2);
+  outline: none; transition: border-color .2s; color-scheme: dark;
+}
+.input:focus { border-color: rgba(227, 167, 154, 0.55); }
+.input.name { font: italic 500 22px var(--serif); height: 50px; }
+textarea.input { height: auto; min-height: 70px; padding: 10px 14px; resize: vertical; }
+.err { color: var(--danger); font-size: 12px; margin-top: 6px; min-height: 0; }
+.emojis { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+.emojis button { height: 38px; border-radius: 11px; font-size: 19px; border: 1px solid transparent; transition: all .15s; }
+.emojis button:hover { background: var(--glass-2); }
+.emojis button.on { border-color: var(--rose); background: rgba(227, 167, 154, 0.12); }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatches button { width: 28px; height: 28px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--bg-2); transition: box-shadow .2s, transform .2s var(--spring); }
+.swatches button.on { box-shadow: 0 0 0 2px var(--bg-2), 0 0 0 4px var(--c); transform: scale(1.08); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid var(--line-2); gap: 2px; flex-wrap: wrap; }
+.seg button { padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); transition: all .2s; }
+.seg button.on { background: var(--glass-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+.days { display: flex; gap: 6px; flex-wrap: wrap; }
+.days button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-2); font-weight: 600; font-size: 12px; color: var(--ink-3); transition: all .2s; }
+.days button.on { background: var(--rose); border-color: var(--rose); color: #2a1712; }
+.presets { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+/* sheet: pick windows */
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+.parts button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 11px 13px; border-radius: 14px;
+  border: 1px solid var(--line-2); text-align: left; transition: border-color .2s, background .2s; }
+.parts button:hover { border-color: rgba(227, 167, 154, 0.4); }
+.parts button b { font: italic 500 18px/1.05 var(--serif); color: var(--ink-2); }
+.parts button small { font: 500 10.5px var(--sans); letter-spacing: 0.02em; color: var(--ink-4); }
+.parts button.on { border-color: rgba(227, 167, 154, 0.6); background: rgba(227, 167, 154, 0.1); }
+.parts button.on b { color: var(--ink); }
+.parts button.on small { color: var(--rose); }
+
+/* Rituals tab: your day windows */
+.cat-sub { font-size: 12.5px; color: var(--ink-3); margin: -6px 0 12px; }
+.dayparts { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--glass); margin-bottom: 26px; }
+.dp-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+.dp-row + .dp-row { border-top: 1px solid var(--line); }
+.dp-name { flex: 1; min-width: 0; font: italic 500 19px/1.1 var(--serif); }
+.dp-name small { display: block; font: 500 10.5px var(--sans); font-style: normal; color: var(--ink-4); margin-top: 3px; letter-spacing: 0.02em; }
+.dp-row input { width: 128px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-2); background: rgba(0, 0, 0, 0.25);
+  color: var(--ink); font: 500 14px var(--sans); color-scheme: dark; outline: none; }
+.dp-row input:focus { border-color: rgba(227, 167, 154, 0.6); }
+.dp-to { font-size: 12px; color: var(--ink-4); }
+.hint { font-size: 12px; color: var(--ink-3); margin-top: 7px; }
+.inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.inline .input { width: auto; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.switch { width: 42px; height: 24px; border-radius: 999px; background: var(--line-2); position: relative; transition: background .2s; flex-shrink: 0; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink); transition: transform .25s var(--spring); }
+.switch.on { background: var(--rose); }
+.switch.on::after { transform: translateX(18px); }
+.sheet-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; padding-top: 16px; border-top: 1px solid var(--line); position: sticky; bottom: -20px; background: #130e11; padding-bottom: 4px; }
+
+/* ── toast ── */
+.toast { position: fixed; left: 50%; bottom: calc(28px + var(--safe-b)); z-index: 60; transform: translate(-50%, 20px); opacity: 0;
+  background: #221a1d; border: 1px solid var(--line-2); border-radius: 999px; padding: 8px 8px 8px 18px; display: flex; align-items: center; gap: 12px;
+  font-size: 13px; transition: all .3s var(--ease); box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.toast.in { opacity: 1; transform: translate(-50%, 0); }
+
+/* ── mobile ── */
+.mob-head, .tabbar { display: none; }
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .main { padding: calc(18px + var(--safe-t)) 16px calc(110px + var(--safe-b)); }
+  .mob-head { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .mob-head .brand h1 { font-size: 34px; }
+  .mob-head .date-line { margin-top: 2px; }
+  .mob-head .util { margin-top: 12px; padding-top: 0; border-top: 0; }
+  .mob-head .util button { flex: 0 0 auto; height: 28px; padding: 0 11px; font-size: 11px; }
+  .mob-head .dial-wrap { width: 118px; max-width: none; margin: 0; }
+  .mob-head .dial-center b { font-size: 26px; }
+  .mob-head .dial-center b small { font-size: 15px; }
+  .mob-head .dial-center span { font-size: 7px; letter-spacing: 0.18em; }
+  .mob-head .dial .hour { display: none; }
+  .mob-head .next { grid-column: 1 / -1; }
+  .tabbar {
+    display: flex; position: fixed; left: 10px; right: 10px; bottom: calc(10px + var(--safe-b)); z-index: 40;
+    background: rgba(22, 16, 19, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line-2); border-radius: 999px; padding: 5px; justify-content: space-between;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+  .tabbar button { flex: 1; height: 46px; border-radius: 999px; display: grid; place-items: center; color: var(--ink-3); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; gap: 0; }
+  .tabbar button svg { width: 19px; height: 19px; }
+  .tabbar button.on { color: var(--ink); background: var(--glass-2); }
+  .tabbar .div { width: 1px; background: var(--line-2); margin: 10px 3px; }
+  .page-head h2 { font-size: 36px; }
+  .bucket-body { grid-template-columns: 46px minmax(0, 1fr); gap: 10px; }
+  .check, .cross { width: 34px; height: 34px; }
+  .marks { gap: 5px; }
+  .slot-row { gap: 10px; }
+  .emoji { width: 34px; height: 34px; font-size: 17px; border-radius: 11px; }
+  .win .t { font-size: 17px; }
+  .win .t small { font-size: 7.5px; margin-left: 2px; }
+  .win .line { margin-right: 9px; }
+  .win.any .t { font-size: 14px; }
+  .dp-row { padding: 10px 12px; gap: 6px; }
+  .dp-name { font-size: 17px; }
+  .dp-row input { width: 100px; padding: 0 6px; font-size: 13px; }
+  /* tapping the field opens the picker on a phone anyway — the icon only costs room */
+  .dp-row input::-webkit-calendar-picker-indicator { display: none; }
+  .checklist, .note-preview, .slot-actions, .note-edit { margin-left: 0; }
+  .sheet { padding: 22px 18px 16px; border-radius: 22px; }
+  .scrim { align-items: flex-end; padding: 0; }
+  .sheet { max-height: 92vh; border-radius: 24px 24px 0 0; padding-bottom: calc(16px + var(--safe-b)); }
+  .atmos .arch { display: none; }
+  .toast { bottom: calc(84px + var(--safe-b)); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="atmos"><div class="arch"></div></div>
+<div class="grain"></div>
+
+<div class="shell">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+    <div class="mob-head" id="mobHead"></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   RITUALS · data
+   One localStorage key, so sync-engine.js mirrors it to every device.
+   {
+     routines: [{ id, name, emoji, color, category, times:['dawn','night'],
+                  schedule:{ type:'days'|'every', days:[0..6 (Sun=0)], every:N, start:'YYYY-MM-DD' },
+                  checklist:['Whites'], notes, paused, created:'YYYY-MM-DD' }],
+     log: { 'YYYY-MM-DD': { '<id>|<slot>': { s:'done'|'skip', at, note, items:[i] } } },
+     parts: { dawn:{ from, to }, … }      // minutes from midnight; to < from wraps past midnight
+   }
+   `times` holds day-part ids (windows like "early morning"), not clock times —
+   nobody washes their face at exactly 07:10. Older data stored 'HH:MM'; load()
+   moves that to the window it falls in. A routine with no parts has a single
+   "anytime" slot (index 0).
+════════════════════════════════════════════════════════════════════ */
+(function () {
+'use strict';
+
+var KEY = 'rituals_v1';
+var COLORS = ['#e3a79a', '#e6cf9e', '#a8c0a3', '#b9a7d6', '#9fbfd8', '#f0b48a', '#c99bb0', '#cdbba0'];
+var EMOJIS = ['🧴','🧼','🪥','💧','🧖','💆','🪞','✨','🌿','🧽','🪒','💅','🦷','💊','🍵','🥛','🧘','🚿','🧺','👕','🧦','🛏️','🪴','🧹','🗑️','🍽️','🐾','👟','📚','☀️'];
+var CATS = [['body', 'Body care'], ['home', 'Home'], ['health', 'Health'], ['other', 'Other']];
+var DN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+var WEEK = [1, 2, 3, 4, 5, 6, 0];                 // shown Monday-first
+var TEMPLATES = [
+  { name: 'Face wash',        emoji: '🧼', category: 'body',   times: ['dawn', 'night'],    schedule: { type: 'days', days: [0,1,2,3,4,5,6] } },
+  { name: 'Face cream',       emoji: '🧴', category: 'body',   times: ['morning', 'night'], schedule: { type: 'days', days: [0,1,2,3,4,5,6] } },
+  { name: 'Sunscreen',        emoji: '☀️', category: 'body',   times: ['morning'],          schedule: { type: 'days', days: [0,1,2,3,4,5,6] } },
+  { name: 'Wash clothes',     emoji: '🧺', category: 'home',   times: ['afternoon'],        schedule: { type: 'days', days: [2,0] }, checklist: ['Whites', 'Jeans', 'Towels'] },
+  { name: 'Change bedsheets', emoji: '🛏️', category: 'home',   times: [],                   schedule: { type: 'every', every: 14 } },
+  { name: 'Vitamins',         emoji: '💊', category: 'health', times: ['morning'],          schedule: { type: 'days', days: [0,1,2,3,4,5,6] } },
+  { name: 'Water plants',     emoji: '🪴', category: 'home',   times: ['evening'],          schedule: { type: 'days', days: [1,4] } }
+];
+
+/* ── day parts: rituals happen in a window, not at a minute ──
+   The ranges are yours to change (Rituals tab → Your day); these are the
+   starting point. Reminders go out as a window opens. */
+var PART_DEFAULTS = [
+  ['dawn',      'Early morning', 360,  480],
+  ['morning',   'Morning',       480,  720],
+  ['afternoon', 'Afternoon',     720,  1020],
+  ['evening',   'Evening',       1020, 1260],
+  ['night',     'Night',         1260, 1440]
+];
+var PART_IDS = PART_DEFAULTS.map(function (p) { return p[0]; });
+var HHMM = /^\d{1,2}:\d{2}$/;
+
+/* ── dates (noon-anchored so DST never shifts a day) ── */
+function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
+function add(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
+function diff(a, b) { return Math.round((parse(b) - parse(a)) / 86400000); }
+// A late night isn't a new day: until 4 am it's still the night before, so a
+// face wash at 00:30 ticks off last night's slot, and a Night window that
+// runs to 01:00 stays open past midnight. nowMin() runs past 1440 to match.
+var DAY_START = 240;
+function today() { var d = new Date(); if (d.getHours() * 60 + d.getMinutes() < DAY_START) d.setDate(d.getDate() - 1); return ymd(d); }
+function nowMin() { var d = new Date(), m = d.getHours() * 60 + d.getMinutes(); return m < DAY_START ? m + 1440 : m; }
+function toMin(t) { if (!t) return null; var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function uid() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* ── day-part helpers ── */
+function part(id) {
+  var at = PART_IDS.indexOf(id); if (at === -1) return null;
+  var d = PART_DEFAULTS[at], o = ((S && S.parts) || {})[id] || {};
+  var from = o.from != null ? o.from : d[2], to = o.to != null ? o.to : d[3];
+  if (to <= from) to += 1440;                              // e.g. Night 21:00 → 01:00
+  return { id: id, name: d[1], from: from, to: to };
+}
+// Where an old clock time belongs. Small hours count as the night before.
+function partOf(m) { return m < 240 ? 'night' : m < 480 ? 'dawn' : m < 720 ? 'morning' : m < 1020 ? 'afternoon' : m < 1260 ? 'evening' : 'night'; }
+function hhmm(m) { m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+function ap(m) { return (((m % 1440) + 1440) % 1440) < 720 ? 'am' : 'pm'; }
+function clock(m) { m = ((m % 1440) + 1440) % 1440; var h = Math.floor(m / 60) % 12 || 12, mm = m % 60; return h + (mm ? ':' + String(mm).padStart(2, '0') : ''); }
+function fmtRange(p) {
+  return ap(p.from) === ap(p.to) && p.to - p.from < 720
+    ? clock(p.from) + '–' + clock(p.to) + ' ' + ap(p.to)
+    : clock(p.from) + ' ' + ap(p.from) + ' – ' + clock(p.to) + ' ' + ap(p.to);
+}
+
+/* Slots are stored by index ('<id>|0'), so when a ritual's windows change,
+   move each day's ticks to wherever that window now sits. Where two land on
+   one slot (old data with 09:00 and 09:05), a "done" wins. */
+function remapLog(log, r, oldT, newT) {
+  var n = Math.max(oldT.length, 1);
+  Object.keys(log).forEach(function (date) {
+    var day = log[date], moved = {}, touched = false;
+    for (var i = 0; i < n; i++) {
+      var k = r.id + '|' + i, e = day[k]; if (!e) continue;
+      delete day[k]; touched = true;
+      var j = (oldT.length && newT.length) ? newT.indexOf(oldT[i]) : (i === 0 ? 0 : -1);
+      if (j < 0) continue;
+      var nk = r.id + '|' + j;
+      if (!moved[nk] || (e.s === 'done' && moved[nk].s !== 'done')) moved[nk] = e;
+    }
+    if (!touched) return;
+    Object.assign(day, moved);
+    if (!Object.keys(day).length) delete log[date];
+  });
+}
+
+// Fill in day parts and move any 'HH:MM' times to windows. Idempotent.
+function migrate(d) {
+  var changed = false;
+  if (!d.parts || typeof d.parts !== 'object') { d.parts = {}; changed = true; }
+  PART_DEFAULTS.forEach(function (p) { if (!d.parts[p[0]]) { d.parts[p[0]] = { from: p[2], to: p[3] }; changed = true; } });
+  d.routines.forEach(function (r) {
+    var t = r.times || [];
+    if (!t.some(function (x) { return HHMM.test(x) || PART_IDS.indexOf(x) === -1; })) return;
+    var ids = t.map(function (x) { return HHMM.test(x) ? partOf(toMin(x)) : x; });
+    var next = PART_IDS.filter(function (id) { return ids.indexOf(id) !== -1; });
+    remapLog(d.log, r, ids, next);
+    r.times = next; changed = true;
+  });
+  return changed;
+}
+
+/* ── state ── */
+function load() {
+  var d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!d || !Array.isArray(d.routines)) d = { routines: [], log: {} };
+  d.log = d.log || {};
+  // Persist the upgrade so the Hub card and reminders read windows too.
+  if (migrate(d) && d.routines.length) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  return d;
+}
+var S = null;
+S = load();
+function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+var ui = {
+  tab: (function () { try { return sessionStorage.getItem('rituals_tab') || 'today'; } catch (e) { return 'today'; } })(),
+  day: today(), weekOff: 0, menu: null, note: null
+};
+
+/* ── schedule rules ── */
+function scheduled(r, date) {
+  if (r.paused) return false;
+  if (r.created && date < r.created) return false;         // no "missed" history before it existed
+  var sc = r.schedule || {};
+  if (sc.type === 'every') {
+    var n = diff(sc.start || r.created || date, date);
+    return n >= 0 && n % Math.max(1, sc.every || 1) === 0;
+  }
+  return (sc.days || []).indexOf(parse(date).getDay()) !== -1;
+}
+function slotCount(r) { return (r.times && r.times.length) ? r.times.length : 1; }
+function entry(date, r, i) { return (S.log[date] || {})[r.id + '|' + i] || null; }
+function setEntry(date, r, i, patch) {
+  var day = S.log[date] || (S.log[date] = {});
+  var k = r.id + '|' + i;
+  var e = Object.assign({}, day[k] || {}, patch);
+  Object.keys(e).forEach(function (x) { if (e[x] == null || e[x] === '' || (Array.isArray(e[x]) && !e[x].length)) delete e[x]; });
+  if (!e.s && !e.note && !e.items) delete day[k]; else day[k] = e;
+  if (!Object.keys(day).length) delete S.log[date];
+  save();
+}
+// Entry states: 'done' (✓), 'miss' (✕ — you marked it not done), 'skip'
+// (neutral, doesn't count). No entry = not marked yet.
+function resolved(e) { return !!(e && (e.s === 'done' || e.s === 'skip' || e.s === 'miss')); }
+
+// done | skip (all skipped) | part | missed | planned | none
+function dayState(r, date) {
+  if (!scheduled(r, date)) return 'none';
+  var n = slotCount(r), done = 0, skip = 0, miss = 0;
+  for (var i = 0; i < n; i++) {
+    var e = entry(date, r, i);
+    if (e && e.s === 'done') done++; else if (e && e.s === 'skip') skip++; else if (e && e.s === 'miss') miss++;
+  }
+  if (done + skip === n) return done ? 'done' : 'skip';
+  // Every slot answered, some with ✕: settled, even for today or a future day.
+  if (done + skip + miss === n) return done ? 'part' : 'missed';
+  if (date > today()) return 'planned';
+  if (date === today()) return done ? 'part' : 'planned';
+  return done ? 'part' : 'missed';
+}
+// Has every slot of the day been answered (✓, ✕ or skip)?
+function settled(r, date) {
+  for (var i = 0; i < slotCount(r); i++) if (!resolved(entry(date, r, i))) return false;
+  return true;
+}
+
+/* Streak = scheduled days in a row, fully kept. Skipped days are neutral —
+   they neither break nor extend it. Today doesn't break it until it's over. */
+function streak(r) {
+  var n = 0, d = today();
+  for (var k = 0; k < 800; k++, d = add(d, -1)) {
+    if (r.created && d < r.created) break;
+    var st = dayState(r, d);
+    if (st === 'none' || st === 'skip') continue;
+    if (st === 'done') { n++; continue; }
+    if (d === today() && !settled(r, d)) continue;   // today is still open; a ✕ today does count
+    break;
+  }
+  return n;
+}
+function bestStreak(r) {
+  var best = 0, cur = 0, d = r.created || add(today(), -365), end = today();
+  for (var k = 0; k < 2000 && d <= end; k++, d = add(d, 1)) {
+    var st = dayState(r, d);
+    if (st === 'none' || st === 'skip') continue;
+    if (st === 'done') { cur++; best = Math.max(best, cur); }
+    else if (d !== end) cur = 0;
+  }
+  return best;
+}
+// % of this month's due slots actually done (skips excluded; today counts only what's done)
+function adherence(r, from, to) {
+  var due = 0, done = 0;
+  for (var d = from; d <= to; d = add(d, 1)) {
+    if (!scheduled(r, d)) continue;
+    for (var i = 0; i < slotCount(r); i++) {
+      var e = entry(d, r, i);
+      if (e && e.s === 'skip') continue;
+      if (e && e.s === 'done') { due++; done++; }
+      else if (d < today() || (e && e.s === 'miss')) due++;
+    }
+  }
+  return due ? Math.round(done / due * 100) : null;
+}
+
+function slotsOn(date) {
+  var out = [];
+  S.routines.forEach(function (r) {
+    if (!scheduled(r, date)) return;
+    for (var i = 0; i < slotCount(r); i++) out.push({ r: r, i: i, part: part((r.times || [])[i]), e: entry(date, r, i) });
+  });
+  // Window order, then the order rituals were made (sort is stable).
+  out.sort(function (a, b) { return (a.part ? PART_IDS.indexOf(a.part.id) : 99) - (b.part ? PART_IDS.indexOf(b.part.id) : 99); });
+  return out;
+}
+// Where "now" sits against a window on a given day: before | live | past
+function phase(p, date) {
+  var t = today();
+  if (!p || date > t) return 'before';
+  if (date < t) return 'past';
+  var now = nowMin();
+  return now < p.from ? 'before' : now < p.to ? 'live' : 'past';
+}
+
+// The first open ritual whose window hasn't closed yet — live ones first by nature.
+function nextUp() {
+  var t = today(), now = nowMin();
+  var open = slotsOn(t).filter(function (s) { return !resolved(s.e) && s.part && s.part.to > now; });
+  if (open.length) {
+    var s = open[0], live = now >= s.part.from;
+    var more = open.filter(function (x) { return x.part.id === s.part.id; }).length - 1;
+    return { s: s, date: t, live: live, mins: live ? s.part.to - now : s.part.from - now, more: more };
+  }
+  for (var k = 1; k <= 14; k++) {
+    var d = add(t, k), c = slotsOn(d).filter(function (s) { return s.part; });
+    if (c.length) return { s: c[0], date: d, live: false, mins: null, more: 0 };
+  }
+  return null;
+}
+function inWords(m) { if (m < 1) return 'now'; if (m < 60) return 'in ' + m + ' min'; var h = Math.floor(m / 60), r = m % 60; return 'in ' + h + 'h' + (r ? ' ' + r + 'm' : ''); }
+function scheduleText(r) {
+  var sc = r.schedule || {}, when;
+  if (sc.type === 'every') when = sc.every === 1 ? 'Every day' : 'Every ' + sc.every + ' days';
+  else {
+    var ds = sc.days || [];
+    when = ds.length === 7 ? 'Every day'
+      : ds.length === 5 && [1,2,3,4,5].every(function (d) { return ds.indexOf(d) !== -1; }) ? 'Weekdays'
+      : ds.length === 2 && ds.indexOf(0) !== -1 && ds.indexOf(6) !== -1 ? 'Weekends'
+      : WEEK.filter(function (d) { return ds.indexOf(d) !== -1; }).map(function (d) { return DN[d]; }).join(' · ');
+  }
+  var t = (r.times || []).map(function (id) { var p = part(id); return p ? p.name.toLowerCase() : id; });
+  var times = !t.length ? 'anytime' : t.length === 1 ? t[0] : t.slice(0, -1).join(', ') + ' & ' + t[t.length - 1];
+  return when + ' · ' + times;
+}
+function fmtDay(d) {
+  var t = today();
+  if (d === t) return 'Today';
+  if (d === add(t, -1)) return 'Yesterday';
+  if (d === add(t, 1)) return 'Tomorrow';
+  return parse(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/* ════════ the 24-hour dial ════════ */
+function dial(date) {
+  var slots = slotsOn(date), R = 108, C = 130;
+  var done = slots.filter(function (s) { return s.e && s.e.s === 'done'; }).length;
+  var skip = slots.filter(function (s) { return s.e && s.e.s === 'skip'; }).length;
+  var total = slots.length - skip;
+  function pt(min, r) { var a = (min / 1440) * Math.PI * 2 - Math.PI / 2; return [C + r * Math.cos(a), C + r * Math.sin(a)]; }
+  var svg = '<svg class="dial" viewBox="0 0 260 260" aria-hidden="true">';
+  svg += '<circle class="ring" cx="130" cy="130" r="' + R + '"/><circle class="ring-in" cx="130" cy="130" r="' + (R - 16) + '"/>';
+  for (var h = 0; h < 24; h++) {
+    var major = h % 6 === 0, a = pt(h * 60, R + 5), b = pt(h * 60, R + (major ? 13 : 9));
+    svg += '<line class="tick' + (major ? ' major' : '') + '" x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '"/>';
+    if (major) { var l = pt(h * 60, R + 24); svg += '<text class="hour" x="' + l[0].toFixed(1) + '" y="' + (l[1] + 3).toFixed(1) + '" text-anchor="middle">' + String(h).padStart(2, '0') + '</text>'; }
+  }
+  var circ = 2 * Math.PI * (R - 16), pct = total ? done / total : 0;
+  svg += '<circle class="arc" cx="130" cy="130" r="' + (R - 16) + '" stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + (circ * (1 - pct)).toFixed(1) + '" transform="rotate(-90 130 130)"/>';
+  if (date === today()) {
+    var hp = pt(nowMin(), R - 30), hq = pt(nowMin(), R + 2);
+    svg += '<line class="hand" x1="' + hp[0].toFixed(1) + '" y1="' + hp[1].toFixed(1) + '" x2="' + hq[0].toFixed(1) + '" y2="' + hq[1].toFixed(1) + '"/><circle class="hand-dot" cx="' + hq[0].toFixed(1) + '" cy="' + hq[1].toFixed(1) + '" r="2.4"/>';
+  }
+  // Each window in use is an arc on the rim; its rituals sit spaced along it.
+  var byPart = {};
+  slots.forEach(function (s) { if (s.part) (byPart[s.part.id] = byPart[s.part.id] || []).push(s); });
+  PART_IDS.forEach(function (id) {
+    var list = byPart[id]; if (!list) return;
+    var p = list[0].part, a = pt(p.from, R), b = pt(p.to, R);
+    svg += '<path class="win-arc' + (phase(p, date) === 'live' ? ' live' : '') + '" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) +
+      ' A' + R + ' ' + R + ' 0 ' + (p.to - p.from > 720 ? 1 : 0) + ' 1 ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"><title>' + p.name + ' · ' + fmtRange(p) + '</title></path>';
+  });
+  PART_IDS.forEach(function (id) {
+    var list = byPart[id]; if (!list) return;
+    var past = phase(list[0].part, date) === 'past';
+    list.forEach(function (s, j) {
+      var m = s.part.from + (s.part.to - s.part.from) * (j + 1) / (list.length + 1);
+      var p = pt(m, R), st = s.e && s.e.s === 'done' ? 'done' : s.e && s.e.s === 'skip' ? 'skip' : s.e && s.e.s === 'miss' ? 'miss' : past ? 'overdue' : 'pending';
+      svg += '<circle class="dot ' + st + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (st === 'done' ? 6 : 5) + '" stroke="' + s.r.color + '"' + (st === 'done' ? ' fill="' + s.r.color + '"' : '') + '><title>' + esc(s.r.name) + ' · ' + s.part.name.toLowerCase() + '</title></circle>';
+    });
+  });
+  svg += '</svg>';
+  return '<div class="dial-wrap">' + svg + '<div class="dial-center"><b>' + done + '<small>/' + total + '</small></b><span>' + (date === today() ? 'kept today' : 'kept') + '</span></div></div>';
+}
+
+function nextCard() {
+  var n = nextUp();
+  if (!n) return '';
+  var p = n.s.part;
+  var when = n.live ? p.name + ' · until ' + clock(p.to) + ' ' + ap(p.to)
+    : n.mins != null ? p.name + ' · ' + inWords(n.mins)
+    : fmtDay(n.date) + ' · ' + p.name.toLowerCase();
+  return '<div class="next' + (n.live ? ' live' : '') + '"><small>' + (n.live ? 'Now' : 'Next ritual') + '</small><p>' + n.s.r.emoji + ' ' + esc(n.s.r.name) +
+    (n.more ? ' <span class="more-n">+' + n.more + ' more</span>' : '') + '</p><em>' + when + '</em></div>';
+}
+
+/* ════════ chrome ════════ */
+var ICONS = {
+  today:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  week:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  routines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 4h6a1 1 0 0 1 1 1v2H8V5a1 1 0 0 1 1-1z"/><path d="M8 7h8l1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2l1-12z"/></svg>',
+  stats:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  // Same 24-unit viewBox and 1.6 stroke as today/week/routines/stats above — these two
+  // used to borrow hub-nav's generic 16px icons verbatim, which read thinner and smaller
+  // than the rest of this set. Sized explicitly so they still fit the 22px sidebar slot.
+  apps:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>',
+  search:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L20.5 20.5" stroke-linecap="round"/></svg>',
+  bell:     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5V7a4 4 0 0 1 8 0v4.5l1 1.5H3l1-1.5z"/><path d="M6.6 14.5a1.6 1.6 0 0 0 2.8 0"/></svg>'
+};
+
+/* Sync + alerts controls. Rebuilt with the rest of the chrome on every render,
+   so each build reads the live state rather than waiting for the next event. */
+var SYNC_WORD = { init: 'Sync…', unconfigured: 'Sync off', unpaired: 'Pair device', connecting: 'Syncing…', online: 'Synced', offline: 'Offline', error: 'Sync error' };
+function utilState() {
+  var s = 'unconfigured', alerts = false;
+  try { if (window.TrackersSync) s = window.TrackersSync.status().status; } catch (_) {}
+  try { if (window.TrackersPush) alerts = !!window.TrackersPush.prefs().enabled; } catch (_) {}
+  return { s: s, alerts: alerts };
+}
+function utilHTML() {
+  var u = utilState();
+  return '<div class="util">' +
+    '<button data-util="sync" data-tsync data-tsync-baked data-s="' + u.s + '" title="Sync status — click to sync now"><span class="tsync-dot"></span><span class="util-w">' + (SYNC_WORD[u.s] || 'Sync') + '</span></button>' +
+    '<button data-util="push" data-tpush-baked class="' + (u.alerts ? 'on' : '') + '" title="Notification settings">' + ICONS.bell + '<span class="util-w">' + (u.alerts ? 'Alerts on' : 'Alerts') + '</span></button>' +
+    '</div>';
+}
+// Status changes arrive between renders — repaint just the words, not the page.
+function paintUtil() {
+  var u = utilState();
+  document.querySelectorAll('[data-util="sync"]').forEach(function (b) {
+    b.dataset.s = u.s;
+    var w = b.querySelector('.util-w'); if (w) w.textContent = SYNC_WORD[u.s] || 'Sync';
+  });
+  document.querySelectorAll('[data-util="push"]').forEach(function (b) {
+    b.classList.toggle('on', u.alerts);
+    var w = b.querySelector('.util-w'); if (w) w.textContent = u.alerts ? 'Alerts on' : 'Alerts';
+  });
+}
+window.addEventListener('trackers-sync', paintUtil);
+// The alerts toggle lives in push-client's sheet, which has no close event.
+setInterval(paintUtil, 2000);
+var TABS = [['today', 'Today', '1'], ['week', 'Week', '2'], ['routines', 'Rituals', '3'], ['stats', 'Insights', '4']];
+
+// Between midnight and 4 am the day shown is still yesterday (see DAY_START) — say so.
+function lateTag() { return today() !== ymd(new Date()) ? ' <span class="late-tag">· late night</span>' : ''; }
+function renderSide() {
+  var d = ui.tab === 'today' ? ui.day : today();
+  var side = document.getElementById('side');
+  side.innerHTML =
+    '<div><div class="brand"><h1>Rituals</h1><span>care</span></div></div>' +
+    '<div class="date-line">' + parse(today()).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + lateTag() + '</div>' +
+    '<div class="side-top">' + dial(d) + nextCard() + '</div>' +
+    '<nav class="nav">' + TABS.map(function (t) {
+      return '<button data-tab="' + t[0] + '" class="' + (ui.tab === t[0] ? 'on' : '') + '"><span class="k">' + t[2] + '</span>' + t[1] + '</button>';
+    }).join('') +
+    '<div class="sep"></div>' +
+    '<button data-hub="switch"><span class="k">' + ICONS.apps + '</span>Switch app</button>' +
+    '<button data-hub="search"><span class="k">' + ICONS.search + '</span>Search <span style="margin-left:auto;font-size:10px;color:var(--ink-4)">⌘K</span></button>' +
+    '</nav>' + utilHTML();
+  var mh = document.getElementById('mobHead');
+  mh.innerHTML = '<div><div class="brand"><h1>Rituals</h1></div><div class="date-line">' +
+    parse(today()).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' }) + lateTag() + '</div>' + utilHTML() + '</div>' +
+    dial(d) + (ui.tab === 'today' ? nextCard() : '');
+  var tb = document.getElementById('tabbar');
+  tb.innerHTML = TABS.map(function (t) {
+    return '<button data-tab="' + t[0] + '" class="' + (ui.tab === t[0] ? 'on' : '') + '" aria-label="' + t[1] + '">' + ICONS[t[0]] + '</button>';
+  }).join('') + '<span class="div"></span>' +
+    '<button data-hub="switch" aria-label="Switch app">' + ICONS.apps + '</button>' +
+    '<button data-hub="search" aria-label="Search">' + ICONS.search + '</button>';
+}
+
+/* ════════ TODAY ════════ */
+function slotHTML(s, k) {
+  var r = s.r, e = s.e || {}, n = slotCount(r);
+  var cls = e.s === 'done' ? ' done' : e.s === 'skip' ? ' skip' : e.s === 'miss' ? ' miss' : '';
+  var key = r.id + '|' + s.i;
+  var meta = [];
+  if (n > 1) meta.push((s.i + 1) + ' of ' + n + ' today');
+  if (e.s === 'skip') meta.push('skipped');
+  if (e.s === 'miss') meta.push('<span class="missed">not done</span>');
+  if (e.s === 'done' && e.at) { var at = new Date(e.at), am = at.getHours() * 60 + at.getMinutes(); meta.push('kept at ' + clock(am) + ' ' + ap(am)); }
+  if (!e.s && s.part && ui.day === today() && phase(s.part, ui.day) === 'past') meta.push('<span class="late">window passed</span>');
+  var st = streak(r); if (st > 1) meta.push('<span class="streak">' + st + '-day streak</span>');
+  if (!meta.length) meta.push(scheduleText(r).split(' · ')[0]);
+  var items = r.checklist || [];
+  var html = '<article class="slot' + cls + '" style="--c:' + r.color + ';animation-delay:' + (k * 45) + 'ms" data-key="' + key + '">' +
+    '<div class="slot-card"><div class="slot-row">' +
+      '<div class="marks">' +
+        '<button class="check" data-act="toggle" title="Done" aria-label="Done" aria-pressed="' + (e.s === 'done') + '"><svg viewBox="0 0 20 20"><path d="M4.5 10.5l3.6 3.4L15.5 6"/></svg></button>' +
+        '<button class="cross" data-act="cross" title="Not done" aria-label="Not done" aria-pressed="' + (e.s === 'miss') + '"><svg viewBox="0 0 20 20"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>' +
+      '</div>' +
+      '<div class="emoji">' + r.emoji + '</div>' +
+      '<div class="slot-body"><div class="slot-name">' + esc(r.name) + '</div><div class="slot-meta">' +
+        meta.map(function (m, i) { return (i ? '<span class="dotsep"></span>' : '') + '<span>' + m + '</span>'; }).join('') + '</div></div>' +
+      '<button class="more" data-act="menu" aria-label="More">⋯</button>' +
+    '</div>';
+  if (items.length) {
+    var got = e.items || [];
+    html += '<div class="checklist">' + items.map(function (it, j) {
+      var on = e.s === 'done' || got.indexOf(j) !== -1;
+      return '<button class="chip' + (on ? ' on' : '') + '" data-act="item" data-j="' + j + '">' + esc(it) + '</button>';
+    }).join('') + '</div>';
+  }
+  if (e.note && ui.note !== key) html += '<div class="note-preview">' + esc(e.note) + '</div>';
+  if (ui.menu === key) {
+    html += '<div class="slot-actions">' +
+      '<button class="btn small" data-act="skip">' + (e.s === 'skip' ? 'Unskip' : 'Skip today') + '</button>' +
+      '<button class="btn small" data-act="note">' + (e.note ? 'Edit note' : 'Add note') + '</button>' +
+      '<button class="btn small ghost" data-act="edit">Edit ritual</button></div>';
+  }
+  if (ui.note === key) {
+    html += '<div class="note-edit"><textarea data-note placeholder="How did it go? e.g. skin felt dry, used a little more">' + esc(e.note || '') + '</textarea>' +
+      '<div class="row"><button class="btn small ghost" data-act="note-cancel">Cancel</button><button class="btn small primary" data-act="note-save">Save note</button></div></div>';
+  }
+  return html + '</div></article>';
+}
+
+/* The week's score, and what it does to your break time in the Procrastination Hub
+   (rules in zen-rules.js): more than 75% of the week's slots ticked → +2h on Monday, less → −2h. */
+function weekStrip() {
+  if (!window.ZenRules) return '';
+  var st = ZenRules.status(), w = st.rituals;
+  if (!st.enabled || !w || !w.counted) return '';
+  var msg;
+  if (!w.counts) msg = 'This week began before break-time rules were switched on, so it doesn’t count yet.';
+  else if (w.done * 4 > w.counted * 3 && w.toGo === 0) msg = 'Above 75% — hold it to Sunday and Monday brings <b>+2h</b> of break time.';
+  else msg = '<b>' + w.toGo + '</b> more tick' + (w.toGo === 1 ? '' : 's') + ' to get above 75% and earn <b>+2h</b> of break time on Monday. Under 75% at the end of Sunday costs 2h.';
+  var today = st.adj && st.adj.parts ? st.adj.parts.filter(function (p) { return p.src === 'rituals'; })[0] : null;
+  return '<div class="wk">' +
+    '<div class="wk-top"><span>This week · break time</span><b>' + w.done + '<small>/' + w.counted + '</small> · ' + w.pct + '%</b></div>' +
+    '<div class="wk-bar"><i style="width:' + Math.min(100, w.pct) + '%"></i><em style="left:75%" title="75%"></em></div>' +
+    '<p>' + msg + '</p>' +
+    (today ? '<p class="wk-today ' + today.kind + '">' + esc(today.label) + (today.applied ? '' : ' — not added today (Zen’s is bigger)') + '</p>' : '') +
+    '</div>';
+}
+
+function renderToday(v) {
+  var slots = slotsOn(ui.day);
+  var kept = slots.filter(function (s) { return s.e && s.e.s === 'done'; }).length;
+  var due = slots.filter(function (s) { return !(s.e && s.e.s === 'skip'); }).length;
+  var head = '<div class="page-head"><div><div class="eyebrow">' + (ui.day === today() ? 'Your day' : ui.day > today() ? 'Looking ahead' : 'Looking back') + '</div>' +
+    '<h2>' + fmtDay(ui.day) + (due ? ' <span class="muted">· ' + kept + ' of ' + due + '</span>' : '') + '</h2></div>' +
+    '<div class="day-nav"><button class="icon-btn" data-act="day-prev" aria-label="Previous day">‹</button>' +
+    '<span class="lbl">' + parse(ui.day).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + '</span>' +
+    '<button class="icon-btn" data-act="day-next" aria-label="Next day">›</button>' +
+    (ui.day !== today() ? '<button class="btn small" data-act="day-today">Today</button>' : '') + '</div></div>' +
+    '<div class="progress-line"><i style="width:' + (due ? kept / due * 100 : 0) + '%"></i></div>' + weekStrip();
+
+  if (!S.routines.length) { v.innerHTML = head + emptyHTML(); return; }
+  if (!slots.length) {
+    v.innerHTML = head + '<div class="empty"><h3>A quiet day.</h3><p>No rituals are scheduled ' + (ui.day === today() ? 'today' : 'on this day') + '.</p>' +
+      '<button class="btn" data-act="new">+ New ritual</button></div>';
+    return;
+  }
+  var groups = {};
+  slots.forEach(function (s) { var g = s.part ? s.part.id : 'any'; (groups[g] = groups[g] || []).push(s); });
+  var k = 0, html = head;
+  PART_IDS.concat('any').forEach(function (g) {
+    var list = groups[g]; if (!list) return;
+    var p = list[0].part, ph = p ? phase(p, ui.day) : 'before', count = list.length + ' ritual' + (list.length > 1 ? 's' : '');
+    // Left rail: the window drawn as a span of time, with a marker for "now".
+    var rail = p
+      ? '<div class="win"><span class="t">' + clock(p.from) + '<small>' + ap(p.from) + '</small></span><span class="line">' +
+          (ph === 'live' ? '<i style="top:' + Math.round((nowMin() - p.from) / (p.to - p.from) * 100) + '%"></i>' : '') +
+        '</span><span class="t">' + clock(p.to) + '<small>' + ap(p.to) + '</small></span></div>'
+      : '<div class="win any"><span class="t">any<small>time</small></span></div>';
+    html += '<section class="bucket ' + ph + '"><div class="bucket-head"><h3>' + (p ? p.name : 'Anytime') + '</h3><span class="rule"></span>' +
+      '<small>' + (ph === 'live' ? '<b class="now">Now</b> · ' : '') + count + '</small></div>' +
+      '<div class="bucket-body">' + rail + '<div class="bucket-list">' + list.map(function (s) { return slotHTML(s, k++); }).join('') + '</div></div></section>';
+  });
+  v.innerHTML = html;
+  var ta = v.querySelector('[data-note]');
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function emptyHTML() {
+  return '<div class="empty"><h3>Begin a ritual.</h3><p>Creams, laundry, vitamins, the plants — anything you do on a rhythm. Start from one of these, or make your own.</p>' +
+    '<div class="templates">' + TEMPLATES.map(function (t, i) {
+      return '<button class="chip" data-act="tpl" data-i="' + i + '">' + t.emoji + ' ' + t.name + '</button>';
+    }).join('') + '</div><div style="margin-top:18px"><button class="btn primary" data-act="new">+ New ritual</button></div></div>';
+}
+
+/* ════════ WEEK ════════ */
+function renderWeek(v) {
+  var t = today(), dow = (parse(t).getDay() + 6) % 7;
+  var mon = add(t, -dow + ui.weekOff * 7), days = [];
+  for (var i = 0; i < 7; i++) days.push(add(mon, i));
+  var label = ui.weekOff === 0 ? 'This week' : ui.weekOff === -1 ? 'Last week' : ui.weekOff === 1 ? 'Next week'
+    : parse(days[0]).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' – ' + parse(days[6]).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  var html = '<div class="page-head"><div><div class="eyebrow">At a glance</div><h2>' + label + '</h2></div>' +
+    '<div class="day-nav"><button class="icon-btn" data-act="wk-prev" aria-label="Previous week">‹</button><button class="icon-btn" data-act="wk-next" aria-label="Next week">›</button>' +
+    (ui.weekOff ? '<button class="btn small" data-act="wk-now">This week</button>' : '') + '</div></div>';
+  var rs = S.routines.filter(function (r) { return !r.paused; });
+  if (!rs.length) { v.innerHTML = html + emptyHTML(); return; }
+  html += '<div class="week"><div class="week-scroll"><table><thead><tr><th style="text-align:left;padding-left:18px">Ritual</th>' +
+    days.map(function (d) { return '<th class="' + (d === t ? 'today' : '') + '">' + DN[parse(d).getDay()] + '<b>' + parse(d).getDate() + '</b></th>'; }).join('') + '</tr></thead><tbody>';
+  rs.forEach(function (r) {
+    html += '<tr style="--c:' + r.color + '"><td class="name">' + r.emoji + '<span>' + esc(r.name) + '</span></td>';
+    days.forEach(function (d) {
+      if (!scheduled(r, d)) { html += '<td class="cell' + (d === t ? ' today' : '') + '" data-act="goto" data-d="' + d + '"><span class="off">—</span></td>'; return; }
+      var pips = '';
+      for (var i = 0; i < slotCount(r); i++) {
+        var e = entry(d, r, i), st = e && e.s === 'done' ? 'done' : e && e.s === 'skip' ? 'skip' : (e && e.s === 'miss') || d < t ? 'missed' : 'planned';
+        pips += '<span class="pip ' + st + '"></span>';
+      }
+      html += '<td class="cell' + (d === t ? ' today' : '') + '" data-act="goto" data-d="' + d + '" title="Open ' + fmtDay(d) + '"><span class="pips">' + pips + '</span></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div><div class="legend">' +
+    '<span><span class="pip done" style="--c:var(--rose)"></span>Kept</span><span><span class="pip skip"></span>Skipped</span>' +
+    '<span><span class="pip missed"></span>Missed</span><span><span class="pip planned" style="--c:var(--rose)"></span>Coming up</span>' +
+    '<span>Tap a day to open it</span></div>';
+  v.innerHTML = html;
+}
+
+/* ════════ ROUTINES ════════ */
+function renderRoutines(v) {
+  var html = '<div class="page-head"><div><div class="eyebrow">Your collection</div><h2>Rituals</h2></div>' +
+    '<button class="btn primary" data-act="new">+ New ritual</button></div>';
+  if (!S.routines.length) { v.innerHTML = html + emptyHTML(); return; }
+  var k = 0;
+  CATS.forEach(function (c) {
+    var list = S.routines.filter(function (r) { return (r.category || 'other') === c[0]; });
+    if (!list.length) return;
+    html += '<section class="cat"><h3>' + c[1] + '</h3><div class="rgrid">' + list.map(function (r) {
+      return '<button class="rcard' + (r.paused ? ' paused' : '') + '" style="--c:' + r.color + ';animation-delay:' + (k++ * 40) + 'ms" data-act="edit-id" data-id="' + r.id + '">' +
+        '<div class="emoji">' + r.emoji + '</div><div><div class="t">' + esc(r.name) + '</div><div class="s">' + scheduleText(r) + '</div>' +
+        ((r.checklist || []).length ? '<div class="s">' + r.checklist.length + ' item checklist</div>' : '') +
+        (r.paused ? '<span class="badge">Paused</span>' : '') + '</div></button>';
+    }).join('') + '</div></section>';
+  });
+  html += dayPartsHTML();
+  html += '<div style="margin-top:6px"><div class="eyebrow">Quick add</div><div class="templates" style="justify-content:flex-start">' +
+    TEMPLATES.map(function (t, i) { return '<button class="chip" data-act="tpl" data-i="' + i + '">' + t.emoji + ' ' + t.name + '</button>'; }).join('') + '</div></div>';
+  v.innerHTML = html;
+}
+
+// What "early morning" etc. mean for you. Changes apply to every ritual at once.
+function dayPartsHTML() {
+  return '<section class="cat"><h3>Your day</h3><p class="cat-sub">Set what each window means for you — Rituals, Study todos and Procrastination sessions all use these. Reminders arrive as a window opens.</p><div class="dayparts">' +
+    PART_IDS.map(function (id) {
+      var p = part(id), used = S.routines.filter(function (r) { return !r.paused && (r.times || []).indexOf(id) !== -1; }).length;
+      return '<div class="dp-row"><div class="dp-name">' + p.name + '<small>' + (used ? used + ' ritual' + (used > 1 ? 's' : '') : 'unused') + '</small></div>' +
+        '<input type="time" data-pfrom="' + id + '" value="' + hhmm(p.from) + '" aria-label="' + p.name + ' starts">' +
+        '<span class="dp-to">to</span>' +
+        '<input type="time" data-pto="' + id + '" value="' + hhmm(p.to) + '" aria-label="' + p.name + ' ends"></div>';
+    }).join('') + '</div></section>';
+}
+// A time input fires "change" per edited segment (hour, then minutes), so
+// save each one but only redraw once focus has left the windows.
+var partsDirty = false;
+function isPartInput(el) { return !!(el && el.dataset && (el.dataset.pfrom || el.dataset.pto)); }
+function flushParts() { if (!partsDirty) return; partsDirty = false; render(); toast('Day windows updated'); }
+document.addEventListener('change', function (ev) {
+  var el = ev.target; if (!isPartInput(el) || !el.value) return;
+  var id = el.dataset.pfrom || el.dataset.pto, p = part(id), m = toMin(el.value);
+  var next = { from: el.dataset.pfrom ? m : p.from % 1440, to: el.dataset.pto ? m : p.to % 1440 };
+  if (next.from === next.to) return;                       // zero-length: wait for the other end
+  S.parts = S.parts || {}; S.parts[id] = next; save(); partsDirty = true;
+  if (document.activeElement !== el) flushParts();
+});
+document.addEventListener('focusout', function (ev) {
+  if (!isPartInput(ev.target)) return;
+  setTimeout(function () { if (!isPartInput(document.activeElement)) flushParts(); }, 0);
+});
+
+/* ════════ STATS ════════ */
+function renderStats(v) {
+  var t = today(), monthStart = t.slice(0, 8) + '01', wkStart = add(t, -((parse(t).getDay() + 6) % 7));
+  var rs = S.routines;
+  var html = '<div class="page-head"><div><div class="eyebrow">How it\'s going</div><h2>Insights</h2></div></div>';
+  if (!rs.length) { v.innerHTML = html + emptyHTML(); return; }
+  var wkDue = 0, wkDone = 0, monthKept = 0;
+  rs.forEach(function (r) {
+    for (var d = wkStart; d <= t; d = add(d, 1)) {
+      if (!scheduled(r, d)) continue;
+      for (var i = 0; i < slotCount(r); i++) { var e = entry(d, r, i); if (e && e.s === 'skip') continue; if (e && e.s === 'done') { wkDone++; wkDue++; } else if (d < t) wkDue++; }
+    }
+    for (var d2 = monthStart; d2 <= t; d2 = add(d2, 1)) for (var j = 0; j < slotCount(r); j++) { var e2 = entry(d2, r, j); if (e2 && e2.s === 'done') monthKept++; }
+  });
+  var bestNow = rs.reduce(function (m, r) { var s = streak(r); return s > m.s ? { s: s, r: r } : m; }, { s: 0, r: null });
+  html += '<div class="kpis">' +
+    '<div class="kpi"><b>' + (wkDue ? Math.round(wkDone / wkDue * 100) : 0) + '<small>%</small></b><span>Kept this week</span></div>' +
+    '<div class="kpi"><b>' + bestNow.s + '</b><span>Longest going' + (bestNow.r ? ' · ' + esc(bestNow.r.name) : '') + '</span></div>' +
+    '<div class="kpi"><b>' + monthKept + '</b><span>Rituals this month</span></div></div>';
+  rs.forEach(function (r, k) {
+    var strip = '';
+    for (var i = 27; i >= 0; i--) {
+      var d = add(t, -i), st = dayState(r, d);
+      var cls = st === 'done' ? 'done' : st === 'part' ? 'part' : st === 'skip' ? 'skip' : st === 'missed' ? 'missed' : st === 'none' ? 'none' : '';
+      strip += '<i class="' + cls + '" title="' + fmtDay(d) + '"></i>';
+    }
+    var notes = [];
+    Object.keys(S.log).sort().reverse().forEach(function (d) {
+      for (var i = 0; i < slotCount(r); i++) { var e = (S.log[d] || {})[r.id + '|' + i]; if (e && e.note) notes.push({ d: d, n: e.note }); }
+    });
+    var adh = adherence(r, monthStart, t);
+    html += '<div class="scard" style="--c:' + r.color + ';animation-delay:' + (k * 50) + 'ms"><div class="scard-top"><div class="emoji">' + r.emoji + '</div>' +
+      '<div class="t">' + esc(r.name) + '<div style="font-weight:400;font-size:12px;color:var(--ink-3)">' + scheduleText(r) + '</div></div>' +
+      '<div class="scard-nums"><div><b>' + streak(r) + '</b><span>Streak</span></div><div><b>' + bestStreak(r) + '</b><span>Best</span></div>' +
+      '<div><b>' + (adh == null ? '—' : adh + '%') + '</b><span>This month</span></div></div></div>' +
+      '<div class="strip">' + strip + '</div>' +
+      (notes.length ? '<div class="notes">' + notes.slice(0, 5).map(function (x) {
+        return '<div><time>' + parse(x.d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + '</time><span>' + esc(x.n) + '</span></div>';
+      }).join('') + '</div>' : '') + '</div>';
+  });
+  v.innerHTML = html;
+}
+
+/* ════════ render + routing ════════ */
+// Every click redraws the view, and the cards' entrance animation replayed
+// each time — so ticking one ritual looked like the whole page reloading.
+// The cards now only animate in when you arrive at a view (another tab,
+// day or week, or the first load), not when something on it changes.
+var lastView = null;
+function render() {
+  renderSide();
+  var v = document.getElementById('view');
+  var sig = ui.tab + '|' + ui.day + '|' + ui.weekOff;
+  v.classList.toggle('enter', sig !== lastView);
+  lastView = sig;
+  ({ today: renderToday, week: renderWeek, routines: renderRoutines, stats: renderStats }[ui.tab] || renderToday)(v);
+}
+function go(tab) {
+  if (!{ today: 1, week: 1, routines: 1, stats: 1 }[tab]) tab = 'today';
+  ui.tab = tab; ui.menu = null; ui.note = null;
+  try { sessionStorage.setItem('rituals_tab', tab); } catch (e) {}
+  render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.ritualsGo = go;                                  // used by hub-nav search
+
+/* ════════ actions ════════ */
+function findSlot(el) {
+  var art = el.closest('[data-key]'); if (!art) return null;
+  var p = art.dataset.key.split('|'), r = S.routines.find(function (x) { return x.id === p[0]; });
+  return r ? { r: r, i: +p[1], key: art.dataset.key, art: art } : null;
+}
+
+document.addEventListener('click', function (ev) {
+  var tabBtn = ev.target.closest('[data-tab]');
+  if (tabBtn) { go(tabBtn.dataset.tab); return; }
+  var hub = ev.target.closest('[data-hub]');
+  if (hub) {
+    // This listener sits on `document`, and so does hub-nav's "close the
+    // switcher on any click". stopPropagation() can't separate two listeners
+    // on the same node, so the same click opened it and closed it again —
+    // stopImmediatePropagation() can (this listener is registered first).
+    // And hub-nav positions the popup from event.currentTarget, which here
+    // would be `document` (no getBoundingClientRect → it threw), so hand it
+    // the button itself.
+    ev.stopImmediatePropagation();
+    if (hub.dataset.hub === 'switch' && window.hubNavSwitch) window.hubNavSwitch({ currentTarget: hub, stopPropagation: function () {} });
+    if (hub.dataset.hub === 'search' && window.hubNavSearch) window.hubNavSearch();
+    return;
+  }
+  var util = ev.target.closest('[data-util]');
+  if (util) {
+    if (util.dataset.util === 'push') { if (window.TrackersPush && window.TrackersPush.openSettings) window.TrackersPush.openSettings(); return; }
+    var TS = window.TrackersSync; if (!TS) return;
+    var st = TS.status().status;
+    if (st === 'unpaired' || st === 'unconfigured') TS.showPairing();
+    else TS.forceSync();
+    return;
+  }
+  var a = ev.target.closest('[data-act]'); if (!a) return;
+  var act = a.dataset.act, s = findSlot(a);
+
+  if (act === 'toggle' && s) {
+    var e = entry(ui.day, s.r, s.i);
+    var nowDone = !(e && e.s === 'done');
+    var before = e ? { s: e.s || null, at: e.at || null, items: e.items || null } : { s: null, at: null, items: null };
+    var day = ui.day, r = s.r, i = s.i;
+    setEntry(day, r, i, { s: nowDone ? 'done' : null, at: nowDone ? Date.now() : null, items: nowDone ? null : (e && e.items) });
+    if (nowDone) {
+      a.classList.add('pop');
+      // The way back is right here — as well as tapping the tick again, or ⋯ → Mark not done.
+      toast(r.name + ' · kept', function () { setEntry(day, r, i, before); render(); });
+    }
+    setTimeout(render, nowDone ? 260 : 0);
+    return;
+  }
+  if (act === 'item' && s) {
+    var e2 = entry(ui.day, s.r, s.i) || {}, j = +a.dataset.j, n = (s.r.checklist || []).length;
+    var got = e2.s === 'done' ? s.r.checklist.map(function (_, x) { return x; }) : (e2.items || []).slice();
+    var at = got.indexOf(j); if (at === -1) got.push(j); else got.splice(at, 1);
+    var complete = got.length === n;
+    setEntry(ui.day, s.r, s.i, { items: complete ? null : got, s: complete ? 'done' : (e2.s === 'skip' ? 'skip' : null), at: complete ? Date.now() : null });
+    render(); return;
+  }
+  if (act === 'menu' && s) { ui.menu = ui.menu === s.key ? null : s.key; ui.note = null; render(); return; }
+  // ✕ — "I didn't do it". Tapping it again clears the mark.
+  if (act === 'cross' && s) {
+    var e4 = entry(ui.day, s.r, s.i);
+    var prev = e4 ? { s: e4.s || null, at: e4.at || null, items: e4.items || null } : { s: null, at: null, items: null };
+    var nowMiss = !(e4 && e4.s === 'miss');
+    var d4 = ui.day, r4 = s.r, i4 = s.i;
+    setEntry(d4, r4, i4, { s: nowMiss ? 'miss' : null, at: nowMiss ? Date.now() : null, items: e4 && e4.items });
+    render();
+    if (nowMiss) toast(r4.name + ' · not done', function () { setEntry(d4, r4, i4, prev); render(); });
+    return;
+  }
+  if (act === 'skip' && s) {
+    var e3 = entry(ui.day, s.r, s.i);
+    setEntry(ui.day, s.r, s.i, { s: e3 && e3.s === 'skip' ? null : 'skip', at: null, items: null });
+    ui.menu = null; render(); return;
+  }
+  if (act === 'note' && s) { ui.note = s.key; ui.menu = null; render(); return; }
+  if (act === 'note-cancel') { ui.note = null; render(); return; }
+  if (act === 'note-save' && s) {
+    var ta = s.art.querySelector('[data-note]');
+    setEntry(ui.day, s.r, s.i, { note: ta ? ta.value.trim() : '' });
+    ui.note = null; render(); toast('Note saved'); return;
+  }
+  if (act === 'edit' && s) { ui.menu = null; openSheet(s.r); return; }
+  if (act === 'edit-id') { var r = S.routines.find(function (x) { return x.id === a.dataset.id; }); if (r) openSheet(r); return; }
+  if (act === 'new') { openSheet(null); return; }
+  if (act === 'tpl') { openSheet(null, TEMPLATES[+a.dataset.i]); return; }
+  if (act === 'day-prev') { ui.day = add(ui.day, -1); ui.menu = ui.note = null; render(); return; }
+  if (act === 'day-next') { ui.day = add(ui.day, 1); ui.menu = ui.note = null; render(); return; }
+  if (act === 'day-today') { ui.day = today(); render(); return; }
+  if (act === 'wk-prev') { ui.weekOff--; render(); return; }
+  if (act === 'wk-next') { ui.weekOff++; render(); return; }
+  if (act === 'wk-now') { ui.weekOff = 0; render(); return; }
+  if (act === 'goto') { ui.day = a.dataset.d; go('today'); return; }
+});
+
+// Enter saves a note; 1–4 switch sections; N starts a new ritual; ←/→ move days
+document.addEventListener('keydown', function (ev) {
+  var tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'TEXTAREA' && ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) {
+    var b = document.querySelector('[data-act="note-save"]'); if (b) b.click(); return;
+  }
+  if (ev.key === 'Escape') { var sc = document.querySelector('.scrim'); if (sc) { closeSheet(); return; } if (ui.menu || ui.note) { ui.menu = ui.note = null; render(); } return; }
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (document.querySelector('.scrim')) return;
+  var map = { '1': 'today', '2': 'week', '3': 'routines', '4': 'stats' };
+  if (map[ev.key]) { go(map[ev.key]); return; }
+  if (ev.key === 'n' || ev.key === 'N') { ev.preventDefault(); openSheet(null); return; }
+  if (ui.tab === 'today' && ev.key === 'ArrowLeft') { ui.day = add(ui.day, -1); render(); }
+  if (ui.tab === 'today' && ev.key === 'ArrowRight') { ui.day = add(ui.day, 1); render(); }
+});
+
+/* ════════ add / edit sheet ════════ */
+function openSheet(r, tpl) {
+  var isNew = !r;
+  var base = r || Object.assign({ name: '', emoji: '🧴', color: COLORS[S.routines.length % COLORS.length], category: 'body',
+    times: ['morning'], schedule: { type: 'days', days: [0,1,2,3,4,5,6] }, checklist: [], notes: '', paused: false }, tpl || {});
+  var f = JSON.parse(JSON.stringify(base));
+  f.schedule = Object.assign({ type: 'days', days: [0,1,2,3,4,5,6], every: 2, start: today() }, f.schedule || {});
+  f.checklist = f.checklist || []; f.times = f.times || [];
+
+  var scrim = document.createElement('div');
+  scrim.className = 'scrim';
+  scrim.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="' + (isNew ? 'New ritual' : 'Edit ritual') + '"></div>';
+  document.body.appendChild(scrim);
+  var sh = scrim.querySelector('.sheet');
+  requestAnimationFrame(function () { scrim.classList.add('in'); });
+
+  function draw() {
+    sh.innerHTML =
+      '<h2>' + (isNew ? 'A new ritual' : 'Edit ritual') + '</h2>' +
+      '<div class="field"><label for="f-name">Name</label><input id="f-name" class="input name" value="' + esc(f.name) + '" placeholder="Face cream" autocomplete="off"><div class="err" id="e-name"></div></div>' +
+      '<div class="field"><div class="lbl">Symbol</div><div class="emojis">' + EMOJIS.map(function (e) { return '<button type="button" data-emoji="' + e + '" class="' + (f.emoji === e ? 'on' : '') + '">' + e + '</button>'; }).join('') + '</div></div>' +
+      '<div class="field"><div class="lbl">Colour</div><div class="swatches">' + COLORS.map(function (c) { return '<button type="button" data-color="' + c + '" style="--c:' + c + '" class="' + (f.color === c ? 'on' : '') + '" aria-label="Colour ' + c + '"></button>'; }).join('') + '</div></div>' +
+      '<div class="field"><div class="lbl">Category</div><div class="seg">' + CATS.map(function (c) { return '<button type="button" data-cat="' + c[0] + '" class="' + (f.category === c[0] ? 'on' : '') + '">' + c[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="field"><div class="lbl">When in the day</div><div class="parts">' +
+        PART_IDS.map(function (id) {
+          var p = part(id);
+          return '<button type="button" data-part="' + id + '" class="' + (f.times.indexOf(id) !== -1 ? 'on' : '') + '" aria-pressed="' + (f.times.indexOf(id) !== -1) + '"><b>' + p.name + '</b><small>' + fmtRange(p) + '</small></button>';
+        }).join('') + '</div>' +
+        '<div class="hint">' + (!f.times.length ? 'None picked — it shows under “anytime”, with no reminder.'
+          : f.times.length === 1 ? 'Once a day, with a reminder as the window opens.'
+          : f.times.length + ' times a day — each window gets its own tick and reminder.') + '</div></div>' +
+      '<div class="field"><div class="lbl">Repeats</div><div class="seg" style="margin-bottom:10px">' +
+        '<button type="button" data-stype="days" class="' + (f.schedule.type === 'days' ? 'on' : '') + '">On certain days</button>' +
+        '<button type="button" data-stype="every" class="' + (f.schedule.type === 'every' ? 'on' : '') + '">Every few days</button></div>' +
+        (f.schedule.type === 'days'
+          ? '<div class="days">' + WEEK.map(function (d) { return '<button type="button" data-day="' + d + '" class="' + (f.schedule.days.indexOf(d) !== -1 ? 'on' : '') + '">' + DN[d].slice(0, 2) + '</button>'; }).join('') + '</div>' +
+            '<div class="presets"><button type="button" class="btn small" data-preset="all">Every day</button><button type="button" class="btn small" data-preset="wk">Weekdays</button><button type="button" class="btn small" data-preset="we">Weekends</button></div>'
+          : '<div class="inline">Every <input class="input" id="f-every" type="number" min="1" max="365" value="' + f.schedule.every + '" style="width:80px"> days, starting <input class="input" id="f-start" type="date" value="' + f.schedule.start + '"></div>') +
+        '<div class="err" id="e-days"></div></div>' +
+      '<div class="field"><div class="lbl">Checklist <span style="text-transform:none;letter-spacing:0;font-weight:400">— optional, e.g. which clothes</span></div>' +
+        '<div class="checklist" style="margin:0 0 8px">' + f.checklist.map(function (c, i) { return '<span class="chip on" style="--c:' + f.color + '">' + esc(c) + ' <button type="button" data-rmitem="' + i + '" style="color:var(--ink-3);margin-left:2px" aria-label="Remove">×</button></span>'; }).join('') + '</div>' +
+        '<input class="input" id="f-item" placeholder="Type an item and press Enter" autocomplete="off"></div>' +
+      '<div class="field"><label for="f-notes">About it <span style="text-transform:none;letter-spacing:0;font-weight:400">— product, how much, anything</span></label><textarea id="f-notes" class="input" placeholder="Pea-sized amount, face and neck">' + esc(f.notes || '') + '</textarea></div>' +
+      (isNew ? '' : '<div class="toggle-row"><div><div style="font-weight:600">Pause</div><div class="hint" style="margin:0">Hidden from your days, history kept.</div></div><button type="button" class="switch' + (f.paused ? ' on' : '') + '" data-pause aria-label="Pause"></button></div>') +
+      '<div class="sheet-foot">' + (isNew ? '<span></span>' : '<button type="button" class="btn danger small" data-del>Delete</button>') +
+        '<div style="display:flex;gap:8px"><button type="button" class="btn ghost" data-cancel>Cancel</button><button type="button" class="btn primary" data-save>' + (isNew ? 'Add ritual' : 'Save') + '</button></div></div>';
+    var name = sh.querySelector('#f-name');
+    name.addEventListener('input', function () { f.name = name.value; sh.querySelector('#e-name').textContent = ''; });
+    var item = sh.querySelector('#f-item');
+    item.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && item.value.trim()) { e.preventDefault(); f.checklist.push(item.value.trim()); draw(); sh.querySelector('#f-item').focus(); }
+    });
+    sh.querySelector('#f-notes').addEventListener('input', function (e) { f.notes = e.target.value; });
+    var ev = sh.querySelector('#f-every'); if (ev) ev.addEventListener('input', function () { f.schedule.every = Math.max(1, parseInt(ev.value, 10) || 1); });
+    var st = sh.querySelector('#f-start'); if (st) st.addEventListener('change', function () { f.schedule.start = st.value || today(); });
+  }
+  draw();
+  if (isNew && !tpl) setTimeout(function () { var n = sh.querySelector('#f-name'); if (n) n.focus(); }, 80);
+
+  sh.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var d = b.dataset;
+    if (d.emoji) { f.emoji = d.emoji; draw(); }
+    else if (d.color) { f.color = d.color; draw(); }
+    else if (d.cat) { f.category = d.cat; draw(); }
+    else if (d.part) {
+      var on = f.times.indexOf(d.part) !== -1;
+      var set = on ? f.times.filter(function (x) { return x !== d.part; }) : f.times.concat(d.part);
+      f.times = PART_IDS.filter(function (id) { return set.indexOf(id) !== -1; }); draw();
+    }
+    else if (d.stype) { f.schedule.type = d.stype; draw(); }
+    else if (d.day !== undefined) {
+      var day = +d.day, at = f.schedule.days.indexOf(day);
+      if (at === -1) f.schedule.days.push(day); else f.schedule.days.splice(at, 1); draw();
+    }
+    else if (d.preset) { f.schedule.days = d.preset === 'all' ? [0,1,2,3,4,5,6] : d.preset === 'wk' ? [1,2,3,4,5] : [0,6]; draw(); }
+    else if (d.rmitem !== undefined) { f.checklist.splice(+d.rmitem, 1); draw(); }
+    else if (d.pause !== undefined) { f.paused = !f.paused; b.classList.toggle('on', f.paused); }
+    else if (d.cancel !== undefined) closeSheet();
+    else if (d.del !== undefined) {
+      var idx = S.routines.findIndex(function (x) { return x.id === r.id; });
+      var removed = S.routines.splice(idx, 1)[0]; save(); closeSheet(); render();
+      toast('Deleted ' + removed.name, function () { S.routines.splice(idx, 0, removed); save(); render(); });
+    }
+    else if (d.save !== undefined) {
+      f.name = (f.name || '').trim();
+      var ok = true;
+      if (!f.name) { sh.querySelector('#e-name').textContent = 'Give it a name.'; ok = false; }
+      if (f.schedule.type === 'days' && !f.schedule.days.length) { sh.querySelector('#e-days').textContent = 'Pick at least one day.'; ok = false; }
+      if (!ok) return;
+      f.times = PART_IDS.filter(function (id) { return f.times.indexOf(id) !== -1; });
+      // Keep past ticks on the window they belong to if the set of windows changed.
+      if (!isNew && JSON.stringify(r.times || []) !== JSON.stringify(f.times)) remapLog(S.log, r, r.times || [], f.times);
+      var clean = { name: f.name, emoji: f.emoji, color: f.color, category: f.category, times: f.times,
+        schedule: f.schedule.type === 'every' ? { type: 'every', every: f.schedule.every, start: f.schedule.start } : { type: 'days', days: f.schedule.days.slice().sort() },
+        checklist: f.checklist, notes: (f.notes || '').trim(), paused: !!f.paused };
+      if (isNew) { clean.id = uid(); clean.created = today(); S.routines.push(clean); }
+      else Object.assign(r, clean);
+      save(); closeSheet(); render(); toast(isNew ? clean.name + ' added' : 'Saved');
+    }
+  });
+  scrim.addEventListener('click', function (e) { if (e.target === scrim) closeSheet(); });
+}
+function closeSheet() {
+  var sc = document.querySelector('.scrim'); if (!sc) return;
+  sc.classList.remove('in'); setTimeout(function () { sc.remove(); }, 250);
+}
+
+/* ════════ toast (with optional undo) ════════ */
+var toastTimer = null;
+function toast(msg, undo) {
+  var old = document.querySelector('.toast'); if (old) old.remove();
+  var t = document.createElement('div'); t.className = 'toast';
+  t.innerHTML = '<span>' + esc(msg) + '</span>' + (undo ? '<button class="btn small">Undo</button>' : '<span style="width:10px"></span>');
+  document.body.appendChild(t);
+  requestAnimationFrame(function () { t.classList.add('in'); });
+  if (undo) t.querySelector('button').onclick = function () { undo(); t.remove(); };
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('in'); setTimeout(function () { t.remove(); }, 300); }, undo ? 6000 : 2200);
+}
+
+/* ════════ sync + clock ════════ */
+// A change from another device lands in localStorage; reload state and redraw.
+window.TRACKERS_SYNC_RERENDER = function () { S = load(); if (!document.querySelector('.scrim') && !ui.note && !isPartInput(document.activeElement)) render(); };
+// Keep the dial hand, "next up" and overdue marks current. Skipped while you're editing.
+setInterval(function () {
+  var busy = document.querySelector('.scrim') || ui.note || (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName));
+  if (!busy) { if (ui.day !== today() && ui.tab !== 'today') ui.day = today(); render(); }
+}, 60000);
+
+render();
+})();
+</script>
+<script src="hub-nav.js?v=20260924a"></script>
+</body>
+</html>

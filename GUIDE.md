@@ -62,13 +62,28 @@ To sync across devices, tap the sync dot in any app and paste your pairing code.
 
 **Daily**
 - The big number is what's free to spend today
-- Tap a usual (like lunch) to log it in one tap. Long-press to edit it
-- Or log any amount with a category
+- Type one line, like `chai 20`, `80 lunch` or `dinner 600 split 3`, and press Enter. The category is guessed from what you've logged before
+- Tap a usual (like lunch) to log it in one tap. The ones you log around this time come first
+- 📋 Paste SMS reads a bank or UPI payment message and fills it in for you
+- Tap any expense to fix it
+- On the Hub, the ＋ on the Budget tile logs spending without opening the app
+- An evening notification reminds you to log the day's spending
+
+**Money in and out**
+- 💵 Money in adds a gift, refund or extra pocket money to this month or to savings
+- 👥 Split a bill logs your share and tracks what friends owe you until they pay
+- 🔁 Subscriptions, monthly or yearly, log themselves on their date and are set aside until then
+- 🤔 Can I afford it? gives a straight answer for any price
 
 **Saving**
 - Goals → add a target, or tap "Save for it" on a wishlist item
+- Whatever's left at the end of a month goes to savings, or to a goal you pick
 - Emergency fund → aim for about 3 months of spending. Part of each month's savings goes in automatically
-- Going over budget? Today offers to cover the gap from the emergency fund
+
+**Keeping track**
+- Insights → daily chart, category split, and optional monthly limits per category
+- All history → any month, with search, category filters and a CSV export
+- Alerts at 80% and 100% of the month, and of any category limit
 
 **List**
 - The shopping list and wishlist live here. Ticking an item logs its price as spending

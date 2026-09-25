@@ -64,10 +64,11 @@ if ('serviceWorker' in navigator) {
      Must load before any app script so localStorage writes are captured
      from the very first one. Remove these two lines to disable sync
      entirely; the app then behaves exactly as it did before. -->
-<script src="sync-config.js?v=20260924a"></script>
-<script src="sync-engine.js?v=20260924a"></script>
-<script src="push-client.js?v=20260924a"></script>
-<script src="zen-rules.js?v=20260924a"></script>
+<script src="sync-config.js?v=20260925a"></script>
+<script src="sync-engine.js?v=20260925a"></script>
+<script src="push-client.js?v=20260925a"></script>
+<script src="zen-rules.js?v=20260925a"></script>
+<script src="budget-core.js?v=20260925a"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -211,6 +212,30 @@ html,body {
   animation:lp 2.2s ease infinite;
 }
 @keyframes lp{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.6);}}
+
+/* Quick log from the Budget tile */
+.g-add {
+  margin-left:auto;flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  border:1px solid rgba(var(--cr),.45);background:rgba(var(--cr),.1);color:var(--cc);
+  font-size:17px;line-height:1;display:grid;place-items:center;
+}
+.g-add:hover { background:var(--cc);color:#000; }
+#hub-log { position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:14vh 16px 0; }
+#hub-log .hl-card {
+  width:100%;max-width:420px;border-radius:20px;padding:18px;background:#0d111c;border:1px solid rgba(242,184,75,.35);
+  box-shadow:0 30px 80px rgba(0,0,0,.6);font-family:'Space Grotesk',sans-serif;animation:up .25s var(--snap) both;
+}
+#hub-log h3 { font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:.14em;color:var(--shop);margin-bottom:12px; }
+#hub-log input {
+  width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:12px;
+  padding:13px 14px;color:#fff;font:500 16px 'Space Grotesk',sans-serif;outline:none;
+}
+#hub-log input:focus { border-color:rgba(242,184,75,.6); }
+#hub-log .hl-prev { min-height:20px;margin:10px 2px 14px;font-size:13px;color:var(--muted2); }
+#hub-log .hl-prev b { color:#fff; }
+#hub-log .hl-btns { display:flex;gap:8px; }
+#hub-log button.hl-go { flex:1;padding:11px;border-radius:12px;border:0;background:var(--shop);color:#1c1300;font:700 14px 'Space Grotesk',sans-serif; }
+#hub-log button.hl-alt { padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--muted2);font:600 13px 'Space Grotesk',sans-serif; }
 
 /* hub-nav.js drops its search pill in here */
 #hub-search-slot { flex-shrink:0; }
@@ -643,7 +668,7 @@ html,body {
     <a class="g-item card-proc" href="Procrastination-Hub.html" data-g="proc"><span class="g-ico">⚡</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Break time</div></span></a>
     <a class="g-item card-zen" href="zen-garden-tracker.html" data-g="zen"><span class="g-ico">🌿</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Day streak</div></span></a>
     <a class="g-item card-care" href="rituals-tracker.html" data-g="care"><span class="g-ico">🧴</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Rituals kept</div></span></a>
-    <a class="g-item card-shop" href="Shopping-List.html" data-g="shop"><span class="g-ico">💰</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Free today</div></span></a>
+    <a class="g-item card-shop" href="Shopping-List.html" data-g="shop"><span class="g-ico">💰</span><span class="g-txt"><div class="g-val">—</div><div class="g-lbl">Free today</div></span><button type="button" class="g-add" onclick="openHubLog(event)" title="Log spending" aria-label="Log spending">＋</button></a>
   </nav>
 
   <main class="bento">
@@ -1267,15 +1292,23 @@ if(zCard) {
             const m = (bd.months || {})[ym];
             const rs = n => (n < 0 ? '−₹' : '₹') + Math.round(Math.abs(n)).toLocaleString('en-IN');
             if (!m || !m.income) { sCard.querySelector('.c-fill').style.width = '0%'; sCard.querySelector('.c-pct').textContent = 'SET UP MONTH'; glance('shop', 'Set up', 'Budget this month'); return; }
-            const spendable = m.income - Math.round(m.income * (m.savePct != null ? m.savePct : (bd.savePct || 0)) / 100) + (m.topUp || 0);
+            const extra = (bd.incomes || []).filter(x => !x.toSavings && (x.date || '').slice(0, 7) === ym).reduce((t, x) => t + x.amt, 0);
+            const spendable = m.income - Math.round(m.income * (m.savePct != null ? m.savePct : (bd.savePct || 0)) / 100) + (m.topUp || 0) + extra;
             const exp = (bd.expenses || []).filter(e => (e.date || '').slice(0, 7) === ym);
             const spent = exp.reduce((s, e) => s + e.amt, 0);
             const todayExp = exp.filter(e => e.date === today), spentToday = todayExp.reduce((s, e) => s + e.amt, 0);
             const daily = (bd.usuals || []).filter(u => u.daily), fixed = daily.reduce((s, u) => s + u.amt, 0);
             const fixedSpent = daily.reduce((s, u) => s + Math.min(u.amt, todayExp.filter(e => e.usualId === u.id).reduce((a, e) => a + e.amt, 0)), 0);
             const daysLeft = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
-            const left = spendable - spent;
-            const free = (left + spentToday - fixed * daysLeft) / daysLeft - (spentToday - fixedSpent);
+            const lent = (bd.owed || []).filter(o => !o.paid).reduce((t, o) => t + o.amt, 0);
+            const left = spendable - spent - lent;
+            // Subscriptions still due this month are set aside, same as in the Budget app
+            const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            const billsAhead = (bd.subs || []).filter(sub => !sub.paused && ym >= sub.startYM && !(sub.skip && sub.skip[ym]) &&
+                (sub.every !== 'year' || +ym.slice(5) === +sub.startYM.slice(5)) &&
+                !(bd.expenses || []).some(e => e.subId === sub.id && e.subYM === ym) &&
+                ym + '-' + String(Math.min(sub.day, dim)).padStart(2, '0') > today).reduce((s, sub) => s + sub.amt, 0);
+            const free = (left + spentToday - fixed * daysLeft - billsAhead) / daysLeft - (spentToday - fixedSpent);
             const pct = Math.min(100, Math.round(spent / Math.max(1, spendable) * 100));
             sCard.querySelector('.c-fill').style.width = pct + '%';
             sCard.querySelector('.c-pct').textContent = left < 0 ? 'OVER BUDGET' : pct + '% OF MONTH SPENT';
@@ -1312,7 +1345,7 @@ if(zCard) {
     setInterval(syncHubData, 3000); 
 })();
 </script>
-<script src="hub-nav.js?v=20260924a"></script>
+<script src="hub-nav.js?v=20260925a"></script>
 
 <!-- ══ CARD TRANSITION ══════════════════════════════════════════════════════
      Why this exists: clicking a card felt like the hub froze for a few seconds
@@ -1400,6 +1433,64 @@ if(zCard) {
 })();
 </script>
 
+
+<script>
+/* Quick log from the Hub. Reads the line the same way the Budget app does
+   (budget-core.js) and adds the expense straight to its data. */
+(function () {
+  var CATS = { food: '🍱 Food', travel: '🛺 Travel', shopping: '🛍️ Shopping', fun: '🎮 Fun', bills: '📱 Bills', other: '💸 Other' };
+  function load() { try { return JSON.parse(localStorage.getItem('budget_v1')) || null; } catch (_) { return null; } }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function rs(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  window.openHubLog = function (e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var b = load();
+    if (!b || !window.BudgetCore) { location.href = 'Shopping-List.html#log'; return; }
+    var el = document.createElement('div');
+    el.id = 'hub-log';
+    el.innerHTML = '<div class="hl-card"><h3>LOG SPENDING</h3>' +
+      '<input id="hl-in" placeholder="chai 20 · lunch 80 · auto 45" autocomplete="off" maxlength="80">' +
+      '<div class="hl-prev" id="hl-prev">Type what you spent and the amount.</div>' +
+      '<div class="hl-btns"><button class="hl-alt" id="hl-open">Open Budget</button><button class="hl-go" id="hl-go">Log</button></div></div>';
+    document.body.appendChild(el);
+    var inp = el.querySelector('#hl-in'), prev = el.querySelector('#hl-prev');
+    function read() { return window.BudgetCore.parseEntry(inp.value, (load() || {}).expenses || []); }
+    function show() {
+      var p = read();
+      if (!p || (!p.amt && !p.note)) { prev.textContent = 'Type what you spent and the amount.'; return; }
+      if (!p.amt) { prev.innerHTML = '<span style="color:#ff5d7a">Add an amount, like chai 20</span>'; return; }
+      prev.innerHTML = '<b>' + rs(p.amt) + '</b> · ' + CATS[p.cat || 'other'] + (p.note ? ' · ' + esc(p.note) : '') +
+        (p.split ? ' · splits open in Budget' : '');
+    }
+    function close() { el.remove(); }
+    function go() {
+      var p = read();
+      if (!p || !p.amt) { inp.focus(); show(); return; }
+      if (p.split) { location.href = 'Shopping-List.html#log'; return; }
+      var bb = load() || {};
+      bb.expenses = bb.expenses || [];
+      bb.expenses.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), amt: p.amt, cat: p.cat || 'other', note: p.note, date: today(), ts: Date.now() });
+      localStorage.setItem('budget_v1', JSON.stringify(bb));
+      close();
+      if (typeof syncHubData === 'function') syncHubData();
+      var t = document.createElement('div');
+      t.style.cssText = 'position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483001;' +
+        'padding:11px 18px;border-radius:12px;background:#0d111c;border:1px solid rgba(242,184,75,.4);color:#fff;font:600 13px "Space Grotesk",sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.5)';
+      t.textContent = 'Logged ' + rs(p.amt) + (p.note ? ' · ' + p.note : '');
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 2200);
+    }
+    inp.addEventListener('input', show);
+    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') go(); if (ev.key === 'Escape') close(); });
+    el.addEventListener('click', function (ev) { if (ev.target === el) close(); });
+    el.querySelector('#hl-go').onclick = go;
+    el.querySelector('#hl-open').onclick = function () { location.href = 'Shopping-List.html#log'; };
+    setTimeout(function () { inp.focus(); }, 30);
+  };
+})();
+</script>
 
 <!-- ══ SAFE AREA ════════════════════════════════════════════════════════════
      Every app declares apple-mobile-web-app-status-bar-style=black-translucent,

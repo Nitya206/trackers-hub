@@ -48,7 +48,9 @@
     gate:           true,   // procrastination unlock earned
     timers:         true,   // "x minutes left" while a timer runs
     rituals:        true,   // a reminder as each Rituals window opens
-    windows:        true    // todos & sessions planned for a window, as it opens
+    windows:        true,   // todos & sessions planned for a window, as it opens
+    budget:         true,   // evening money check-in, plus 80% / 100% of the month
+    budgetHour:     21
   };
   function prefs() {
     try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')); }
@@ -351,6 +353,54 @@
     }
   }
 
+  /** Budget: an evening check-in to log the day's spending, and a heads-up at
+   *  80% and 100% of the month's money (once each per month). */
+  function planBudget(rows, p) {
+    if (!p.budget) return;
+    var b = LS('budget_v1', null);
+    if (!b || !b.months) return;
+    var today = localDate(), ym = today.slice(0, 7);
+    var spentToday = (b.expenses || []).filter(function (e) { return e.date === today; })
+      .reduce(function (s, e) { return s + (+e.amt || 0); }, 0);
+    var rs = function (n) { return '₹' + Math.round(n).toLocaleString('en-IN'); };
+
+    for (var day = 0; day < RECUR_DAYS; day++) {
+      var when = atHour(day, p.budgetHour);
+      if (when <= new Date()) continue;
+      rows.push({
+        key: 'budget:checkin:' + localDate(when),
+        send_at: when.toISOString(),
+        title: 'Money check-in',
+        body: day > 0 ? 'Log what you spent today before bed.'
+          : spentToday ? rs(spentToday) + ' logged today. Anything else?'
+          : 'Nothing logged today. Did you spend anything?',
+        url: './Shopping-List.html#log',
+        tag: 'budget'
+      });
+    }
+
+    var m = b.months[ym];
+    if (!m || !m.income) return;
+    var pct = m.savePct != null ? m.savePct : (b.savePct || 0);
+    var extra = (b.incomes || []).filter(function (x) { return !x.toSavings && (x.date || '').slice(0, 7) === ym; })
+      .reduce(function (s, x) { return s + x.amt; }, 0);
+    var spendable = m.income - Math.round(m.income * pct / 100) + (m.topUp || 0) + extra;
+    var used = (b.expenses || []).filter(function (e) { return (e.date || '').slice(0, 7) === ym; })
+      .reduce(function (s, e) { return s + (+e.amt || 0); }, 0)
+      + (b.owed || []).filter(function (o) { return !o.paid; }).reduce(function (s, o) { return s + o.amt; }, 0);
+    if (spendable <= 0) return;
+    // Skipped once the Budget app has already shown the same alert this month
+    var seen = (b.alerted || {})[ym] || {};
+    var soon = new Date(Date.now() + 60000).toISOString();
+    if (used >= spendable && !seen.m100) {
+      rows.push({ key: 'budget:100:' + ym, send_at: soon, title: 'Month budget used up',
+                  body: "You've spent all of this month's money.", url: './Shopping-List.html', tag: 'budget-alert' });
+    } else if (used >= spendable * 0.8 && used < spendable && !seen.m80) {
+      rows.push({ key: 'budget:80:' + ym, send_at: soon, title: '80% of the month spent',
+                  body: rs(spendable - used) + ' left for the rest of the month.', url: './Shopping-List.html', tag: 'budget-alert' });
+    }
+  }
+
   /** Exams get their own countdown at 7 / 3 / 1 days out. */
   function planExams(rows, p) {
     if (!p.exams) return;
@@ -586,6 +636,7 @@
       planTimer(rows, p);
       planRituals(rows, p);
       planWindows(rows, p);
+      planBudget(rows, p);
 
       // Clear anything still pending that this plan no longer wants — a todo
       // you finished shouldn't still produce a reminder tonight.
@@ -769,7 +820,8 @@ border-radius:7px;color:#fff;padding:5px 7px;font-size:12px;font-family:inherit;
     ['gate',       'Break unlocked',      'When you earn procrastination budget'],
     ['timers',     'Timer alerts',        '5 minutes before a timer ends, and when it does'],
     ['rituals',    'Ritual reminders',    'As each Rituals window opens — skipped once ticked'],
-    ['windows',    'Planned times',       'Todos and sessions you put in a window (as it opens) or at an exact time (when it is due)']
+    ['windows',    'Planned times',       'Todos and sessions you put in a window (as it opens) or at an exact time (when it is due)'],
+    ['budget',     'Money check-in',      'An evening nudge to log spending, and alerts at 80% and 100% of the month']
   ];
 
   async function sheet() {
@@ -805,9 +857,10 @@ border-radius:7px;color:#fff;padding:5px 7px;font-size:12px;font-family:inherit;
             return '<div class="tpush-row"><div>' + t[1] + '<small>' + t[2] + '</small></div>' +
                    '<button class="tpush-sw" data-k="' + t[0] + '" data-on="' + (p[t[0]] ? 1 : 0) + '"></button></div>';
           }).join('') +
-          '<div class="tpush-row"><div>Times<small>Digest hour · zen hour</small></div><div>' +
+          '<div class="tpush-row"><div>Times<small>Digest hour · zen hour · money check-in hour</small></div><div>' +
           '<input class="tpush-num" id="tpush-dh" type="number" min="0" max="23" value="' + p.digestHour + '"> ' +
-          '<input class="tpush-num" id="tpush-zh" type="number" min="0" max="23" value="' + p.zenHour + '"></div></div>' +
+          '<input class="tpush-num" id="tpush-zh" type="number" min="0" max="23" value="' + p.zenHour + '"> ' +
+          '<input class="tpush-num" id="tpush-bh" type="number" min="0" max="23" value="' + p.budgetHour + '"></div></div>' +
           '<button class="tpush-btn primary" id="tpush-test">Send a test notification</button>' +
           '<button class="tpush-btn" id="tpush-check">Check setup</button>') +
         '<button class="tpush-btn" id="tpush-close">Close</button>' +
@@ -839,6 +892,8 @@ border-radius:7px;color:#fff;padding:5px 7px;font-size:12px;font-family:inherit;
     var dh = el.querySelector('#tpush-dh'), zh = el.querySelector('#tpush-zh');
     if (dh) dh.onchange = function () { api.setPrefs({ digestHour: Math.max(0, Math.min(23, +dh.value || 8)) }); };
     if (zh) zh.onchange = function () { api.setPrefs({ zenHour:    Math.max(0, Math.min(23, +zh.value || 21)) }); };
+    var bh = el.querySelector('#tpush-bh');
+    if (bh) bh.onchange = function () { api.setPrefs({ budgetHour: Math.max(0, Math.min(23, +bh.value || 21)) }); };
 
     var cb = el.querySelector('#tpush-check');
     if (cb) cb.onclick = async function () {

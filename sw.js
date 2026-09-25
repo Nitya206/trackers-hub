@@ -24,12 +24,12 @@
  * Google Fonts (see CDN_ALLOW).
  */
 
-const VERSION = 'th-2026-09-24b';   // bump to ship a new worker; the cache itself survives
+const VERSION = 'th-2026-09-25b';   // bump to ship a new worker; the cache itself survives
 const CACHE   = 'trackers-hub';      // stable on purpose — see above
 // Must match the ?v= on the pages' <script> tags, so precached copies are the
 // exact URLs the pages ask for (a different query string is a different entry).
-const ASSET_V = '20260924a';
-const VERSIONED = ['sync-config.js', 'sync-engine.js', 'push-client.js', 'hub-nav.js', 'day-parts.js', 'zen-rules.js'];
+const ASSET_V = '20260925a';
+const VERSIONED = ['sync-config.js', 'sync-engine.js', 'push-client.js', 'hub-nav.js', 'day-parts.js', 'zen-rules.js', 'budget-core.js'];
 
 // Split deliberately: install takes only the light shell, so the first visit
 // isn't slowed by downloading the heavy pages it isn't showing yet.

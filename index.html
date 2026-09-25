@@ -64,11 +64,11 @@ if ('serviceWorker' in navigator) {
      Must load before any app script so localStorage writes are captured
      from the very first one. Remove these two lines to disable sync
      entirely; the app then behaves exactly as it did before. -->
-<script src="sync-config.js?v=20260925a"></script>
-<script src="sync-engine.js?v=20260925a"></script>
-<script src="push-client.js?v=20260925a"></script>
-<script src="zen-rules.js?v=20260925a"></script>
-<script src="budget-core.js?v=20260925a"></script>
+<script src="sync-config.js?v=20260926a"></script>
+<script src="sync-engine.js?v=20260926a"></script>
+<script src="push-client.js?v=20260926a"></script>
+<script src="zen-rules.js?v=20260926a"></script>
+<script src="budget-core.js?v=20260926a"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1307,7 +1307,8 @@ if(zCard) {
             const billsAhead = (bd.subs || []).filter(sub => !sub.paused && ym >= sub.startYM && !(sub.skip && sub.skip[ym]) &&
                 (sub.every !== 'year' || +ym.slice(5) === +sub.startYM.slice(5)) &&
                 !(bd.expenses || []).some(e => e.subId === sub.id && e.subYM === ym) &&
-                ym + '-' + String(Math.min(sub.day, dim)).padStart(2, '0') > today).reduce((s, sub) => s + sub.amt, 0);
+                ym + '-' + String(Math.min(sub.day, dim)).padStart(2, '0') > today).reduce((s, sub) => s + sub.amt, 0)
+                + (bd.plans || []).filter(p => !p.done && p.date <= ym + '-' + String(dim).padStart(2, '0')).reduce((s, p) => s + p.amt, 0);
             const free = (left + spentToday - fixed * daysLeft - billsAhead) / daysLeft - (spentToday - fixedSpent);
             const pct = Math.min(100, Math.round(spent / Math.max(1, spendable) * 100));
             sCard.querySelector('.c-fill').style.width = pct + '%';
@@ -1345,7 +1346,7 @@ if(zCard) {
     setInterval(syncHubData, 3000); 
 })();
 </script>
-<script src="hub-nav.js?v=20260925a"></script>
+<script src="hub-nav.js?v=20260926a"></script>
 
 <!-- ══ CARD TRANSITION ══════════════════════════════════════════════════════
      Why this exists: clicking a card felt like the hub froze for a few seconds
@@ -1438,7 +1439,7 @@ if(zCard) {
 /* Quick log from the Hub. Reads the line the same way the Budget app does
    (budget-core.js) and adds the expense straight to its data. */
 (function () {
-  var CATS = { food: '🍱 Food', travel: '🛺 Travel', shopping: '🛍️ Shopping', fun: '🎮 Fun', bills: '📱 Bills', other: '💸 Other' };
+  var CATS = { food: '🍱 Food', travel: '🛺 Travel', shopping: '🛍️ Shopping', fun: '🎮 Fun', care: '💇 Care', bills: '📱 Bills', other: '💸 Other' };
   function load() { try { return JSON.parse(localStorage.getItem('budget_v1')) || null; } catch (_) { return null; } }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function rs(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }

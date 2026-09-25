@@ -68,10 +68,11 @@ if ('serviceWorker' in navigator) {
      Must load before any app script so localStorage writes are captured
      from the very first one. Remove these two lines to disable sync
      entirely; the app then behaves exactly as it did before. -->
-<script src="sync-config.js?v=20260925a"></script>
-<script src="sync-engine.js?v=20260925a"></script>
-<script src="push-client.js?v=20260925a"></script>
-<script src="day-parts.js?v=20260925a"></script>
+<script src="sync-config.js?v=20260926a"></script>
+<script src="sync-engine.js?v=20260926a"></script>
+<script src="push-client.js?v=20260926a"></script>
+<script src="budget-core.js?v=20260926a"></script>
+<script src="day-parts.js?v=20260926a"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <!-- Chart.js now lives in chart.umd.min.js and is loaded the first time the Logs charts come on screen (see loadChartLib) -->
@@ -15838,7 +15839,7 @@ if ('serviceWorker' in navigator) {
         function initializeTodos() {
             resetTodoFormDefaults();
             loadTodosState();
-            if (syncRitualTodos() | syncShoppingTodos()) saveTodosState();
+            if (syncRitualTodos() | syncShoppingTodos() | syncBudgetTodos()) saveTodosState();
             renderTodos();
             renderAllocation();
             updateTopStats();
@@ -16071,6 +16072,7 @@ if ('serviceWorker' in navigator) {
             const gone = todos.find(t => t.id === id);
             if (gone && gone.ritual) ritualDismissed[gone.ritual.key] = true;     // stays in Rituals; just not in this list
             if (gone && gone.shopping) shoppingDismissed[gone.shopping.id] = true; // stays on the Shopping List; just not in this list
+            if (gone && gone.budget) budgetDismissed[gone.budget.key] = true;     // stays in Budget; just not in this list
             todos = todos.filter(t => t.id !== id);
             renderTodos();
             saveTodosState();
@@ -17506,6 +17508,9 @@ if ('serviceWorker' in navigator) {
                     shoppingDismissed = data.shoppingDismissed || {};
                     // An item that's gone (bought and cleared, or deleted) has nothing left to dismiss
                     { const live = new Set(shopItems().map(it => it.id)); Object.keys(shoppingDismissed).forEach(id => { if (!live.has(id)) delete shoppingDismissed[id]; }); }
+                    budgetDismissed = data.budgetDismissed || {};
+                    // Dismissals for occurrences more than two weeks old have nothing left to hide
+                    { const old = budgetShift(-14); Object.keys(budgetDismissed).forEach(k => { const d = k.split(':').pop(); if (d.length >= 7 && d < old.slice(0, d.length)) delete budgetDismissed[k]; }); }
                     Object.keys(data.allocation || {}).forEach(subject => {
                         if (allocation[subject]) {
                             allocation[subject].studied = data.allocation[subject].studied || 0;
@@ -17530,9 +17535,11 @@ if ('serviceWorker' in navigator) {
         function saveTodosState() {
             ritualPushStatuses();      // a ✓ / ✕ on a ritual todo goes back to the Rituals tracker first
             shoppingPushStatuses();    // a ✓ / ✕ on a shopping todo goes back to the Shopping List first
+            budgetPushStatuses();      // a ✓ on a planned payment marks it paid in Budget
             const data = {
                 ritualDismissed,
                 shoppingDismissed,
+                budgetDismissed,
                 todos,
                 allocation: Object.fromEntries(
                     Object.entries(allocation).map(([k, v]) => [k, { studied: v.studied }])
@@ -17826,6 +17833,115 @@ if ('serviceWorker' in navigator) {
         document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshShoppingTodos(); });
         setInterval(() => { if (!document.hidden) refreshShoppingTodos(); }, 60000);
 
+        // ==================== BUDGET → TODOS ====================
+        // Planned payments due within a week, and subscriptions renewing within 3 days,
+        // show up in the Money tab. Ticking a planned payment marks it paid in Budget.
+        // A subscription is charged on its own, so its todo ticks itself once that happens.
+        const BUDGET_KEY = 'budget_v1';
+        let budgetDismissed = {};        // occurrence key → true: removed here, Budget untouched
+        function budgetData() { try { return JSON.parse(localStorage.getItem(BUDGET_KEY)) || null; } catch (_) { return null; } }
+        function budgetNumericId(key) {
+            let h = 5381; const s = 'budget:' + key;
+            for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+            return 9600000000000 + h;
+        }
+        function budgetShift(days) { const d = new Date(); d.setDate(d.getDate() + days); return localDate(d); }
+        function budgetMoney(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
+        function budgetSubDue(sub, ym) {
+            const [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
+            return ym + '-' + String(Math.min(sub.day, dim)).padStart(2, '0');
+        }
+
+        // Every Budget item that should be a todo right now, keyed by occurrence
+        function budgetWanted() {
+            const want = new Map(), b = budgetData();
+            if (!b) return want;
+            const today = localDate(), soon = budgetShift(7), subSoon = budgetShift(3), recent = budgetShift(-2);
+            (b.plans || []).forEach(p => {
+                const title = `${p.emoji || '📅'} ${p.name} · ${budgetMoney(p.amt)}`;
+                if (!p.done && p.date <= soon) want.set(`plan:${p.id}:${p.date}`, { title, due: p.date, done: false, type: 'plan', planId: p.id, planDate: p.date });
+                (p.history || []).forEach(h => {
+                    if (!h.skipped && h.on >= recent) want.set(`plan:${p.id}:${h.date}`, { title, due: h.date, done: true, type: 'plan', planId: p.id, planDate: h.date });
+                });
+            });
+            const ymNow = today.slice(0, 7), next = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1); return localDate(d).slice(0, 7); })();
+            (b.subs || []).forEach(sub => {
+                if (sub.paused) return;
+                const title = `${sub.emoji || '🔁'} ${sub.name} renews · ${budgetMoney(sub.amt)}`;
+                [ymNow, next].forEach(ym => {
+                    if (ym < sub.startYM || (sub.every === 'year' && +ym.slice(5) !== +sub.startYM.slice(5))) return;
+                    const due = budgetSubDue(sub, ym);
+                    const paid = (b.expenses || []).find(e => e.subId === sub.id && e.subYM === ym);
+                    if (paid && paid.date >= recent) want.set(`sub:${sub.id}:${ym}`, { title, due, done: true, type: 'sub' });
+                    else if (!paid && !(sub.skip && sub.skip[ym]) && due >= today && due <= subSoon) want.set(`sub:${sub.id}:${ym}`, { title, due, done: false, type: 'sub' });
+                });
+            });
+            return want;
+        }
+
+        function syncBudgetTodos() {
+            const want = budgetWanted();
+            let changed = false;
+
+            // 1) drop todos Budget no longer wants, unless ticked here and not yet sent
+            const before = todos.length;
+            todos = todos.filter(t => !t.budget || want.has(t.budget.key) || (t.completed && !t.budget.synced));
+            if (todos.length !== before) changed = true;
+
+            // 2) add the ones that aren't here yet
+            want.forEach((w, key) => {
+                if (budgetDismissed[key] || todos.some(t => t.budget && t.budget.key === key)) return;
+                todos.unshift({
+                    id: budgetNumericId(key), task: w.title, subject: 'Other', kind: 'shopping', priority: 'Medium',
+                    dueDate: w.due, dueWindow: null, dueTime: null, estimatedMinutes: null, recurring: null, category: null,
+                    completed: w.done, notDone: false, archived: false,
+                    accumulatedSeconds: 0, lastStartTime: null, createdAt: new Date().toISOString(),
+                    subtasks: [], sessionNotes: [], sessionRatings: [], isFocusTodo: false,
+                    budget: { key, type: w.type, planId: w.planId || null, planDate: w.planDate || null, synced: w.done }
+                });
+                changed = true;
+            });
+
+            // 3) keep existing ones in step: titles, dates, and ticks made in Budget
+            todos.forEach(t => {
+                if (!t.budget) return;
+                const w = want.get(t.budget.key);
+                if (!w) return;
+                if (t.task !== w.title) { t.task = w.title; changed = true; }
+                if (t.dueDate !== w.due) { t.dueDate = w.due; changed = true; }
+                if (!!t.completed !== !!t.budget.synced) return;       // changed here, budgetPushStatuses sends it
+                // A subscription you ticked early stays ticked; it only ever gets ticked from Budget's side
+                if (w.done !== !!t.budget.synced && (w.done || t.budget.type === 'plan')) {
+                    t.completed = w.done; t.budget.synced = w.done; changed = true;
+                }
+            });
+            return changed;
+        }
+
+        // A planned payment ticked here is marked paid in Budget
+        function budgetPushStatuses() {
+            let b = null;
+            todos.forEach(t => {
+                if (!t.budget) return;
+                const now = !!t.completed;
+                if (now === !!t.budget.synced) return;
+                if (now && t.budget.type === 'plan' && window.BudgetCore) {
+                    b = b || budgetData();
+                    const p = b && (b.plans || []).find(x => x.id === t.budget.planId);
+                    if (p && !p.done && p.date === t.budget.planDate) window.BudgetCore.settlePlan(b, p.id, {});
+                }
+                t.budget.synced = now;
+            });
+            if (b) localStorage.setItem(BUDGET_KEY, JSON.stringify(b));
+        }
+
+        function refreshBudgetTodos() {
+            if (syncBudgetTodos()) { saveTodosState(); renderTodos(); if (typeof updateTopStats === 'function') updateTopStats(); }
+        }
+        window.addEventListener('storage', e => { if (e.key === BUDGET_KEY) refreshBudgetTodos(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshBudgetTodos(); });
+        setInterval(() => { if (!document.hidden) refreshBudgetTodos(); }, 60000);
+
         function setTodoKind(k) {
             todoKind = k;               // lasts for this session only — see the comment where todoKind is declared
             // The add-form's list picker only offers Study/Other — Shopping todos are bridge-only,
@@ -17840,7 +17956,7 @@ if ('serviceWorker' in navigator) {
             const n = { study: open.filter(t => t.kind !== 'other' && t.kind !== 'shopping').length,
                         other: open.filter(t => t.kind === 'other').length,
                         shopping: open.filter(t => t.kind === 'shopping').length };
-            el.innerHTML = [['study', '📚 Study', n.study], ['other', '🌿 Other', n.other], ['shopping', '🛒 Shopping', n.shopping],
+            el.innerHTML = [['study', '📚 Study', n.study], ['other', '🌿 Other', n.other], ['shopping', '💰 Money', n.shopping],
                             ['all', 'All', n.study + n.other + n.shopping]].map(([k, label, c]) =>
                 `<button type="button" role="tab" aria-selected="${todoKind === k}" class="${todoKind === k ? 'on' : ''}" onclick="setTodoKind('${k}')">${label}<small>${c}</small></button>`).join('');
         }
@@ -23357,6 +23473,7 @@ if ('serviceWorker' in navigator) {
             if (!confirm(`Delete ${selectedTodos.size} tasks?`)) return;
             todos.forEach(t => { if (selectedTodos.has(t.id) && t.ritual) ritualDismissed[t.ritual.key] = true; });
             todos.forEach(t => { if (selectedTodos.has(t.id) && t.shopping) shoppingDismissed[t.shopping.id] = true; });
+            todos.forEach(t => { if (selectedTodos.has(t.id) && t.budget) budgetDismissed[t.budget.key] = true; });
             todos = todos.filter(t => !selectedTodos.has(t.id));
             clearSelection();
             renderTodos();
@@ -30360,7 +30477,7 @@ if ('serviceWorker' in navigator) {
         // END v8.0
         // ============================================================
     </script>
-    <script src="hub-nav.js?v=20260925a"></script>
+    <script src="hub-nav.js?v=20260926a"></script>
 
 <!-- ══ MOBILE-FIX · phone layout corrections ══════════════════════════════
      Appended last on purpose. The "v8.FINAL" nav rules above use !important
@@ -30617,6 +30734,8 @@ if ('serviceWorker' in navigator) {
   }
 
   window.TRACKERS_SYNC_RERENDER = function (keys) {
+    if (keys && keys.indexOf('shopping_list_v1') !== -1 && typeof refreshShoppingTodos === 'function') refreshShoppingTodos();
+    if (keys && keys.indexOf('budget_v1') !== -1 && typeof refreshBudgetTodos === 'function') refreshBudgetTodos();
     // The subject list shapes the whole page, so a new one from another device reloads it,
     // unless a timer is running, in which case it applies next time the app opens.
     if (keys && keys.indexOf('study_subjects_v1') !== -1 && !(typeof activeTimerId !== 'undefined' && activeTimerId)) {

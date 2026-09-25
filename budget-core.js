@@ -15,6 +15,8 @@
                'stationery', 'pen', 'notebook', 'book', 'books', 'shopping', 'soap', 'shampoo', 'toiletries'],
     fun: ['movie', 'movies', 'pvr', 'inox', 'game', 'games', 'steam', 'party', 'outing', 'trip', 'concert', 'bowling',
           'netflix', 'spotify', 'prime', 'hotstar', 'youtube', 'gift'],
+    care: ['haircut', 'hair', 'salon', 'barber', 'spa', 'grooming', 'shave', 'trim', 'facial', 'gym', 'medicine', 'medicines',
+           'pharmacy', 'doctor', 'dentist', 'clinic', 'skincare', 'massage'],
     bills: ['recharge', 'wifi', 'internet', 'electricity', 'rent', 'bill', 'bills', 'jio', 'airtel', 'vi', 'fees', 'fee',
             'laundry', 'gas', 'emi', 'insurance', 'subscription', 'hostel']
   };
@@ -85,5 +87,60 @@
     return { amt: amt, note: who || '', credit: credit };
   }
 
-  window.BudgetCore = { guessCat: guessCat, parseEntry: parseEntry, parseSMS: parseSMS };
+  /* ── Planned payments (a haircut, a trip, anything with a date) ──────────
+     A plan holds its next date and how it repeats: { n, unit } with unit
+     day | week | month | year, or null for once. Paying or skipping moves a
+     repeating plan to its next date, and finishes a one-off. */
+  function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function today() { return ymd(new Date()); }
+
+  function step(plan, ds) {
+    var r = plan.repeat, d = new Date(ds + 'T12:00:00');
+    if (r.unit === 'day') d.setDate(d.getDate() + r.n);
+    else if (r.unit === 'week') d.setDate(d.getDate() + 7 * r.n);
+    else {
+      // Months and years keep the original day, clamped to short months
+      var months = r.unit === 'year' ? 12 * r.n : r.n;
+      var y = d.getFullYear(), m = d.getMonth() + months;
+      var day = plan.anchorDay || d.getDate();
+      var dim = new Date(y, m + 1, 0).getDate();
+      d = new Date(y, m, Math.min(day, dim), 12);
+    }
+    return ymd(d);
+  }
+
+  // The first date after `after` (default today) on the plan's schedule
+  function nextPlanDate(plan, after) {
+    after = after || today();
+    var ds = plan.date, guard = 0;
+    while (ds <= after && guard++ < 500) ds = step(plan, ds);
+    return ds;
+  }
+
+  function repeatLabel(r) {
+    if (!r) return 'Once';
+    var names = { day: ['day', 'days'], week: ['week', 'weeks'], month: ['month', 'months'], year: ['year', 'years'] };
+    return 'Every ' + (r.n === 1 ? names[r.unit][0] : r.n + ' ' + names[r.unit][1]);
+  }
+
+  // Pays (or skips) the plan's current date. Returns the logged expense, if any.
+  function settlePlan(b, planId, opts) {
+    opts = opts || {};
+    var plan = (b.plans || []).find(function (p) { return p.id === planId; });
+    if (!plan || plan.done) return null;
+    var on = opts.on || today(), exp = null;
+    if (!opts.skip) {
+      exp = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), amt: opts.amt || plan.amt,
+              cat: plan.cat, note: plan.name, date: on, ts: Date.now(), planId: plan.id, planDate: plan.date };
+      b.expenses = b.expenses || [];
+      b.expenses.push(exp);
+    }
+    plan.history = (plan.history || []).concat([{ date: plan.date, on: on, expId: exp ? exp.id : null, skipped: !!opts.skip }]).slice(-24);
+    if (plan.repeat) plan.date = nextPlanDate(plan, plan.date < on ? on : plan.date);
+    else plan.done = true;
+    return exp;
+  }
+
+  window.BudgetCore = { guessCat: guessCat, parseEntry: parseEntry, parseSMS: parseSMS,
+                        nextPlanDate: nextPlanDate, repeatLabel: repeatLabel, settlePlan: settlePlan };
 })();

@@ -50,10 +50,10 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Cross-device sync. Must load before any app script. -->
-<script src="sync-config.js?v=20260925a"></script>
-<script src="sync-engine.js?v=20260925a"></script>
-<script src="push-client.js?v=20260925a"></script>
-<script src="budget-core.js?v=20260925a"></script>
+<script src="sync-config.js?v=20260926a"></script>
+<script src="sync-engine.js?v=20260926a"></script>
+<script src="push-client.js?v=20260926a"></script>
+<script src="budget-core.js?v=20260926a"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -331,6 +331,26 @@ if ('serviceWorker' in navigator) {
   .leftover-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-dim); }
   .leftover-row .field { width: auto; max-width: 55%; padding: 7px 10px; font-size: 13px; }
 
+  .plan-due { border-color: rgba(242,184,75,.45); background: linear-gradient(90deg, rgba(242,184,75,.07), var(--surface) 70%); flex-wrap: wrap; }
+  .plan-btns { display: flex; gap: 6px; width: 100%; padding-left: 41px; }
+  .plan-btns .mini-btn { flex: 1; padding: 7px 9px; }
+  .good-btn { color: var(--good); border-color: rgba(127,217,154,.4); }
+
+  /* ── Plain-language hero ── */
+  .plain-note { font-size: 13px; color: var(--text); line-height: 1.55; margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border); position: relative; text-align: left; }
+  .short-warn { font-size: 13px; line-height: 1.55; margin-top: 10px; padding: 10px 12px; border-radius: 10px; text-align: left;
+    background: var(--danger-dim); border: 1px solid rgba(226,114,111,.35); color: var(--text); position: relative; }
+  .short-warn .hero-actions { justify-content: flex-start; }
+  .how { margin-top: 10px; text-align: left; position: relative; }
+  .how summary { cursor: pointer; font-size: 12px; color: var(--text-dim); font-weight: 600; text-align: center; list-style: none; }
+  .how summary::-webkit-details-marker { display: none; }
+  .how summary::after { content: ' ▾'; }
+  .how[open] summary::after { content: ' ▴'; }
+  .how-rows { margin-top: 8px; font-size: 12.5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; }
+  .how-rows > div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; color: var(--text-dim); }
+  .how-rows > div.sum { color: var(--text); font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; }
+
   /* ── Insights ── */
   .chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 6px; }
   .chart .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
@@ -412,6 +432,7 @@ const CATS = [
   { id: 'travel',   icon: '🛺', label: 'Travel',   c: '#7fa1e0' },
   { id: 'shopping', icon: '🛍️', label: 'Shopping', c: '#d98fd0' },
   { id: 'fun',      icon: '🎮', label: 'Fun',      c: '#7fd99a' },
+  { id: 'care',     icon: '💇', label: 'Care',     c: '#e3a79a' },
   { id: 'bills',    icon: '📱', label: 'Bills',    c: '#e2726f' },
   { id: 'other',    icon: '💸', label: 'Other',    c: '#8b94a8' },
 ];
@@ -445,7 +466,7 @@ function saveShop(items) { localStorage.setItem(SHOP_KEY, JSON.stringify(items))
 
 function blankBudget() {
   return { months: {}, savePct: 20, expenses: [], usuals: [], goals: [], subs: [], incomes: [], owed: [], limits: {},
-           rolled: {}, leftoverTo: 'savings', savedOut: 0, migrated: false };
+           rolled: {}, leftoverTo: 'savings', plans: [], savedOut: 0, migrated: false };
 }
 function loadBudget() {
   let b;
@@ -600,7 +621,10 @@ function calc(b) {
   if (!plan) return { today, ym, dim, daysLeft, plan: null, spent, spentToday, monthExp, fixedPerDay };
 
   const bills = subsAhead(b, ym, today);
-  const billsAhead = bills.reduce((s, x) => s + x.amt, 0);
+  const monthEnd = ym + '-' + String(dim).padStart(2, '0');
+  const plans = (b.plans || []).filter(p => !p.done && p.date <= monthEnd);
+  const plansAhead = plans.reduce((s, p) => s + p.amt, 0);
+  const billsAhead = bills.reduce((s, x) => s + x.amt, 0) + plansAhead;
 
   const lent = (b.owed || []).filter(o => !o.paid).reduce((s, o) => s + o.amt, 0);
   const left = plan.spendable - spent - lent;
@@ -610,7 +634,7 @@ function calc(b) {
   const reservedAhead = fixedPerDay * (daysLeft - 1) + (fixedPerDay - fixedSpentToday) + billsAhead;
   const freeMonth = left - reservedAhead;
 
-  return { today, ym, dim, daysLeft, plan, spent, spentToday, monthExp, left, flexPerDay, freeToday, freeMonth, fixedPerDay, fixedSpentToday, bills, billsAhead, lent,
+  return { today, ym, dim, daysLeft, plan, spent, spentToday, monthExp, left, flexPerDay, freeToday, freeMonth, fixedPerDay, fixedSpentToday, bills, billsAhead, lent, plans, plansAhead,
            yesterday: yesterdayResult(b, plan, ym, dim, daily, fixedPerDay) };
 }
 
@@ -1227,6 +1251,71 @@ function submitQuick() {
   previewQuick();
 }
 
+// ═══════════════════════════ PLANNED PAYMENTS ═══════════════════════════
+// A haircut, a trip, a gift: anything with a date. Its money is set aside until
+// then. On the day it asks whether you paid, since you might not go.
+const REPEATS = [
+  ['', 'Doesn\'t repeat'], ['1week', 'Every week'], ['2week', 'Every 2 weeks'], ['4week', 'Every 4 weeks'],
+  ['6week', 'Every 6 weeks'], ['1month', 'Every month'], ['2month', 'Every 2 months'], ['3month', 'Every 3 months'], ['1year', 'Every year']
+];
+const repeatKey = r => r ? r.n + r.unit : '';
+const repeatFrom = v => { const m = /^(\d+)(day|week|month|year)$/.exec(v || ''); return m ? { n: +m[1], unit: m[2] } : null; };
+
+function editPlan(id) {
+  const b = loadBudget();
+  const p = id ? (b.plans || []).find(x => x.id === id) : { name: '', amt: '', cat: 'care', emoji: '', date: localDate(), repeat: null };
+  if (!p) return;
+  const cur = repeatKey(p.repeat);
+  const last = p.history && p.history.length ? p.history[p.history.length - 1] : null;
+  openSheet({
+    title: id ? 'Edit planned payment' : '📅 Plan a payment',
+    desc: 'Money for it is set aside until the day. On the day, mark it paid or skip it.',
+    body: `
+      <label>What is it?</label>
+      <input class="field" name="name" value="${escapeHtml(p.name)}" placeholder="e.g. Haircut" maxlength="40" required>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label>Amount (₹)</label><input class="field mono" name="amt" type="number" inputmode="decimal" min="0" step="1" value="${p.amt}" required></div>
+        <div style="width:84px"><label>Emoji</label><input class="field" name="emoji" value="${escapeHtml(p.emoji || '')}" placeholder="📅" maxlength="4"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label>${id ? 'Next date' : 'Date'}</label><input class="field" name="date" type="date" value="${p.date}" required></div>
+        <div style="flex:1"><label>Repeats</label><select class="field" name="repeat">${REPEATS.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      </div>
+      <label>Category</label>
+      ${catSelect(p.cat)}
+      ${last ? `<p class="hint">Last time: ${last.skipped ? 'skipped' : 'paid'} ${fmtDate(last.on)}.</p>` : ''}`,
+    saveLabel: id ? 'Save' : 'Add',
+    onSave: f => {
+      const name = f.name.value.trim(), amt = num(f.amt.value);
+      if (!name) { f.name.focus(); return false; }
+      if (!amt) { f.amt.focus(); return false; }
+      const bb = loadBudget(); bb.plans = bb.plans || [];
+      const date = f.date.value || localDate();
+      const data = { name, amt, cat: f.cat.value, emoji: f.emoji.value.trim(), date, repeat: repeatFrom(f.repeat.value), anchorDay: +date.slice(8) };
+      if (id) Object.assign(bb.plans.find(x => x.id === id), data);
+      else bb.plans.push(Object.assign({ id: uid(), history: [] }, data));
+      saveBudget(bb); render();
+      if (!id) showToast(`📅 ${escapeHtml(name)} planned for ${fmtDay(date)}`);
+    },
+    onDelete: id ? () => { const bb = loadBudget(); bb.plans = bb.plans.filter(x => x.id !== id); saveBudget(bb); render(); } : null
+  });
+}
+
+function settlePlanNow(id, skip) {
+  const b = loadBudget(), before = JSON.stringify((b.plans || []).find(x => x.id === id) || null);
+  const exp = window.BudgetCore.settlePlan(b, id, { skip });
+  saveBudget(b); render();
+  if (!skip) checkAlerts();
+  const p = b.plans.find(x => x.id === id);
+  const undo = () => {
+    const bb = loadBudget(), i = bb.plans.findIndex(x => x.id === id);
+    if (i !== -1 && before !== 'null') bb.plans[i] = JSON.parse(before);
+    if (exp) bb.expenses = bb.expenses.filter(e => e.id !== exp.id);
+    saveBudget(bb); render();
+  };
+  showToast(`${skip ? 'Skipped' : 'Paid · ' + money(exp.amt)}${p && !p.done ? ' · next ' + fmtDate(p.date) : ''}`, { label: 'Undo', fn: undo });
+}
+
 // ═══════════════════════════ ALERTS ═══════════════════════════
 // Once per month each: 80% and 100% of the month, and of any category limit
 function checkAlerts() {
@@ -1528,7 +1617,7 @@ function expenseRow(e) {
       <div class="row-ico" style="--c:${c.c}">${escapeHtml(icon)}</div>
       <div class="row-main">
         <div class="row-title">${escapeHtml(e.note || c.label)}</div>
-        <div class="row-sub">${c.label}${e.shopId ? ' · from list' : ''}${e.fromEF ? ' · 🛟 emergency fund' : ''}${e.subId ? ' · 🔁 subscription' : ''}${e.split ? ' · 👥 split' : ''} · ${time}</div>
+        <div class="row-sub">${c.label}${e.shopId ? ' · from list' : ''}${e.fromEF ? ' · 🛟 emergency fund' : ''}${e.subId ? ' · 🔁 subscription' : ''}${e.split ? ' · 👥 split' : ''}${e.planId ? ' · 📅 planned' : ''} · ${time}</div>
       </div>
       <div class="row-amt mono">${money(e.amt)}</div>
       <button class="x" onclick="event.stopPropagation(); deleteExpense('${e.id}')" title="Remove" aria-label="Remove">×</button>
@@ -1570,26 +1659,75 @@ function renderToday(b, k) {
     const y = k.yesterday;
     const yLine = y && y.diff !== 0
       ? `<div class="yday ${y.diff > 0 ? 'good' : 'bad'}">${y.diff > 0
-          ? `Yesterday you spent ${money(y.diff)} less than your allowance 👏 It stays in this month, so today's amount went up.`
-          : `Yesterday went ${money(-y.diff)} over, so today's amount is a little lower.`}</div>`
+          ? `Yesterday you spent ${money(y.diff)} less than planned 👏 so you have a bit more today.`
+          : `Yesterday you spent ${money(-y.diff)} more than planned, so today has a bit less.`}</div>`
       : '';
-    const reservedNote = (k.fixedPerDay ? `<br>${money(k.fixedPerDay)}/day set aside for your daily usuals` : '') +
-      (k.billsAhead ? `<br>${money(k.billsAhead)} set aside for ${k.bills.length} subscription${k.bills.length === 1 ? '' : 's'} due later this month` : '');
+
+    // Plain-language pieces for what's held back from "left"
+    const dailies = b.usuals.filter(u => u.daily);
+    const lunchWord = dailies.length ? dailies.map(u => u.name).join(' and ') : '';
+    const fixedLeft = k.fixedPerDay * (k.daysLeft - 1) + (k.fixedPerDay - k.fixedSpentToday);
+    const subsLeft = k.billsAhead - k.plansAhead;
+    const held = fixedLeft + k.billsAhead;
+    const heldParts = [lunchWord && `your ${lunchWord}`, subsLeft && 'subscriptions', k.plansAhead && 'planned payments'].filter(Boolean);
+    const joinParts = arr => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
+    const freeRest = k.freeMonth;                      // left after everything held back
+    const short = freeRest < 0;
+    const later = k.daysLeft - 1;
+    const tomorrow = later > 0 ? Math.max(0, (freeRest - Math.max(0, k.freeToday)) / later) : null;
+
+    const verb = heldParts.length === 1 && lunchWord && !lunchWord.includes(' and ') ? 'needs' : 'need';
+    const days = `${k.daysLeft} day${k.daysLeft === 1 ? '' : 's'}`;
+    const explain = !held ? `${money(k.left)} left for the last ${days}.`
+      : short ? `${money(k.left)} left for the last ${days}, but ${joinParts(heldParts)} ${verb} ${money(held)}.`
+      : `${money(k.left)} left for the last ${days}. ${joinParts(heldParts).replace(/^./, c => c.toUpperCase())} ${verb} ${money(held)} of it, so ${money(freeRest)} is free for everything else.`;
+
+    const rows = [
+      ['Money for this month', money(k.plan.income)],
+      [`Saved first (${k.plan.pct}%)`, '− ' + money(k.plan.save)],
+      k.plan.extra ? ['Money in', '+ ' + money(k.plan.extra)] : null,
+      k.plan.topUp ? ['From emergency fund', '+ ' + money(k.plan.topUp)] : null,
+      ['To spend this month', money(k.plan.spendable), 'sum'],
+      ['Spent so far', '− ' + money(k.spent)],
+      k.lent ? ['Lent to friends', '− ' + money(k.lent)] : null,
+      ['Left', money(k.left), 'sum'],
+      fixedLeft ? [`${lunchWord} for the rest of the month`, '− ' + money(fixedLeft)] : null,
+      subsLeft ? ['Subscriptions still to come', '− ' + money(subsLeft)] : null,
+      k.plansAhead ? ['Planned payments', '− ' + money(k.plansAhead)] : null,
+      ['Free for everything else', money(freeRest), 'sum'],
+      later > 0 ? [`That's about this much a day for the next ${later} day${later === 1 ? '' : 's'}`, `${money(Math.floor(tomorrow))} a day`] : null
+    ].filter(Boolean);
+
     hero = `
       <div class="card hero" style="--hero-glow:${over ? 'rgba(226,114,111,.16)' : 'rgba(127,217,154,.14)'}">
-        <div class="hero-lbl">${over ? 'Over today by' : 'Free to spend today'}</div>
-        <div class="hero-num mono ${over ? 'over' : 'good'}">${money(over ? Math.ceil(-k.freeToday) : Math.floor(k.freeToday))}</div>
+        <div class="hero-lbl">${over ? 'Nothing left to spend today' : 'You can still spend today'}</div>
+        <div class="hero-num mono ${over ? 'over' : 'good'}">${over ? '₹0' : money(Math.floor(k.freeToday))}</div>
         <div class="hero-sub">
-          ${over ? 'Tomorrow\'s amount shrinks a little to cover it.' : `${money(k.spentToday)} spent today`}${reservedNote}
+          ${over
+            ? `Today's share was ${money(Math.max(0, Math.floor(k.flexPerDay)))} and you've spent ${money(k.spentToday - k.fixedSpentToday)}${lunchWord ? ' on other things' : ''}. The extra ${money(Math.ceil(-k.freeToday))} ${later > 0 ? `comes out of the next ${later} day${later === 1 ? '' : 's'}` : 'comes out of this month'}.`
+            : `${money(k.spentToday)} spent today.${lunchWord ? ` Your ${escapeHtml(lunchWord)} is already counted, so this is extra.` : ''}`}
         </div>
+        <div class="plain-note">${escapeHtml(explain)}${tomorrow != null && !short ? `<br>Tomorrow you'll have about <b>${money(Math.floor(tomorrow))}</b>${lunchWord ? ` plus your ${escapeHtml(lunchWord)}` : ''}.` : ''}</div>
+        ${short ? `
+          <div class="short-warn">
+            <b>⚠️ Not enough money left.</b> ${lunchWord ? `Your ${escapeHtml(lunchWord)} for the rest of the month costs` : 'What you have planned costs'} more than the ${money(k.left)} you have. You'll be <b>${money(Math.ceil(-freeRest))} short</b> unless you spend less or add money.
+            <div class="hero-actions" style="margin-top:8px">
+              ${dailies.length ? `<button class="mini-btn" onclick="editUsual('${dailies[0].id}')">Change ${escapeHtml(dailies[0].name)}</button>` : ''}
+              <button class="mini-btn" onclick="editIncome(null)">💵 Add money</button>
+            </div>
+          </div>` : ''}
         ${yLine}
+        <details class="how">
+          <summary>How is this worked out?</summary>
+          <div class="how-rows">${rows.map(([l, v, cls]) => `<div class="${cls || ''}"><span>${escapeHtml(l)}</span><span class="mono">${v}</span></div>`).join('')}</div>
+        </details>
         <div class="hero-stats">
           <div class="hs"><b class="mono">${money(k.left)}</b><span>Left in month</span></div>
           <div class="hs"><b class="mono">${k.daysLeft}</b><span>Days left</span></div>
           <div class="hs" onclick="setTab('goals')" style="cursor:pointer"><b class="mono" style="color:var(--good)">${money(k.plan.save)}</b><span>Saved ${k.plan.pct}%</span></div>
         </div>
         <div class="bar ${k.left < 0 ? 'over' : ''}" style="margin-top:14px"><div style="width:${monthPct}%"></div></div>
-        <div class="hero-sub" style="margin-top:6px;font-size:11.5px">${money(k.spent)} of ${money(k.plan.spendable)} spent${k.plan.topUp ? ` (incl. ${money(k.plan.topUp)} 🛟)` : ''}${k.lent ? ` · ${money(k.lent)} lent` : ''} · <button class="link-btn" onclick="editMonth()">Edit month</button></div>
+        <div class="hero-sub" style="margin-top:6px;font-size:11.5px">${money(k.spent)} of ${money(k.plan.spendable)} spent this month · <button class="link-btn" onclick="editMonth()">Edit month</button></div>
         <div class="hero-actions">
           <button class="mini-btn" onclick="editIncome(null)">💵 Money in</button>
           <button class="mini-btn" onclick="openAfford()">🤔 Can I afford it?</button>
@@ -1648,6 +1786,30 @@ function renderToday(b, k) {
       <button class="usual add" onclick="editUsual(null)">＋ ${b.usuals.length ? 'Add' : 'Add a usual, e.g. lunch'}</button>
     </div>
     ${b.usuals.length ? '<div class="hint">Tap to log. Long-press or right-click to edit. The ones you usually log around now come first.</div>' : ''}`;
+
+  const planned = (b.plans || []).filter(p => !p.done).sort((a, c) => a.date < c.date ? -1 : 1);
+  const planRow = p => {
+    const days = Math.round((new Date(p.date + 'T12:00:00') - new Date(k.today + 'T12:00:00')) / 864e5);
+    const due = days <= 0;
+    const when = days < 0 ? `${-days} day${days === -1 ? '' : 's'} overdue` : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : fmtDay(p.date);
+    return `
+      <div class="row click${due ? ' plan-due' : ''}" onclick="editPlan('${p.id}')">
+        <div class="row-ico" style="--c:${catOf(p.cat).c}">${escapeHtml(p.emoji || catOf(p.cat).icon)}</div>
+        <div class="row-main">
+          <div class="row-title">${escapeHtml(p.name)}</div>
+          <div class="badges"><span class="badge ${days < 0 ? 'nofit' : 'date'}">${when}</span><span class="badge">${window.BudgetCore.repeatLabel(p.repeat)}</span></div>
+        </div>
+        <div class="row-amt mono">${money(p.amt)}</div>
+        ${due ? `<div class="plan-btns">
+          <button class="mini-btn good-btn" onclick="event.stopPropagation(); settlePlanNow('${p.id}', false)">Paid ✓</button>
+          <button class="mini-btn" onclick="event.stopPropagation(); settlePlanNow('${p.id}', true)">Skip</button>
+        </div>` : ''}
+      </div>`;
+  };
+  const plannedSection = `
+    <div class="section-label"><span>📅 Planned${planned.length ? ' · ' + planned.length : ''}</span><button class="link-btn" onclick="editPlan(null)">＋ Plan</button></div>
+    ${planned.length ? `<div class="list">${planned.map(planRow).join('')}</div>`
+      : '<div class="empty" style="padding:14px 10px">Plan something with a date, like a haircut or a trip. Its money is set aside until then, and it shows in your Study todos.</div>'}`;
 
   const subs = b.subs || [];
   const monthlyTotal = subs.filter(x => !x.paused && x.every !== 'year').reduce((sum, x) => sum + x.amt, 0);
@@ -1712,7 +1874,7 @@ function renderToday(b, k) {
       <div class="list">${dayRows(b, d, byDay[d])}</div>`).join('')
       : '<div class="empty">Nothing logged this week yet.</div>'}`;
 
-  return hero + usuals + quick + owedSection + subsSection + list;
+  return hero + usuals + quick + owedSection + plannedSection + subsSection + list;
 }
 
 function renderList(b, k) {
@@ -2058,7 +2220,7 @@ function openLogFromHash() {
 openLogFromHash();
 addEventListener('hashchange', openLogFromHash);
 </script>
-<script src="hub-nav.js?v=20260925a"></script>
+<script src="hub-nav.js?v=20260926a"></script>
 
 </body>
 </html>

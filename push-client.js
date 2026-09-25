@@ -379,6 +379,19 @@
       });
     }
 
+    // Planned payments: a morning reminder on the day
+    (b.plans || []).forEach(function (pl) {
+      if (pl.done) return;
+      for (var d = 0; d < RECUR_DAYS; d++) {
+        var at = atHour(d, 9);
+        if (localDate(at) !== pl.date || at <= new Date()) continue;
+        rows.push({ key: 'budget:plan:' + pl.id + ':' + pl.date, send_at: at.toISOString(),
+                    title: (pl.emoji ? pl.emoji + ' ' : '') + pl.name + ' today',
+                    body: rs(pl.amt) + ' planned. Mark it paid or skip it in Budget.',
+                    url: './Shopping-List.html', tag: 'budget-plan' });
+      }
+    });
+
     var m = b.months[ym];
     if (!m || !m.income) return;
     var pct = m.savePct != null ? m.savePct : (b.savePct || 0);

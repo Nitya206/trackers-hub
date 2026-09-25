@@ -930,7 +930,7 @@ function tapUsual(id) {
   if (!u) return;
   const e = addExpense(u.amt, u.cat, u.name, localDate(), { usualId: u.id });
   if (navigator.vibrate) try { navigator.vibrate(12); } catch (_) {}
-  showToast(`${escapeHtml(u.emoji || catOf(u.cat).icon)} ${escapeHtml(u.name)} · ${money(u.amt)}`, { label: 'Undo', fn: () => deleteExpenseSilently(e.id) });
+  showToast(`${escapeHtml(u.emoji || catOf(u.cat).icon)} ${escapeHtml(u.name)} · ${money(u.amt)}`, { label: 'Change', fn: () => editExpense(e.id) });
 }
 
 function editUsual(id, preset) {
@@ -1178,6 +1178,17 @@ function wishToGoal(itemId) {
 // ═══════════════════════════ ONE-LINE LOGGING ═══════════════════════════
 // Type "chai 20" or "80 lunch". The amount and note are read from the line and
 // the category is guessed from what you've logged before, until you tap one.
+// "lunch 60" matches a usual called "Lunch" or "Lunch thali", so it uses up that usual's set-aside money
+function matchUsual(note) {
+  const n = String(note || '').trim().toLowerCase();
+  if (!n) return null;
+  const first = s => s.split(/\s+/)[0];
+  const us = loadBudget().usuals;
+  return us.find(u => u.name.toLowerCase() === n)
+      || us.find(u => first(u.name.toLowerCase()) === n || u.name.toLowerCase() === first(n))
+      || null;
+}
+
 function readQuick() {
   const el = document.getElementById('qaText');
   return el ? window.BudgetCore.parseEntry(el.value, loadBudget().expenses) : null;
@@ -1186,12 +1197,13 @@ function readQuick() {
 function previewQuick() {
   const p = readQuick(), out = document.getElementById('qaPreview');
   if (!out) return;
-  const cat = qaCat || (p && p.cat) || 'other';
+  const u = p && !p.split && matchUsual(p.note);
+  const cat = qaCat || (u && u.cat) || (p && p.cat) || 'other';
   document.querySelectorAll('#qaCats .cat').forEach(x => x.classList.toggle('on', x.dataset.cat === cat));
   if (!p || (!p.amt && !p.note)) { out.innerHTML = '<span class="faint">Try <b>chai 20</b>, <b>80 lunch</b> or <b>dinner 600 split 3</b></span>'; return; }
   const c = catOf(cat);
   out.innerHTML = p.amt
-    ? `<b class="mono">${money(p.amt)}</b> · ${c.icon} ${c.label}${p.note ? ' · ' + escapeHtml(p.note) : ''}${p.split ? ` · 👥 your share ${money(p.amt / p.split)}` : ''}`
+    ? `<b class="mono">${money(p.amt)}</b> · ${c.icon} ${c.label}${p.note ? ' · ' + escapeHtml(p.note) : ''}${p.split ? ` · 👥 your share ${money(p.amt / p.split)}` : ''}${u ? ` · ⚡ counts as your ${escapeHtml(u.name)}` : ''}`
     : '<span style="color:var(--danger)">Add an amount, like chai 20</span>';
 }
 
@@ -1200,11 +1212,12 @@ function pickQuickCat(cat) { qaCat = qaCat === cat ? null : cat; previewQuick();
 function submitQuick() {
   const p = readQuick(), input = document.getElementById('qaText');
   if (!p || !p.amt) { if (input) input.focus(); previewQuick(); return; }
-  const cat = qaCat || p.cat || 'other';
+  const u = !p.split && matchUsual(p.note);
+  const cat = qaCat || (u && u.cat) || p.cat || 'other';
   const d = document.getElementById('qaDate');
   const date = (d && d.value) || localDate();
   if (p.split) { openSplit({ total: p.amt, note: p.note, cat, people: p.split, date }); return; }
-  const e = addExpense(p.amt, cat, p.note, date);
+  const e = addExpense(p.amt, cat, p.note, date, u ? { usualId: u.id } : null);
   maybeSuggestUsual(e);
   showToast(`Logged ${money(p.amt)} · ${catOf(cat).label}`, { label: 'Undo', fn: () => deleteExpenseSilently(e.id) });
   checkAlerts();

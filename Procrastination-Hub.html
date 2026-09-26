@@ -15,10 +15,43 @@
     var full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
     var gap = Math.max(0, Math.min(60, full - innerHeight));
     document.documentElement.style.setProperty('--ios-gap', gap + 'px');
+    document.documentElement.style.setProperty('--screen-h', full + 'px');
+    document.documentElement.classList.add('ios-app');
   }
   fit();
   addEventListener('resize', fit);
   addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+})();
+
+/* Five quick taps in the top-left corner show the screen measurements, for
+   checking the layout on a phone. Tap the readout to close it. */
+(function () {
+  var taps = [];
+  addEventListener('pointerdown', function (e) {
+    if (e.clientX > 60 || e.clientY > 60) return;
+    var now = Date.now();
+    taps = taps.filter(function (t) { return now - t < 1500; }).concat(now);
+    if (taps.length < 5) return;
+    taps = [];
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px);width:1px;visibility:hidden';
+    document.body.appendChild(probe);
+    var main = document.getElementById('app-main'), cs = getComputedStyle(document.documentElement);
+    var rows = [
+      ['screen', screen.width + '×' + screen.height], ['window', innerWidth + '×' + innerHeight],
+      ['visual', window.visualViewport ? Math.round(visualViewport.height) : '—'],
+      ['inset bottom', probe.offsetHeight], ['--ios-gap', cs.getPropertyValue('--ios-gap') || '—'],
+      ['--screen-h', cs.getPropertyValue('--screen-h') || '—'], ['ios-app', document.documentElement.classList.contains('ios-app')],
+      ['standalone', navigator.standalone], ['app-main bottom', main ? Math.round(main.getBoundingClientRect().bottom) : '—'],
+      ['body height', document.body.offsetHeight]
+    ];
+    probe.remove();
+    var box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:12px;top:60px;z-index:2147483647;background:#000;color:#0f0;font:12px/1.5 monospace;padding:10px 12px;border:1px solid #0f0;border-radius:8px';
+    box.innerHTML = rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('<br>');
+    box.onclick = function () { box.remove(); };
+    document.body.appendChild(box);
+  }, true);
 })();
 </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20805,6 +20838,14 @@ body::before, body::after, #hex-grid, #scanlines, #app-main, #study-gate {
 }
 /* An svg keeps its own size unless given one, so the grid gets an explicit one */
 #hex-grid { width: 100%; height: calc(100% + max(env(safe-area-inset-bottom, 0px), var(--ios-gap, 0px))); }
+
+/* iPhone Home Screen app: size the page and every full-screen layer to the screen's
+   own height from the top edge, instead of trusting the laid-out height. */
+html.ios-app, html.ios-app body { height: var(--screen-h) !important; }
+html.ios-app body::before, html.ios-app body::after, html.ios-app #hex-grid, html.ios-app #scanlines,
+html.ios-app #app-main, html.ios-app #study-gate {
+  top: 0 !important; bottom: auto !important; height: var(--screen-h) !important;
+}
 </style>
 
 <!-- ══ PERF · stop repainting the whole screen every frame ═════════════════

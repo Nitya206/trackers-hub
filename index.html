@@ -568,7 +568,7 @@ html,body {
 /* Study leads the grid, so it reads bigger */
 .card-study .c-icon { width:62px;height:62px;font-size:28px;border-radius:18px; }
 .card-study .c-title { font-size:22px; }
-.card-study .c-stats { gap:14px 34px; }
+.card-study .c-stats { gap:52px; }
 .card-study .s-val { font-size:24px; }
 .card-study .s-lbl { font-size:10px; }
 .card-study .wm { font-size:190px; }
@@ -690,13 +690,13 @@ html,body {
     </div>
     <div class="s-item">
         <span class="s-val">0%</span>
-        <span class="s-lbl">Attendance</span>
+        <span class="s-lbl">Aggregate Attendance</span>
     </div>
     <div class="s-item">
         <span class="s-val">Exams</span>
-        <span class="s-lbl">Next Exam</span>
+        <span class="s-lbl">Countdown</span>
     </div>
-    <div class="s-item">
+    <div class="s-item s-todos">
         <span class="s-val">—</span>
         <span class="s-lbl">Todos Left Today</span>
     </div>
@@ -1525,6 +1525,14 @@ if(zCard) {
      everywhere except the installed app, where it's ~47-59px. -->
 <style id="safe-area-fix">
 .page { padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important; }
+/* In an iPhone Home Screen app, position:fixed layers stop above the home-indicator
+   strip, which left a band of plain colour under the stars and grid. Each full-screen
+   layer reaches past that inset to the real bottom edge. */
+#bg-canvas, .grid-bg, .aurora, #hub-transition, #hub-log {
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
+}
+/* A canvas takes its drawn size unless given one, so it gets an explicit one */
+#bg-canvas { width: 100%; height: calc(100% + env(safe-area-inset-bottom, 0px)); }
 @media (max-width: 700px){ .page { padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important; } }
 </style>
 

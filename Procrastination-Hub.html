@@ -20777,6 +20777,13 @@ window.phubTypeLabel = function (t) {
 @media (max-height: 680px) { #sg-content { zoom: 0.68; } }
 @media (max-height: 580px) { #sg-content { zoom: 0.56; } }
 #sidebar { padding-top: env(safe-area-inset-top, 0px) !important; }
+
+/* In an iPhone Home Screen app, position:fixed layers stop above the home-indicator
+   strip, so a band of plain page colour showed under them. Each full-screen layer
+   reaches past that inset to the real bottom edge. The bottom nav keeps its place. */
+body::before, body::after, #hex-grid, #scanlines, #app-main, #study-gate {
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
+}
 </style>
 
 <!-- ══ PERF · stop repainting the whole screen every frame ═════════════════

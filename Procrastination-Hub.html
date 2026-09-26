@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+/* iPhone Home Screen apps can lay the page out shorter than the screen, leaving the
+   strip behind the home indicator outside it, and report that strip's inset as 0.
+   So measure it: the screen's full height minus the laid-out height. iPhone only,
+   since a desktop app window is meant to be shorter than the screen. */
+(function () {
+  if (navigator.standalone !== true || !/iPhone/.test(navigator.userAgent)) return;
+  function fit() {
+    var portrait = innerHeight >= innerWidth;
+    var full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    var gap = Math.max(0, Math.min(60, full - innerHeight));
+    document.documentElement.style.setProperty('--ios-gap', gap + 'px');
+  }
+  fit();
+  addEventListener('resize', fit);
+  addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+})();
+</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PROC//HUB</title>
@@ -20780,10 +20798,13 @@ window.phubTypeLabel = function (t) {
 
 /* In an iPhone Home Screen app, position:fixed layers stop above the home-indicator
    strip, so a band of plain page colour showed under them. Each full-screen layer
-   reaches past that inset to the real bottom edge. The bottom nav keeps its place. */
+   reaches past that strip (see --ios-gap in the head) to the real bottom edge.
+   The bottom nav keeps its place. */
 body::before, body::after, #hex-grid, #scanlines, #app-main, #study-gate {
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(-1 * max(env(safe-area-inset-bottom, 0px), var(--ios-gap, 0px))) !important;
 }
+/* An svg keeps its own size unless given one, so the grid gets an explicit one */
+#hex-grid { width: 100%; height: calc(100% + max(env(safe-area-inset-bottom, 0px), var(--ios-gap, 0px))); }
 </style>
 
 <!-- ══ PERF · stop repainting the whole screen every frame ═════════════════

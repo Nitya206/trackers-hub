@@ -3,6 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+/* iPhone Home Screen apps can lay the page out shorter than the screen, leaving the
+   strip behind the home indicator outside it, and report that strip's inset as 0.
+   So measure it: the screen's full height minus the laid-out height. iPhone only,
+   since a desktop app window is meant to be shorter than the screen. */
+(function () {
+  if (navigator.standalone !== true || !/iPhone/.test(navigator.userAgent)) return;
+  function fit() {
+    var portrait = innerHeight >= innerWidth;
+    var full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    var gap = Math.max(0, Math.min(60, full - innerHeight));
+    document.documentElement.style.setProperty('--ios-gap', gap + 'px');
+  }
+  fit();
+  addEventListener('resize', fit);
+  addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+})();
+</script>
 <title>TRACKERS HUB</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1527,12 +1545,16 @@ if(zCard) {
 .page { padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important; }
 /* In an iPhone Home Screen app, position:fixed layers stop above the home-indicator
    strip, which left a band of plain colour under the stars and grid. Each full-screen
-   layer reaches past that inset to the real bottom edge. */
+   layer reaches past that strip (see --ios-gap in the head) to the real bottom edge. */
 #bg-canvas, .grid-bg, .aurora, #hub-transition, #hub-log {
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(-1 * max(env(safe-area-inset-bottom, 0px), var(--ios-gap, 0px))) !important;
 }
+/* html and body both hide sideways overflow, which makes body its own scroll box,
+   clipped at the (short) laid-out height. Growing body with its content lets the
+   page itself scroll, so cards run to the bottom edge like the other apps. */
+body { height: auto !important; min-height: 100%; }
 /* A canvas takes its drawn size unless given one, so it gets an explicit one */
-#bg-canvas { width: 100%; height: calc(100% + env(safe-area-inset-bottom, 0px)); }
+#bg-canvas { width: 100%; height: calc(100% + max(env(safe-area-inset-bottom, 0px), var(--ios-gap, 0px))); }
 @media (max-width: 700px){ .page { padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important; } }
 </style>
 

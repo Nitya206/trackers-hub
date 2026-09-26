@@ -16,6 +16,13 @@
     var gap = Math.max(0, Math.min(60, full - innerHeight));
     document.documentElement.style.setProperty('--ios-gap', gap + 'px');
     document.documentElement.style.setProperty('--screen-h', full + 'px');
+    // Height of the home-indicator strip: what the phone reports, or 34pt on a
+    // Face ID-sized screen when it reports 0
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;height:env(safe-area-inset-bottom,0px);width:1px;visibility:hidden';
+    (document.body || document.documentElement).appendChild(probe);
+    var inset = probe.offsetHeight; probe.remove();
+    document.documentElement.style.setProperty('--home-bar', (inset || (full >= 812 ? 34 : 0)) + 'px');
     document.documentElement.classList.add('ios-app');
   }
   fit();
@@ -20846,6 +20853,13 @@ html.ios-app body::before, html.ios-app body::after, html.ios-app #hex-grid, htm
 html.ios-app #app-main, html.ios-app #study-gate {
   top: 0 !important; bottom: auto !important; height: var(--screen-h) !important;
 }
+/* The nav pill floats above the home indicator with a gap at each side, like Study's,
+   and the page gets the same extra room at the bottom so nothing hides under it */
+html.ios-app #bottom-nav {
+  bottom: calc(10px + var(--home-bar, 0px)) !important;
+  max-width: calc(100vw - 24px) !important;
+}
+html.ios-app #app-main { padding-bottom: calc(110px + var(--home-bar, 0px)) !important; }
 </style>
 
 <!-- ══ PERF · stop repainting the whole screen every frame ═════════════════

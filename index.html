@@ -787,8 +787,8 @@ html,body {
   <span class="c-pct">SET UP MONTH</span>
 </div>
           <div class="c-stats">
-            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Free Today</span></div>
-            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Month Left</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Left Today</span></div>
+            <div class="s-item"><span class="s-val">—</span><span class="s-lbl">Left This Month</span></div>
             <div class="s-item"><span class="s-val">0</span><span class="s-lbl">To Buy</span></div>
           </div>
         </div>
@@ -1310,12 +1310,18 @@ if(zCard) {
                 ym + '-' + String(Math.min(sub.day, dim)).padStart(2, '0') > today).reduce((s, sub) => s + sub.amt, 0)
                 + (bd.plans || []).filter(p => !p.done && p.date <= ym + '-' + String(dim).padStart(2, '0')).reduce((s, p) => s + p.amt, 0);
             const free = (left + spentToday - fixed * daysLeft - billsAhead) / daysLeft - (spentToday - fixedSpent);
+            // Same plain wording as the Budget app: never a minus "free" amount
+            const freeRest = left - (fixed * (daysLeft - 1) + (fixed - fixedSpent) + billsAhead);
             const pct = Math.min(100, Math.round(spent / Math.max(1, spendable) * 100));
             sCard.querySelector('.c-fill').style.width = pct + '%';
-            sCard.querySelector('.c-pct').textContent = left < 0 ? 'OVER BUDGET' : pct + '% OF MONTH SPENT';
-            v[0].textContent = rs(free);
-            v[1].textContent = rs(left);
-            glance('shop', rs(free), free < 0 ? 'Over today' : 'Free today', free < 0 ? 'bad' : null);
+            sCard.querySelector('.c-pct').textContent = left < 0 ? "SPENT MORE THAN THIS MONTH'S MONEY"
+                : freeRest < 0 ? '⚠ ' + rs(-freeRest) + ' SHORT THIS MONTH'
+                : rs(spent) + ' OF ' + rs(spendable) + ' SPENT';
+            v[0].textContent = rs(Math.max(0, free));
+            v[1].textContent = rs(Math.max(0, left));
+            if (freeRest < 0) glance('shop', rs(-freeRest) + ' short', 'Not enough this month', 'bad');
+            else if (free < 0) glance('shop', '₹0', 'Nothing left today', 'bad');
+            else glance('shop', rs(free), 'You can spend today', free > 0 ? 'good' : null);
         })();
 
     } catch(err) { console.error("Sync Logic Error:", err); }

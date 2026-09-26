@@ -568,7 +568,7 @@ html,body {
 /* Study leads the grid, so it reads bigger */
 .card-study .c-icon { width:62px;height:62px;font-size:28px;border-radius:18px; }
 .card-study .c-title { font-size:22px; }
-.card-study .c-stats { gap:40px; }
+.card-study .c-stats { gap:14px 34px; }
 .card-study .s-val { font-size:24px; }
 .card-study .s-lbl { font-size:10px; }
 .card-study .wm { font-size:190px; }
@@ -690,11 +690,15 @@ html,body {
     </div>
     <div class="s-item">
         <span class="s-val">0%</span>
-        <span class="s-lbl">Aggregate Attendance</span>
+        <span class="s-lbl">Attendance</span>
     </div>
     <div class="s-item">
         <span class="s-val">Exams</span>
-        <span class="s-lbl">Countdown</span>
+        <span class="s-lbl">Next Exam</span>
+    </div>
+    <div class="s-item">
+        <span class="s-val">—</span>
+        <span class="s-lbl">Todos Left Today</span>
     </div>
 </div>
         </div>
@@ -1046,6 +1050,17 @@ function syncHubData() {
             sVals[0].textContent = `${studiedHrs.toFixed(1)} / ${goalHrs}h`;
             sVals[1].textContent = `${attPct}%`;
             sVals[2].textContent = examText;
+
+            // Study todos due today or overdue and still open (not Other, rituals or Money)
+            const tDay = todayStr();
+            const studyTodos = (sData.todos || []).filter(t => t && !t.archived && t.kind !== 'other' && t.kind !== 'shopping'
+                && !t.ritual && !t.shopping && !t.budget && t.dueDate && t.dueDate <= tDay);
+            const openTodos = studyTodos.filter(t => !t.completed).length;
+            const doneToday = studyTodos.filter(t => t.completed && t.dueDate === tDay).length;
+            if (sVals[3]) {
+                sVals[3].textContent = openTodos ? openTodos : (doneToday ? 'All done ✓' : '0');
+                sCard.querySelector('.s-item:nth-child(4)').title = doneToday ? `${doneToday} done today` : '';
+            }
             glance('study', studiedHrs.toFixed(1) + ' / ' + goalHrs + 'h', 'Studied today', sPct >= 100 ? 'good' : null);
         }
 

@@ -24,7 +24,7 @@
  * Google Fonts (see CDN_ALLOW).
  */
 
-const VERSION = 'th-2026-09-26c';   // bump to ship a new worker; the cache itself survives
+const VERSION = 'th-2026-09-26d';   // bump to ship a new worker; the cache itself survives
 const CACHE   = 'trackers-hub';      // stable on purpose — see above
 // Must match the ?v= on the pages' <script> tags, so precached copies are the
 // exact URLs the pages ask for (a different query string is a different entry).

@@ -351,6 +351,12 @@ if ('serviceWorker' in navigator) {
   .how-rows > div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; color: var(--text-dim); }
   .how-rows > div.sum { color: var(--text); font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; }
 
+  .goal-warn { font-size: 12.5px; line-height: 1.55; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: var(--danger-dim); border: 1px solid rgba(226,114,111,.35); color: var(--text); }
+  .save-total { font-size: 34px; font-weight: 700; color: var(--good); margin: 2px 0 12px; letter-spacing: -0.02em; }
+  .save-split { display: flex; flex-direction: column; gap: 6px; }
+  .save-split > div { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; padding: 8px 12px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); }
+  .save-split span { color: var(--text-dim); }
+
   /* ── Insights ── */
   .chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 6px; }
   .chart .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
@@ -1991,6 +1997,26 @@ function renderEF(b, k) {
 function renderGoals(b, k) {
   const pool = savingsPool(b);
   const goals = b.goals.slice().sort((a, c) => (a.date || '9999') < (c.date || '9999') ? -1 : 1);
+  // Months left until a date, counted in fractions so a goal 10 days away isn't "1 month"
+  const monthsTo = d => Math.max(1 / 30, (new Date(d + 'T12:00:00') - new Date()) / (864e5 * 30.4));
+  const monthlySave = k.plan ? k.plan.save : 0;
+  const dated = b.goals.filter(g => g.date && (g.saved || 0) < g.target);
+  const needPerMonth = dated.reduce((sum, g) => sum + (g.target - (g.saved || 0)) / monthsTo(g.date), 0);
+  const goalsShort = k.plan && dated.length > 0 && needPerMonth > monthlySave + 1;
+
+  // Warning for a goal that its dated savings pace can't reach
+  const goalWarn = g => {
+    const need = Math.max(0, g.target - (g.saved || 0));
+    if (!g.date || need <= 0 || !k.plan) return '';
+    const m = monthsTo(g.date), reach = (g.saved || 0) + monthlySave * m;
+    if (reach >= g.target) return '';
+    const shortBy = Math.ceil(g.target - reach);
+    const more = Math.ceil(need / m - monthlySave);
+    const lateDate = new Date(); lateDate.setDate(lateDate.getDate() + Math.ceil(need / Math.max(1, monthlySave) * 30.4));
+    return `<div class="goal-warn">⚠️ <b>Won't be ready by ${fmtDate(g.date)}.</b> At your savings of ${money(monthlySave)} a month you'd be ${money(shortBy)} short.
+      To make it, save about ${money(more)} more a month${monthlySave > 0 ? `, or move the date to ${fmtDate(localDate(lateDate))}` : ''}.</div>`;
+  };
+
   const goalCard = g => {
     const saved = g.saved || 0, pct = Math.min(100, saved / g.target * 100), need = Math.max(0, g.target - saved);
     let pace = '';
@@ -2014,6 +2040,7 @@ function renderGoals(b, k) {
         </div>
         <div class="bar good"><div style="width:${pct}%"></div></div>
         <div class="goal-nums"><span class="mono">${money(saved)} saved</span><span class="mono">${money(g.target)}</span></div>
+        ${goalWarn(g)}
         <div class="goal-actions">
           ${need > 0 ? `<button class="btn" style="flex:1;padding:9px" onclick="moveToGoal('${g.id}', 1)">＋ Add money</button>` : `<button class="btn" style="flex:1;padding:9px" onclick="completeGoal('${g.id}')">🛍️ I bought it</button>`}
           ${saved > 0 ? `<button class="btn ghost" style="padding:9px 14px" onclick="moveToGoal('${g.id}', -1)">Take out</button>` : ''}
@@ -2024,15 +2051,14 @@ function renderGoals(b, k) {
   const hist = (b.history || []).slice(-5).reverse();
   return `
     <div class="card">
-      <div class="pool">
-        <div>
-          <div class="muted" style="font-size:12px;font-weight:600">Savings not in a goal</div>
-          <b class="mono">${money(pool.free)}</b>
-        </div>
-        <div style="text-align:right;font-size:12px" class="muted">
-          ${k.plan ? `${money(k.plan.save)} set aside this month<br>` : ''}${money(pool.inGoals)} in goals${efOn(b) ? `<br>${money(efBalance(b))} in emergency fund` : ''}
-        </div>
+      <div class="hero-lbl" style="text-align:left">Total you've saved</div>
+      <div class="save-total mono">${money(pool.total - (b.savedOut || 0))}</div>
+      <div class="save-split">
+        <div><span>🎯 In your goals</span><b class="mono">${money(pool.inGoals)}</b></div>
+        ${efOn(b) ? `<div><span>🛟 In emergency fund</span><b class="mono">${money(efBalance(b))}</b></div>` : ''}
+        <div><span>💰 Not set aside for anything yet</span><b class="mono">${money(pool.free)}</b></div>
       </div>
+      <div class="hint" style="margin-top:8px">Adding money to a goal moves it from "not set aside" into the goal. Your total doesn't change.</div>
       ${!k.plan ? `<div class="hint" style="margin-top:10px">Set this month's money on the Today tab to start saving automatically.</div>` : ''}
       <div class="leftover-row">
         <span>Month-end leftover goes to</span>
@@ -2046,6 +2072,7 @@ function renderGoals(b, k) {
 
     ${renderEF(b, k)}
 
+    ${goalsShort ? `<div class="goal-warn" style="margin-bottom:12px">⚠️ <b>Your goals together need ${money(Math.ceil(needPerMonth))} a month</b> to hit their dates, but you save ${money(monthlySave)} a month. They share the same savings, so some will be late. Add money, save a higher %, or move a date.</div>` : ''}
     <div class="section-label"><span>🎯 Goals · ${goals.length}</span><button class="link-btn" onclick="editGoal(null)">＋ New goal</button></div>
     ${goals.length ? goals.map(goalCard).join('') : `
       <div class="empty">

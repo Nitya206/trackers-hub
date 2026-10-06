@@ -134,17 +134,95 @@ if ('serviceWorker' in navigator) {
    Named phub* on purpose: several functions declare a local `isReadType`,
    which would shadow a helper of that name and crash. */
 window.phubIsRead = function (t) {
-  return t === 'manga' || t === 'manhwa' || t === 'novel' || t === 'lightnovel';
+  return t === 'manga' || t === 'manhwa' || t === 'novel' || t === 'lightnovel' || t === 'book';
+};
+
+/* Every reading type groups its chapters into sections stored in item.arcs. A section is
+   called a Volume or an Arc, and that is a per-item choice (item.groupBy). Light novels and
+   books default to Volume, the rest to Arc. Only light novels restart chapter numbers
+   at 1 inside each section. */
+window.phubIsVolume = function (it) {
+  if (!it) return false;
+  if (it.groupBy) return it.groupBy === 'volume';
+  return it.type === 'lightnovel' || it.type === 'book';
 };
 window.phubArcWord = function (t, w) {
-  // Light novels group chapters into VOLUMES; web novels, manga and manhwa into ARCS.
-  // Same data (item.arcs), only the name changes.
-  if (t !== 'lightnovel') return w;
+  // t is an item (preferred) or just a type string
+  var vol = (t && typeof t === 'object') ? window.phubIsVolume(t) : (t === 'lightnovel' || t === 'book');
+  if (!vol) return w;
   return String(w)
     .replace(/\bin an arc\b/g, 'in a volume').replace(/\ban arc\b/g, 'a volume')
     .replace(/\bARCS\b/g, 'VOLUMES').replace(/\bARC\b/g, 'VOLUME')
     .replace(/\bArcs\b/g, 'Volumes').replace(/\bArc\b/g, 'Volume')
     .replace(/\barcs\b/g, 'volumes').replace(/\barc\b/g, 'volume');
+};
+
+/* Prologue and epilogue.
+   A prologue is chapter 0. Light-novel volumes store it as chapterStart = 0; every other
+   reading type uses arc.prologue = true, which adds a Ch. 0 in front of the real range.
+   An epilogue is arc.epilogue = true, which adds one final chapter numbered 9999 (it sorts
+   last and can never clash with a real chapter) that is shown as "Epilogue". */
+window.PHUB_EPILOGUE = 9999;
+/* A social channel counts the videos you saved, not episodes. Returns watched, total and left. */
+window.phubCounts = function (it) {
+  if (it && it.type === 'social') {
+    var v = it.socialVideos || [], w = v.filter(function (x) { return x.watched; }).length;
+    return { watched: w, total: v.length, left: v.length - w, unit: 'videos', isSocial: true };
+  }
+  var total = (it && it.totalEpisodes) || 0, watched = ((it && it.watchedEpisodes) || []).length;
+  return { watched: watched, total: total, left: total - watched, unit: window.phubIsRead(it && it.type) ? 'chapters' : 'episodes', isSocial: false };
+};
+window.phubChapterLabel = function (n) {
+  return n === 0 ? 'Prologue' : n === window.PHUB_EPILOGUE ? 'Epilogue' : 'Ch. ' + n;
+};
+window.phubNumText = function (n) {
+  return n === 0 ? '0 (prologue)' : n === window.PHUB_EPILOGUE ? '(epilogue)' : n;
+};
+window.phubTileText = function (n) {
+  return n === 0 ? 'Pro' : n === window.PHUB_EPILOGUE ? 'Epi' : n;
+};
+window.phubHasPrologue = function (a) { return !!(a && (a.prologue || a.chapterStart === 0)); };
+// Chapters that sit outside the numbered range, summed across sections (running-count types)
+window.phubExtras = function (it) {
+  var n = 0;
+  (it && it.arcs || []).forEach(function (a) {
+    if (a.prologue && a.chapterStart !== 0) n++;
+    if (a.epilogue) n++;
+  });
+  return n;
+};
+/* A reading item added with the Seasons box has seasons but no arcs. That hid every
+   Volume/Arc control, so this moves its seasons into sections. Chapters keep their numbers,
+   and progress keys (s<index>_<n>) are the same shape for both, so reads carry over. */
+window.phubSeasonsToArcs = function (it) {
+  if (!it || !window.phubIsRead(it.type) || !(it.seasons && it.seasons.length)) return false;
+  // Seasons number their episodes from 1 inside each season, the same as light-novel volumes.
+  // So the sections are built in that local form first, then running-count types are
+  // renumbered by phubGlobalizeVolumes, which also carries read progress across.
+  var keys = (it.watchedEpisodes || []).slice();
+  var arcs = [];
+  it.seasons.forEach(function (se, i) {
+    var eps = (se.episodes || []).slice().sort(function (a, b) { return a.number - b.number; });
+    var map = {}; eps.forEach(function (e, j) { map['s' + i + '_' + e.number] = 's' + i + '_' + (j + 1); });
+    keys = keys.map(function (k) { return map[k] || k; });
+    var chapters = [];
+    eps.forEach(function (e, j) {
+      // keep anything a chapter carries (my rating, site ratings, a title), not just the number
+      var custom = e.rating || e.ratingIMDb || e.ratingMAL || e.ratingMDL || (e.title && e.title !== 'Ch. ' + e.number && e.title !== 'Episode ' + e.number);
+      if (custom) { var c = Object.assign({}, e); c.number = j + 1; chapters.push(c); }
+    });
+    var extra = Object.assign({}, se); delete extra.episodes; delete extra.name;
+    var arc = { id: 'arc-' + Date.now().toString(36) + i, name: se.name || ((window.phubIsVolume(it) ? 'Volume ' : 'Arc ') + (i + 1)),
+                chapterStart: 1, chapterEnd: Math.max(1, eps.length), chapters: chapters };
+    if (Object.keys(extra).length) arc.fromSeason = extra;      // season-level fields, kept for reference
+    arcs.push(arc);
+  });
+  it.arcs = arcs;
+  it.seasons = [];
+  it.watchedEpisodes = keys;
+  it.totalEpisodes = arcs.reduce(function (n, a) { return n + a.chapterEnd; }, 0);
+  if (it.type !== 'lightnovel') window.phubGlobalizeVolumes(it);
+  return true;
 };
 /* Light novels number chapters from 1 inside every volume; arcs (web novel,
    manga, manhwa) use one running count across the whole series. Progress keys
@@ -158,17 +236,23 @@ window.phubLocalizeVolumes = function (it) {
     var start = a.chapterStart != null ? a.chapterStart : 1, end = a.chapterEnd != null ? a.chapterEnd : start;
     var nums = []; for (var n = start; n <= Math.floor(end); n++) nums.push(n);
     if (end !== Math.floor(end)) nums.push(end);
-    total += nums.length;
+    var flagPro = !!(a.prologue && a.chapterStart !== 0);       // Ch. 0 kept as its own chapter
+    total += nums.length + (a.epilogue ? 1 : 0) + (flagPro ? 1 : 0);   // the epilogue (Ch. 9999) keeps its own key
     // Already local? A remembered prologue overrides this: after a web-novel
     // detour its volume reads 1–9, which looks local but should be 0–8.
     var looksLocal = (start === 1 && end === nums.length) || (start === 0 && end === nums.length - 1);
-    if (looksLocal && !(a._prologue && start === 1)) { delete a._prologue; return; }
+    if (looksLocal && !(a._prologue && start === 1)) {
+      delete a._prologue;
+      if (flagPro) { a.chapterStart = 0; delete a.prologue; changed = true; }   // Ch. 0 is already keyed s<i>_0
+      return;
+    }
     changed = true;
-    var base = a._prologue ? 0 : 1;             // remembered from a web-novel detour
+    var base = (a._prologue && !flagPro) ? 0 : 1;             // remembered from a web-novel detour
     var map = {}; nums.forEach(function (n, j) { map['s' + i + '_' + n] = 's' + i + '_' + (j + base); });
     keys = keys.map(function (k) { return map[k] || k; });
     (a.chapters || []).forEach(function (c) { var j = nums.indexOf(c.number); if (j >= 0) c.number = j + base; });
-    a.chapterStart = base; a.chapterEnd = nums.length - 1 + base; delete a._prologue;
+    a.chapterStart = flagPro ? 0 : base; a.chapterEnd = nums.length - 1 + base; delete a._prologue;
+    if (flagPro) delete a.prologue;
   });
   it.watchedEpisodes = keys;
   if (it.totalEpisodes !== total) { it.totalEpisodes = total; changed = true; }
@@ -296,6 +380,7 @@ window.phubTypeLabel = function (t) {
       --type-movie:   #fbbf24;
       --type-novel:   #f472b6;
       --type-lightnovel: #c084fc;
+      --type-book: #f59e0b;
       --type-social:  #ff4d4d;
 
       /* ── TYPOGRAPHY ── */
@@ -453,6 +538,7 @@ window.phubTypeLabel = function (t) {
     .badge[data-type="movie"]  { background: rgba(251,191,36,0.12);  color: var(--type-movie);  border: 1px solid rgba(251,191,36,0.3);  box-shadow: 0 0 12px rgba(251,191,36,0.15), inset 0 0 12px rgba(251,191,36,0.05); text-shadow: 0 0 8px rgba(251,191,36,0.4); }
     .badge[data-type="novel"]  { background: rgba(244,114,182,0.12);  color: var(--type-novel);  border: 1px solid rgba(244,114,182,0.3);  box-shadow: 0 0 12px rgba(244,114,182,0.15), inset 0 0 12px rgba(244,114,182,0.05); text-shadow: 0 0 8px rgba(244,114,182,0.4); }
     .badge[data-type="lightnovel"]  { background: rgba(192,132,252,0.12);  color: var(--type-lightnovel);  border: 1px solid rgba(192,132,252,0.3);  box-shadow: 0 0 12px rgba(192,132,252,0.15), inset 0 0 12px rgba(192,132,252,0.05); text-shadow: 0 0 8px rgba(192,132,252,0.4); }
+    .badge[data-type="book"]  { background: rgba(245,158,11,0.12);  color: var(--type-book);  border: 1px solid rgba(245,158,11,0.3);  box-shadow: 0 0 12px rgba(245,158,11,0.15), inset 0 0 12px rgba(245,158,11,0.05); text-shadow: 0 0 8px rgba(245,158,11,0.4); }
     .badge[data-type="social"] { background: rgba(255,77,77,0.12);    color: var(--type-social); border: 1px solid rgba(255,77,77,0.3);    box-shadow: 0 0 12px rgba(255,77,77,0.15),  inset 0 0 12px rgba(255,77,77,0.05);  text-shadow: 0 0 8px rgba(255,77,77,0.4); }
 
     /* ── .btn-primary ── */
@@ -2657,6 +2743,31 @@ window.phubTypeLabel = function (t) {
       border: 1px solid rgba(255,255,255,0.07);
       letter-spacing: 0.08em;
     }
+    /* Next Up queue */
+    .nextup-banner { margin: 14px 0 18px; padding: 16px 18px; border-radius: var(--radius-md); background: linear-gradient(135deg, rgba(168,85,247,0.14), rgba(0,229,255,0.05)); border: 1px solid rgba(168,85,247,0.35); }
+    .nextup-title { font: 700 11px var(--font-mono); letter-spacing: 0.16em; color: #c084fc; }
+    .nextup-sub { font: 400 12px var(--font-ui); color: var(--text-2); margin: 6px 0 12px; line-height: 1.5; }
+    .nextup-list { display: flex; flex-direction: column; gap: 8px; }
+    .nextup-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(8,8,22,0.55); border: 1px solid var(--border); }
+    .nextup-pos { font: 700 12px var(--font-mono); color: #c084fc; width: 18px; text-align: center; flex-shrink: 0; }
+    .nextup-main { flex: 1; min-width: 0; }
+    .nextup-name { font: 600 13px var(--font-ui); color: var(--text-1); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nextup-meta { font: 500 10px var(--font-mono); color: var(--text-3); margin-top: 4px; letter-spacing: 0.06em; }
+    .nextup-go { flex-shrink: 0; font-size: 10px; padding: 8px 12px; letter-spacing: 0.08em; }
+    @media (max-width: 560px) {
+      .nextup-banner { padding: 14px; }
+      .nextup-row { gap: 8px; padding: 9px 10px; }
+      .nextup-go { padding: 8px 10px; font-size: 9px; min-height: 0; width: 84px; line-height: 1.25; white-space: normal; text-align: center; }
+      .nextup-name { white-space: normal; }
+    }
+    .nextup-foot { margin-top: 10px; font: 400 11px var(--font-ui); color: var(--text-3); }
+    .lib-nextup-btn { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.4); color: #c084fc; font: 700 9px var(--font-mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .lib-card-actions { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .lib-nextup-pill { font: 700 9px var(--font-mono); letter-spacing: 0.1em; color: #c084fc; background: rgba(168,85,247,0.14); border: 1px solid rgba(168,85,247,0.4); padding: 3px 9px; border-radius: 999px; }
+    .lib-queue-ctl { display: none; gap: 6px; margin-top: 10px; }
+    .lib-grid.stage-queue .lib-queue-ctl { display: flex; }
+    .lib-queue-ctl button { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-2); font: 700 10px var(--font-mono); padding: 6px 9px; border-radius: 8px; cursor: pointer; }
+    .lib-queue-ctl .lib-qc-go { flex: 1; background: rgba(168,85,247,0.16); border-color: rgba(168,85,247,0.45); color: #c084fc; letter-spacing: 0.08em; }
     .lib-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
     .lib-status-label { font: 600 9px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
     .lib-status-label.watching { color: var(--success); }
@@ -6947,6 +7058,9 @@ window.phubTypeLabel = function (t) {
         changed = true
       }
       seenIds[item.id] = true
+      if (item.type === 'social' && item.status && item.status !== 'watching' && item.status !== 'on-hold' && item.status !== 'graveyard') {
+        item.status = 'watching'; delete item.queuePos; changed = true      // social is only ever Watching or On Hold
+      }
       if (!Array.isArray(item.seasons)) { item.seasons = []; changed = true }
       if (!Array.isArray(item.watchedEpisodes)) { item.watchedEpisodes = []; changed = true }
       ;(item.seasons || []).forEach(function(s, sidx) {
@@ -7282,7 +7396,7 @@ window.phubTypeLabel = function (t) {
           return (sched[dk] || []).some(function(e) { return e.id === it.id && e.eps === 'Releases' })
         })
         if (hasWatched || releasePassed) {
-          it.status = 'watching'
+          it.status = 'watching'; delete it.queuePos
           _changed = true
         }
       })
@@ -7515,14 +7629,15 @@ window.phubTypeLabel = function (t) {
     const autoExclude = lastMood[mood] ? [lastMood[mood]] : []
     const allExclude  = [...new Set([...autoExclude, ...excludeIds])]
 
-    // Only recommend currently-watching items — completed items are done, graveyard is dropped, social media excluded
+    // Only recommend currently-watching items — completed items are done, graveyard is dropped
     const candidates = library
-      .filter(i => i.moodTags && i.moodTags.includes(mood) && i.status === 'watching' && i.type !== 'social')
+      .filter(i => i.moodTags && i.moodTags.includes(mood) && i.status === 'watching')
       .filter(i => !allExclude.includes(i.id))
       .sort((a, b) => {
-        // Sort by fewest episodes remaining — prioritise what you are closest to finishing
-        const aLeft = a.totalEpisodes - (a.watchedEpisodes||[]).length
-        const bLeft = b.totalEpisodes - (b.watchedEpisodes||[]).length
+        // Sort by fewest episodes (or saved videos) remaining — prioritise what you are closest to finishing
+        const left = it => it.type === 'social' ? (it.socialVideos || []).filter(v => !v.watched).length : it.totalEpisodes - (it.watchedEpisodes||[]).length
+        const aLeft = left(a)
+        const bLeft = left(b)
         if (aLeft !== bLeft) return aLeft - bLeft
         // Tie-break by highest rating (ratingIMDb preferred, fallback to rating)
         const aRat = a.ratingIMDb || a.rating || 0
@@ -7549,6 +7664,7 @@ window.phubTypeLabel = function (t) {
      PART 2: DASHBOARD — renderDashboard()
   ───────────────────────────────────────────────────────────────── */
   function renderDashboard() {
+    fixSocialStatuses()
     const main    = document.getElementById('app-main')
     const library = loadData(KEYS.library, [])
     const today   = getTodayName()
@@ -7607,7 +7723,7 @@ window.phubTypeLabel = function (t) {
     // Smart progress label based on what types are in the library
     const _libTypes = new Set(library.map(i => i.type))
     const _hasEpType  = ['anime','show','movie'].some(t => _libTypes.has(t))
-    const _hasCHType  = ['manga','manhwa','novel','lightnovel'].some(t => _libTypes.has(t))
+    const _hasCHType  = ['manga','manhwa','novel','lightnovel','book'].some(t => _libTypes.has(t))
     const watchedLabel = (_hasEpType && _hasCHType) ? 'Episodes &amp; Chapters' : _hasCHType ? 'Chapters Read' : 'Episodes Watched'
 
     // ── Next mission ──
@@ -7718,6 +7834,10 @@ window.phubTypeLabel = function (t) {
         </div>
       </div>`
 
+    // [BLOCK 2.2] Nothing left in Watching: offer the Next Up queue, then On Hold
+    var _nuBanner = buildNextUpBanner(library)
+    if (_nuBanner) { var bNU = makeBlock(); bNU.appendChild(_nuBanner) }
+
     // [BLOCK 2.5] Missed Episodes
     var bMissedContainer = makeBlock()
     bMissedContainer.id = 'dash-missed-block'
@@ -7791,9 +7911,10 @@ window.phubTypeLabel = function (t) {
     // [BLOCK 3] Next mission
     const b3 = makeBlock()
     if (mission) {
-      const remaining = mission.totalEpisodes - (mission.watchedEpisodes ? mission.watchedEpisodes.length : 0)
-      const unit      = (phubIsRead(mission.type)) ? 'chapters' : 'episodes'
-      const watched   = mission.watchedEpisodes ? mission.watchedEpisodes.length : 0
+      const _mc       = phubCounts(mission)
+      const remaining = _mc.isSocial ? 0 : _mc.left          // a channel has no "next episode" line
+      const unit      = _mc.unit
+      const watched   = _mc.watched
       // Compute next chapter/episode as the first missing positive integer
       // This handles mixed key formats (e.g. 's0_21', '21', numeric) and gaps
       var nextNum = 1
@@ -7827,7 +7948,7 @@ window.phubTypeLabel = function (t) {
             <div class="next-mission-meta">
               <span class="badge" data-type="${mission.type}">${phubTypeLabel(mission.type)}</span>
               <span style="font:var(--text-sm) var(--font-mono);color:var(--text-2);">
-                ${watched} of ${mission.totalEpisodes} ${unit}
+                ${watched} of ${_mc.total} ${unit}
               </span>
               ${mission.scheduledDay ? `<span class="next-mission-day">▸ ${mission.scheduledDay}</span>` : ''}
             </div>
@@ -8066,8 +8187,9 @@ window.phubTypeLabel = function (t) {
       wrap.style.position = 'relative'
 
       if (result) {
-        const remaining = result.totalEpisodes - (result.watchedEpisodes ? result.watchedEpisodes.length : 0)
-        const unit      = (phubIsRead(result.type)) ? 'ch' : 'ep'
+        const _rc       = phubCounts(result)
+        const remaining = _rc.left
+        const unit      = _rc.isSocial ? 'video' + (remaining === 1 ? '' : 's') : (phubIsRead(result.type)) ? 'ch' : 'ep'
         wrap.innerHTML = `
           <div class="mood-result-card" style="cursor:none;" onclick="if(!event.target.closest('button'))navigateTo('detail','${result.id}')">
             <span class="badge" data-type="${result.type}">${phubTypeLabel(result.type)}</span>
@@ -8408,10 +8530,11 @@ window.phubTypeLabel = function (t) {
     wrap.className = 'mq-result-wrap'
 
     if (result) {
-      const remaining  = result.totalEpisodes - (result.watchedEpisodes ? result.watchedEpisodes.length : 0)
-      const watched    = result.watchedEpisodes ? result.watchedEpisodes.length : 0
-      const unit       = (phubIsRead(result.type)) ? 'chapters' : 'episodes'
-      const pct        = result.totalEpisodes > 0 ? watched / result.totalEpisodes : 0
+      const _qc        = phubCounts(result)
+      const remaining  = _qc.left
+      const watched    = _qc.watched
+      const unit       = _qc.unit
+      const pct        = _qc.total > 0 ? watched / _qc.total : 0
       const ratingStr  = result.rating ? `★ ${result.rating.toFixed(1)}` : '—'
       const tagsHTML   = (result.moodTags || [])
         .map(t => `<span class="mq-mood-tag">${t}</span>`).join('')
@@ -8488,8 +8611,9 @@ window.phubTypeLabel = function (t) {
           </div>`
       } else {
         const listHTML = allMatches.map(i => {
-          const unit = (phubIsRead(i.type)) ? 'ch' : 'ep'
-          const rem  = i.totalEpisodes - (i.watchedEpisodes||[]).length
+          const _ic  = phubCounts(i)
+          const unit = _ic.isSocial ? 'video' + (_ic.left === 1 ? '' : 's') : (phubIsRead(i.type)) ? 'ch' : 'ep'
+          const rem  = _ic.left
           return `<div class="mq-history-item" style="cursor:none;" onclick="navigateTo('detail','${i.id}')">
             <span class="badge" data-type="${i.type}">${phubTypeLabel(i.type)}</span>
             <span class="mq-history-title">${i.title}</span>
@@ -8574,6 +8698,7 @@ window.phubTypeLabel = function (t) {
      Performance: DocumentFragment, IntersectionObserver, no re-render on filter.
   ----------------------------------------------------------------- */
   function renderLibrary() {
+    fixSocialStatuses()
     const main    = document.getElementById('app-main')
     var library = sortLibraryItems(loadData(KEYS.library, []), normalizeLibrarySortMode(getAppSettings().librarySortMode))
 
@@ -8667,6 +8792,7 @@ window.phubTypeLabel = function (t) {
     var STAGES = [
       { id: 'active', label: '▶ ACTIVE',      color: 'rgba(0,229,255,0.15)'  },
       { id: 'new',    label: '○ NOT STARTED', color: 'rgba(250,204,21,0.15)' },
+      { id: 'queue',  label: '⏭ NEXT UP',     color: 'rgba(168,85,247,0.18)' },
       { id: 'done',   label: '✓ DONE',        color: 'rgba(74,222,128,0.15)' },
       { id: 'hold',   label: '⏸ ON HOLD',     color: 'rgba(249,115,22,0.15)' }
     ]
@@ -8694,7 +8820,7 @@ window.phubTypeLabel = function (t) {
     // ── Row B: Type pills ──
     var typePillRow = document.createElement('div')
     typePillRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;'
-    const TYPES = ['all','anime','manga','manhwa','show','movie','novel','lightnovel','social']
+    const TYPES = ['all','anime','manga','manhwa','show','movie','novel','lightnovel','book','social']
     TYPES.forEach(function(t) {
       const pill = document.createElement('button')
       pill.className = 'lib-filter-pill' + (t === activeType ? ' active' : '')
@@ -8767,6 +8893,8 @@ window.phubTypeLabel = function (t) {
     topbar.appendChild(sortPanel)
 
     main.appendChild(topbar)
+    var _nextUp = buildNextUpBanner(loadData(KEYS.library, []))
+    if (_nextUp) main.appendChild(_nextUp)
 
     // ---- GRID ----
     const grid = document.createElement('div')
@@ -8782,6 +8910,7 @@ window.phubTypeLabel = function (t) {
     let cardObserver = null  // declared here so observe call below is always in scope
 
     if (library.length === 0) {
+      const empty = document.createElement('div')       // was never created, so an empty library crashed this page
       empty.style.gridColumn = '1 / -1'
       empty.innerHTML =
         '<div class="lib-empty-state">' +
@@ -8873,12 +9002,14 @@ window.phubTypeLabel = function (t) {
         var titleOk  = !q || (card.dataset.title || '').toLowerCase().includes(q)
         var show     = typeOk && titleOk && card.dataset.stage === libStage
         card.style.display = show ? '' : 'none'
+        card.style.order = (libStage === 'queue' && card.dataset.queuePos) ? card.dataset.queuePos : ''
         if (show) visible++
       })
+      grid.classList.toggle('stage-queue', libStage === 'queue')
       noResults.style.display = (library.length > 0 && visible === 0) ? 'block' : 'none'
       if (library.length > 0 && visible === 0 && !searchQuery) {
         // An empty stage isn't a failed search — don't show a "clear search" button for it.
-        var _emptyMsg = { active: 'Nothing in progress', new: 'Nothing waiting to start', done: 'Nothing finished yet', hold: 'Nothing on hold' }
+        var _emptyMsg = { active: 'Nothing in progress', new: 'Nothing waiting to start', queue: 'Next Up is empty. Open an upcoming or on-hold series and tap ⏭ NEXT UP', done: 'Nothing finished yet', hold: 'Nothing on hold' }
         noResults.innerHTML = '<div style="color:var(--text-3);font:400 12px var(--font-mono);">' + (_emptyMsg[libStage] || 'Nothing here') + (activeType!=='all'?' in '+activeType:'') + '</div>'
         return
       }
@@ -8939,7 +9070,7 @@ window.phubTypeLabel = function (t) {
       var parts = raw.split('|').map(function(s) { return s.trim() })
       var title = parts[0]
       if (!title) { flashInputError(e.target); return }
-      var VALID_TYPES = ['anime','manga','manhwa','show','movie','novel','lightnovel']
+      var VALID_TYPES = ['anime','manga','manhwa','show','movie','novel','lightnovel','book']
       // Accept what people actually type: "light novel", "LN", "web novel", "WN".
       var TYPE_ALIASES = { 'light novel': 'lightnovel', 'ln': 'lightnovel', 'light-novel': 'lightnovel',
                            'web novel': 'novel', 'wn': 'novel', 'webnovel': 'novel', 'web-novel': 'novel' }
@@ -9004,6 +9135,12 @@ window.phubTypeLabel = function (t) {
         var badge = document.getElementById('lib-file-count')
         if (badge) badge.textContent = '[' + lib2.length + ' FILES]'
         library = lib2
+        // A series added to Next Up: show the Next Up tab so it is right there
+        if (newItem.queuePos != null && libStage !== 'queue') {
+          libStage = 'queue'
+          _libState.stage = 'queue'; delete _libState.hold; _saveLibState()
+          stageBtns.forEach(function(x) { x._setActive(x.dataset.stage === 'queue') })
+        }
         filterCards()
         orderLibraryCardsInGrid(grid2, normalizeLibrarySortMode(getAppSettings().librarySortMode))
       })
@@ -9163,10 +9300,15 @@ window.phubTypeLabel = function (t) {
       return '<span class="lib-mood-chip" data-mood="' + tag + '" style="color:' + color + ';">' + tag + '</span>'
     }).join('')
 
-    const statusClass = item.status || 'watching'
-    const startedNothing = item.type === 'social' ? socialTotal === 0 : watched === 0
+    // A social channel never finishes and never "hasn't started": it is Watching or On Hold
+    const statusClass = (item.type === 'social' && item.status !== 'on-hold' && item.status !== 'graveyard') ? 'watching' : (item.status || 'watching')
+    const startedNothing = item.type === 'social' ? false : watched === 0
+    var _queued = item.queuePos != null && queueEligible(item)
+    card.dataset.queued = _queued ? '1' : ''
+    card.dataset.queuePos = _queued ? item.queuePos : ''
     card.dataset.stage =
-        statusClass === 'graveyard' ? 'grave'
+        _queued                     ? 'queue'     // waiting in line behind Watching
+      : statusClass === 'graveyard' ? 'grave'
       : statusClass === 'on-hold'   ? 'hold'
       : statusClass === 'completed' ? 'done'
       : startedNothing              ? 'new'      // watching/upcoming with zero progress
@@ -9265,20 +9407,22 @@ window.phubTypeLabel = function (t) {
       })() +
       '<div class="lib-card-footer">' +
         '<div class="lib-card-footer-left">' +
-          '<span class="lib-status-dot ' + (statusClass === 'watching' && watched === 0 ? 'not-started' : statusClass) + '"></span>' +
-          '<span class="lib-status-label ' + (statusClass === 'watching' && (item.type==='social'?socialTotal===0:watched === 0) ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type==='social'?socialTotal===0:watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (phubIsRead(item.type)) ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass === 'on-hold' ? 'ON HOLD' : statusClass.toUpperCase()) + '</span>' +
+          '<span class="lib-status-dot ' + (statusClass === 'watching' && item.type !== 'social' && watched === 0 ? 'not-started' : statusClass) + '"></span>' +
+          '<span class="lib-status-label ' + (statusClass === 'watching' && item.type !== 'social' && watched === 0 ? 'not-started' : statusClass) + '">' + (statusClass === 'watching' ? ((item.type !== 'social' && watched===0) ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (phubIsRead(item.type)) ? 'READING' : 'WATCHING') : statusClass === 'completed' ? 'DONE' : statusClass === 'on-hold' ? 'ON HOLD' : statusClass.toUpperCase()) + '</span>' +
           dayHTML +
         '</div>' +
         (item.status === 'watching' && item.type !== 'social'
-          ? '<button class="lib-watch-next-btn" data-item-id="' + item.id + '">▶ QUEUE</button>'
-          : '') +
-      '</div>'
+          ? '<span class="lib-card-actions"><button class="lib-nextup-btn" type="button" title="Park this and put it in the Next Up line">⏭ NEXT UP</button><button class="lib-watch-next-btn" data-item-id="' + item.id + '">▶ QUEUE</button></span>'
+          : (_queued ? '<span class="lib-nextup-pill">NEXT UP #' + item.queuePos + '</span>'
+            : (queueCanAdd(item) ? '<button class="lib-nextup-btn" type="button">⏭ NEXT UP</button>' : ''))) +
+      '</div>' +
+      (_queued ? '<div class="lib-queue-ctl"><button type="button" class="lib-qc-up" title="Move earlier">▲</button><button type="button" class="lib-qc-down" title="Move later">▼</button><button type="button" class="lib-qc-go">▶ WATCH NOW</button><button type="button" class="lib-qc-rm" title="Take out of Next Up">✕</button></div>' : '')
 
     // Entire card is clickable
     // Type-colored left border accent
     var _typeColors = {
       anime:'#c084fc', manga:'#34d399', manhwa:'#fb923c',
-      show:'#60a5fa', movie:'#fbbf24', novel:'#f472b6', lightnovel:'#c084fc', social:'#ff4d4d'
+      show:'#60a5fa', movie:'#fbbf24', novel:'#f472b6', lightnovel:'#c084fc', book:'#f59e0b', social:'#ff4d4d'
     }
     var _tc = (item.themeStyles && item.themeStyles['--accent-cool']) || _typeColors[item.type] || 'rgba(100,160,255,0.4)'
     card.style.borderLeftColor = _tc
@@ -9288,6 +9432,17 @@ window.phubTypeLabel = function (t) {
       // Don't navigate if clicking a button inside the card
       if (e.target.closest('button')) return
       navigateTo('detail', item.id)
+    })
+
+    var nuBtn = card.querySelector('.lib-nextup-btn')
+    if (nuBtn) nuBtn.addEventListener('click', function(e) {
+      e.stopPropagation()
+      if (queueAdd(item.id)) { showQuickConfirm('NEXT UP: ' + item.title.toUpperCase()); refreshAfterQueueChange() }
+    })
+    ;[['.lib-qc-up', function() { queueMove(item.id, -1) }], ['.lib-qc-down', function() { queueMove(item.id, 1) }],
+      ['.lib-qc-rm', function() { queueRemove(item.id) }], ['.lib-qc-go', function() { queueStart(item.id) }]].forEach(function(p) {
+      var b = card.querySelector(p[0])
+      if (b) b.addEventListener('click', function(e) { e.stopPropagation(); p[1](); refreshAfterQueueChange() })
     })
 
     var watchNextBtn = card.querySelector('.lib-watch-next-btn')
@@ -9304,6 +9459,140 @@ window.phubTypeLabel = function (t) {
   /* -----------------------------------------------------------------
      PART 3: BUILD NEW ITEM OBJECT (shared: quick-add and modal)
   ----------------------------------------------------------------- */
+  /* -----------------------------------------------------------------
+     NEXT UP QUEUE
+     A series waiting in line behind Watching. It keeps its own status (upcoming or on hold)
+     and item.queuePos is its place in the line. Starting it moves it to Watching. Anything
+     in the queue comes before On Hold when the app suggests what to watch next.
+     (The card's "▶ QUEUE" button is different: it queues episodes inside one series.)
+  ----------------------------------------------------------------- */
+  // A social channel is only ever Watching or On Hold. Runs on every screen draw, so a sync from
+  // another device can't leave one in Done, Upcoming or the queue.
+  function fixSocialStatuses() {
+    var lib = loadData(KEYS.library, []), changed = false
+    lib.forEach(function(i) {
+      if (i && i.type === 'social' && i.status && i.status !== 'watching' && i.status !== 'on-hold' && i.status !== 'graveyard') {
+        i.status = 'watching'; delete i.queuePos; changed = true
+      }
+    })
+    if (changed) saveData(KEYS.library, lib)
+  }
+  // A Watching series can be sent to the queue too. It is parked (on hold if you'd started it, upcoming
+  // if you hadn't) and returns to Watching if you take it out again.
+  function queueCanAdd(i) { return !!i && i.type !== 'social' && i.status !== 'completed' && i.status !== 'graveyard' }
+  // Waiting in the line: queued, and parked rather than being watched
+  function queueEligible(i) { return !!i && i.type !== 'social' && i.status !== 'watching' && i.status !== 'completed' && i.status !== 'graveyard' }
+  function getQueue(lib) {
+    return lib.filter(function(i) { return i.queuePos != null && queueEligible(i) })
+              .sort(function(a, b) { return a.queuePos - b.queuePos })
+  }
+  function queueNormalize(lib) { getQueue(lib).forEach(function(it, idx) { it.queuePos = idx + 1 }) }
+  function itemFinished(i) {
+    if (i.type === 'social') return false           // a channel is never finished
+    var total = i.totalEpisodes || 0
+    return total > 0 && (i.watchedEpisodes || []).length >= total
+  }
+  function nothingLeftToWatch(lib) {
+    return !lib.some(function(i) { return i.status === 'watching' && !itemFinished(i) })
+  }
+  // Second priority: paused series that aren't in the queue, most recently touched first
+  function holdCandidates(lib) {
+    return lib.filter(function(i) { return i.status === 'on-hold' && !(i.queuePos != null) })
+              .sort(function(a, b) { return String(b.lastActivityAt || b.addedDate || '').localeCompare(String(a.lastActivityAt || a.addedDate || '')) })
+  }
+  function queueAdd(id) {
+    var lib = loadData(KEYS.library, [])
+    var it = lib.find(function(i) { return i.id === id })
+    if (!it || !queueCanAdd(it)) return false
+    delete it.queuedFrom
+    if (it.status === 'watching') {
+      it.queuedFrom = 'watching'
+      it.status = ((it.watchedEpisodes || []).length > 0) ? 'on-hold' : 'upcoming'
+    }
+    var last = getQueue(lib).reduce(function(m, q) { return Math.max(m, q.queuePos) }, 0)
+    it.queuePos = last + 1
+    queueNormalize(lib)
+    saveData(KEYS.library, lib)
+    logEvent('Next up #' + it.queuePos + ': ' + it.title)
+    return true
+  }
+  function queueRemove(id) {
+    var lib = loadData(KEYS.library, [])
+    var it = lib.find(function(i) { return i.id === id })
+    if (!it) return
+    delete it.queuePos
+    if (it.queuedFrom === 'watching') it.status = 'watching'       // it was being watched before it went in the line
+    delete it.queuedFrom
+    queueNormalize(lib)
+    saveData(KEYS.library, lib)
+    logEvent('Removed ' + it.title + ' from next up')
+  }
+  function queueMove(id, delta) {
+    var lib = loadData(KEYS.library, [])
+    var q = getQueue(lib)
+    var i = q.findIndex(function(x) { return x.id === id })
+    var j = i + delta
+    if (i < 0 || j < 0 || j >= q.length) return
+    var tmp = q[i].queuePos; q[i].queuePos = q[j].queuePos; q[j].queuePos = tmp
+    saveData(KEYS.library, lib)
+  }
+  // Move a queued or on-hold series into Watching
+  function queueStart(id) {
+    var lib = loadData(KEYS.library, [])
+    var it = lib.find(function(i) { return i.id === id })
+    if (!it) return
+    var was = it.status
+    it.status = 'watching'
+    delete it.queuePos
+    delete it.queuedFrom
+    queueNormalize(lib)
+    saveData(KEYS.library, lib)
+    logEvent((was === 'on-hold' ? 'Resumed ' : 'Started ') + it.title)
+  }
+  function refreshAfterQueueChange() {
+    var sec = (typeof currentSection !== 'undefined') ? currentSection : 'library'
+    navigateTo(sec === 'detail' ? 'library' : sec, null, true)
+  }
+
+  /* The "nothing left in Watching" suggestion, shown on the dashboard and the library.
+     Queue first. If the queue is empty, On Hold is offered as the second priority. */
+  function buildNextUpBanner(lib) {
+    if (!nothingLeftToWatch(lib)) return null
+    var queue = getQueue(lib), mode = queue.length ? 'queue' : 'hold'
+    var list = (mode === 'queue' ? queue : holdCandidates(lib)).slice(0, 3)
+    if (!list.length) return null
+    var box = document.createElement('div')
+    box.className = 'nextup-banner'
+    var head = mode === 'queue'
+      ? '<div class="nextup-title">⏭ NOTHING LEFT IN WATCHING</div><div class="nextup-sub">You put these in Next Up. Add one to Watching?</div>'
+      : '<div class="nextup-title">⏸ NOTHING LEFT IN WATCHING</div><div class="nextup-sub">Your Next Up queue is empty, so these are your On Hold series (second priority). Resume one?</div>'
+    box.innerHTML = head + '<div class="nextup-list"></div>' +
+      '<div class="nextup-foot">' + (mode === 'queue' ? '<button type="button" class="btn-ghost nextup-manage">Manage Next Up</button>' : 'Tip: put what you plan to watch in <b>Next Up</b> and it will be offered before On Hold.') + '</div>'
+    var listEl = box.querySelector('.nextup-list')
+    list.forEach(function(it, idx) {
+      var row = document.createElement('div')
+      row.className = 'nextup-row'
+      var prog = it.type === 'social' ? ((it.socialVideos || []).length + ' videos') : ((it.watchedEpisodes || []).length + '/' + (it.totalEpisodes || 0) + ' ' + (phubIsRead(it.type) ? 'ch' : 'eps'))
+      row.innerHTML = (mode === 'queue' ? '<span class="nextup-pos">' + (idx + 1) + '</span>' : '') +
+        '<div class="nextup-main"><div class="nextup-name"></div><div class="nextup-meta"><span class="badge" data-type="' + it.type + '">' + phubTypeLabel(it.type) + '</span> ' + prog + '</div></div>' +
+        '<button type="button" class="btn-primary nextup-go">' + (mode === 'queue' ? '▶ ADD TO WATCHING' : '▶ RESUME') + '</button>'
+      row.querySelector('.nextup-name').textContent = it.title
+      row.querySelector('.nextup-name').addEventListener('click', function() { navigateTo('detail', it.id) })
+      row.querySelector('.nextup-go').addEventListener('click', function() {
+        queueStart(it.id)
+        showQuickConfirm((mode === 'queue' ? 'ADDED TO WATCHING: ' : 'RESUMED: ') + it.title.toUpperCase())
+        refreshAfterQueueChange()
+      })
+      listEl.appendChild(row)
+    })
+    var mg = box.querySelector('.nextup-manage')
+    if (mg) mg.addEventListener('click', function() {
+      try { var st = JSON.parse(sessionStorage.getItem('phub_lib_filter') || '{}'); st.stage = 'queue'; sessionStorage.setItem('phub_lib_filter', JSON.stringify(st)) } catch (e) {}
+      navigateTo('library')
+    })
+    return box
+  }
+
   function buildNewItem(title, type, total, extras) {
     extras = extras || {}
     var item = {
@@ -9494,7 +9783,7 @@ window.phubTypeLabel = function (t) {
       '<div class="modal-section-card" style="margin-top:6px;">' +
       '<div class="modal-section-title">General</div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">UI Density</div><select class="sched-modal-input" id="set-density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>' +
-      '<div class="sched-modal-field"><div class="sched-modal-label">Default New Content Status</div><select class="sched-modal-input" id="set-default-status"><option value="watching">Watching / Active</option><option value="on-hold">On Hold</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option></select></div>' +
+      '<div class="sched-modal-field"><div class="sched-modal-label">Default New Content Status</div><select class="sched-modal-input" id="set-default-status"><option value="watching">Watching / Active</option><option value="next-up">Next Up</option><option value="on-hold">On Hold</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option></select></div>' +
       '<div class="sched-modal-field"><div class="sched-modal-label">Dashboard Suggestion Mode</div><select class="sched-modal-input" id="set-suggest-mode"><option value="oldest">Oldest First</option><option value="newest">Newest First</option><option value="random">Random</option></select></div>' +
       '</div>' +
       '<div class="modal-section-card">' +
@@ -9677,15 +9966,30 @@ window.phubTypeLabel = function (t) {
         '<option value="movie">Movie</option>' +
         '<option value="novel">Web Novel</option>' +
         '<option value="lightnovel">Light Novel</option>' +
+        '<option value="book">Book</option>' +
         '<option value="social">Social Media</option>' +
       '</select>' +
 
-      '<label class="modal-field-label">Total Episodes / Chapters</label>' +
+      '<label class="modal-field-label" id="modal-total-label">Total Episodes / Chapters</label>' +
       '<input class="modal-input" id="modal-total" type="number" min="0" placeholder="0 if unknown / upcoming" autocomplete="off"/>' +
+
+      '<div id="modal-sections-wrap" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin:8px 0 10px;background:var(--surface);">' +
+        '<div style="font:700 10px var(--font-mono);color:var(--accent-cool);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;">Sections</div>' +
+        '<label class="modal-field-label" style="margin-top:0;">Group chapters into</label>' +
+        '<select class="modal-select" id="modal-groupby"><option value="volume">Volumes</option><option value="arc">Arcs</option></select>' +
+        '<label class="modal-field-label" style="margin-top:10px;" id="modal-sections-label">Volumes <span style="color:var(--text-3);font-weight:400;">(one per line, with a chapter count after "|")</span></label>' +
+        '<textarea class="modal-input" id="modal-sections" rows="4" placeholder="Volume 1 | 12&#10;Volume 2 | 14" style="resize:vertical;min-height:78px;font-family:var(--font-mono);font-size:12px;"></textarea>' +
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;">' +
+          '<label style="display:flex;align-items:center;gap:8px;font:500 11px var(--font-mono);color:var(--text-2);cursor:pointer;"><input type="checkbox" id="modal-sec-pro" style="width:14px;height:14px;accent-color:var(--accent-cool);"/> Has a prologue</label>' +
+          '<label style="display:flex;align-items:center;gap:8px;font:500 11px var(--font-mono);color:var(--text-2);cursor:pointer;"><input type="checkbox" id="modal-sec-epi" style="width:14px;height:14px;accent-color:var(--accent-cool);"/> Has an epilogue</label>' +
+        '</div>' +
+        '<div id="modal-sections-preview" class="modal-helper-text" style="margin-top:8px;">Optional. List no volumes for a single book. Tick prologue or epilogue to add them to it. You can add volumes later from the series page.</div>' +
+      '</div>' +
 
       '<label class="modal-field-label" style="margin-top:4px;">Status</label>' +
       '<select class="modal-select" id="modal-status">' +
         '<option value="watching">Watching / Active</option>' +
+        '<option value="next-up">Next Up (watch after this)</option>' +
         '<option value="on-hold">On Hold</option>' +
         '<option value="upcoming">Upcoming</option>' +
         '<option value="completed">Completed</option>' +
@@ -9723,6 +10027,7 @@ window.phubTypeLabel = function (t) {
       '<label class="modal-field-label" style="margin-top:10px;">MDL Rating <span style="color:var(--text-3);font-weight:400;">(optional, 0–10)</span></label>' +
       '<input class="modal-input" id="modal-rating-mdl" type="number" min="0" max="10" step="0.1" placeholder="e.g. 8.2" autocomplete="off"/>' +
 
+      '<div id="modal-seasons-wrap">' +
       '<label class="modal-field-label" style="margin-top:4px;">Seasons <span style="color:var(--text-3);font-weight:400;">(one per line; add count using "|" e.g. Season 1 | 12)</span></label>' +
       '<textarea class="modal-input" id="modal-seasons" rows="4" placeholder="Season 1 | 12&#10;Season 2 | 24&#10;Specials | 2" style="resize:vertical;min-height:78px;font-family:var(--font-mono);font-size:12px;line-height:1.6;" autocomplete="off"></textarea>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 8px 0;">' +
@@ -9730,6 +10035,7 @@ window.phubTypeLabel = function (t) {
         '<button type="button" class="btn-ghost" id="modal-season-autototal" style="padding:5px 10px;font-size:10px;">Auto-fill Total</button>' +
       '</div>' +
       '<div id="modal-season-preview" style="font:400 10px var(--font-mono);color:var(--text-3);margin:-2px 0 10px 0;">Add season lines to preview parse result.</div>' +
+      '</div>' +
 
       '<label class="modal-field-label" style="margin-top:4px;">Mood Tags</label>' +
       '<div class="modal-mood-grid" id="modal-mood-grid"></div>' +
@@ -9746,6 +10052,78 @@ window.phubTypeLabel = function (t) {
       '</div>'
 
     box.insertBefore(closeXBtn, box.firstChild)
+
+    // -- Fields follow the type: reading types get sections (volumes or arcs), social drops what doesn't apply --
+    function setLabel(inputId, text) {
+      var el = box.querySelector('#' + inputId)
+      var lab = el && el.parentElement && el.parentElement.querySelector('label')
+      if (lab) lab.textContent = text
+    }
+    function sectionLines() {
+      return (box.querySelector('#modal-sections').value || '').split('\n').map(function(x) { return x.trim() }).filter(Boolean)
+    }
+    function renderSectionsPreview() {
+      var out = box.querySelector('#modal-sections-preview'), lines = sectionLines()
+      var proOn = box.querySelector('#modal-sec-pro').checked, epiOn = box.querySelector('#modal-sec-epi').checked
+      if (!lines.length) {
+        var tot = parseInt(box.querySelector('#modal-total').value, 10) || 0
+        if (proOn || epiOn) {
+          out.textContent = tot > 0
+            ? 'One book, no volumes: ' + tot + ' chapters' + (proOn ? ' + prologue' : '') + (epiOn ? ' + epilogue' : '')
+            : 'Enter the total chapters above, then the prologue / epilogue is added to the book.'
+        } else {
+          out.textContent = 'Optional. List no volumes for a single book. Tick prologue or epilogue to add them to it. You can add volumes later from the series page.'
+        }
+        return
+      }
+      var total = parseInt(box.querySelector('#modal-total').value, 10) || 0
+      var plan = buildSeasonPlanFromInput(lines, total)
+      var pro = box.querySelector('#modal-sec-pro').checked, epi = box.querySelector('#modal-sec-epi').checked
+      var word = box.querySelector('#modal-groupby').value === 'volume' ? 'volume' : 'arc'
+      var n = plan.seasons.length, chapters = plan.seasons.reduce(function(a, se) { return a + Math.max(1, se.episodes.length) }, 0)
+      var extra = n * ((pro ? 1 : 0) + (epi ? 1 : 0))
+      out.textContent = n + ' ' + word + (n === 1 ? '' : 's') + ' · ' + chapters + ' chapters' + (extra ? ' + ' + extra + ' prologue/epilogue' : '') +
+        (plan.seasons.some(function(se) { return !se.episodes.length }) ? ' · a section with no count starts with 1 chapter, change it later' : '')
+    }
+    function applyTypeUI() {
+      var t = box.querySelector('#modal-type').value
+      var reading = phubIsRead(t), social = t === 'social'
+      box.querySelector('#modal-sections-wrap').style.display = reading ? '' : 'none'
+      box.querySelector('#modal-seasons-wrap').style.display = (reading || social) ? 'none' : ''
+      var gb = box.querySelector('#modal-groupby')
+      if (reading && !gb.dataset.touched) gb.value = (t === 'lightnovel' || t === 'book') ? 'volume' : 'arc'
+      var vol = gb.value === 'volume'
+      box.querySelector('#modal-sections-label').innerHTML = (vol ? 'Volumes' : 'Arcs') + ' <span style="color:var(--text-3);font-weight:400;">(one per line, with a chapter count after "|")</span>'
+      box.querySelector('#modal-sections').placeholder = vol ? 'Volume 1 | 12\nVolume 2 | 14' : 'East Blue Arc | 61\nAlabasta Arc | 100'
+      box.querySelector('#modal-total-label').textContent = reading ? 'Total Chapters' : social ? '' : 'Total Episodes / Chapters'
+      box.querySelector('#modal-total-label').style.display = social ? 'none' : ''
+      box.querySelector('#modal-total').style.display = social ? 'none' : ''
+      // A channel has videos you add yourself: no episode totals, release dates, weekly episode
+      // schedule or site ratings, and it is only ever Watching or On Hold
+      box.querySelector('#modal-schedule-card').style.display = social ? 'none' : ''
+      ;['modal-rating-imdb', 'modal-rating-mal', 'modal-rating-mdl'].forEach(function(rid) {
+        var inp = box.querySelector('#' + rid); if (!inp) return
+        var lab = inp.previousElementSibling
+        inp.style.display = social ? 'none' : ''
+        if (lab && lab.tagName === 'LABEL') lab.style.display = social ? 'none' : ''
+        if (social) inp.value = ''
+      })
+      var stSel = box.querySelector('#modal-status')
+      if (stSel) {
+        ;[].forEach.call(stSel.options, function(o) { var bad = social && o.value !== 'watching' && o.value !== 'on-hold'; o.hidden = bad; o.disabled = bad })
+        if (social && stSel.value !== 'watching' && stSel.value !== 'on-hold') stSel.value = 'watching'
+      }
+      setLabel('modal-rec-day', reading ? 'Releases Every' : 'Airs Every')
+      setLabel('modal-rec-ep-start', reading ? 'First Chapter #' : 'First Episode #')
+      setLabel('modal-rec-end', reading ? '# of Chapters' : '# of Episodes')
+      renderSectionsPreview()
+    }
+    box.querySelector('#modal-type').addEventListener('change', applyTypeUI)
+    box.querySelector('#modal-groupby').addEventListener('change', function() { this.dataset.touched = '1'; applyTypeUI() })
+    ;['modal-sections', 'modal-total', 'modal-sec-pro', 'modal-sec-epi'].forEach(function(id) {
+      box.querySelector('#' + id).addEventListener(id === 'modal-sections' || id === 'modal-total' ? 'input' : 'change', renderSectionsPreview)
+    })
+    applyTypeUI()
 
     // -- Mood tags --
     const moodGrid = box.querySelector('#modal-mood-grid')
@@ -9868,12 +10246,16 @@ window.phubTypeLabel = function (t) {
       var seasonsData = seasonPlan.seasons
       var finalTotal = seasonPlan.resolvedTotal
       var status = box.querySelector('#modal-status').value
+      var wantNextUp = status === 'next-up'          // kept as upcoming, with a place in the Next Up queue
+      if (wantNextUp) status = 'upcoming'
+      if (type === 'social' && status !== 'on-hold') { status = 'watching'; wantNextUp = false }     // social: Watching or On Hold only
       var releaseDate = box.querySelector('#modal-release-date').value
       var recDay = box.querySelector('#modal-rec-day').value
       var recStart = box.querySelector('#modal-rec-start').value
       var recCount = parseInt(box.querySelector('#modal-rec-end').value, 10) || 0
       var recEpStart = parseInt(box.querySelector('#modal-rec-ep-start').value, 10) || 1
       var recWin = (box.querySelector('#modal-rec-win') || {}).value || null
+      if (type === 'social') { releaseDate = ''; recDay = ''; ratingIMDb = 0; ratingMAL = 0; ratingMDL = 0 }   // none of these apply to a channel
 
       // Build themeStyles from selected colour
       var themeStyles = {}
@@ -9918,11 +10300,52 @@ window.phubTypeLabel = function (t) {
         themeStyles: themeStyles
       })
       newItem.status = status || 'watching'
+      if (phubIsRead(type)) {
+        // Reading types group chapters into sections (volumes or arcs), each with an optional prologue and epilogue
+        newItem.groupBy = box.querySelector('#modal-groupby').value
+        var secLines = sectionLines()
+        var wantPro = box.querySelector('#modal-sec-pro').checked, wantEpi = box.querySelector('#modal-sec-epi').checked
+        if (!secLines.length && (wantPro || wantEpi) && total > 0) {
+          // No volumes listed means one book. The prologue and epilogue belong to the book itself,
+          // so it is stored as a single unnamed section and shows no volume tabs.
+          var soloLocal = (type === 'lightnovel')
+          var soloArc = { id: 'arc-' + Date.now().toString(36), name: 'Chapters', chapterStart: soloLocal ? (wantPro ? 0 : 1) : 1, chapterEnd: total, chapters: [], solo: true }
+          if (!soloLocal && wantPro) soloArc.prologue = true
+          if (wantEpi) soloArc.epilogue = true
+          newItem.arcs = [soloArc]
+          if (soloLocal) phubLocalizeVolumes(newItem)
+          else newItem.totalEpisodes = total + phubExtras(newItem)
+        }
+        if (secLines.length) {
+          var secPlan = buildSeasonPlanFromInput(secLines, total)
+          var localNums = (type === 'lightnovel'), cursor = 0, newArcs = []
+          secPlan.seasons.forEach(function(se, i) {
+            var count = Math.max(1, se.episodes.length)
+            var arc = {
+              id: 'arc-' + Date.now().toString(36) + i, name: se.name,
+              chapterStart: localNums ? (wantPro ? 0 : 1) : cursor + 1,     // light novels restart at 1 and keep Ch. 0 in the range
+              chapterEnd: localNums ? count : cursor + count,
+              chapters: []
+            }
+            if (!localNums && wantPro) arc.prologue = true
+            if (wantEpi) arc.epilogue = true
+            cursor += count
+            newArcs.push(arc)
+          })
+          newItem.arcs = newArcs
+          if (localNums) phubLocalizeVolumes(newItem)          // total = chapters across every volume
+          else newItem.totalEpisodes = Math.max(total, cursor) + phubExtras(newItem)
+        }
+      }
       if (downloadUrl) newItem.downloadUrl = downloadUrl
       if (releaseDate) newItem.releaseDate = releaseDate
       const lib = loadData(KEYS.library, [])
       lib.unshift(newItem)
       saveData(KEYS.library, lib)
+      if (wantNextUp && queueAdd(newItem.id)) {
+        // the library draws its new card from this object, so it needs the queue place too
+        newItem.queuePos = (loadData(KEYS.library, []).find(function(i) { return i.id === newItem.id }) || {}).queuePos
+      }
       if (releaseDate) {
         var sched = loadData(KEYS.schedule, {})
         if (!sched[releaseDate]) sched[releaseDate] = []
@@ -10278,6 +10701,80 @@ window.phubTypeLabel = function (t) {
     titleEl.className = 'social-title'
     titleEl.textContent = item.title
     heroLeft.appendChild(titleEl)
+
+    // Mood tags and a personal rating, the same as every other type has
+    var SOCIAL_MOODS = ['brain-off','hype','emotional damage','cozy','chaos','slow-burn','dark','psychological','action','thriller','binge-worthy','aesthetic','horror','comedy','romance','fantasy','sci-fi','wholesome','mystery','slice-of-life','nostalgic']
+    var metaRow = document.createElement('div')
+    metaRow.className = 'detail-mood-row'
+    metaRow.style.cssText = 'margin:10px 0 4px;'
+    function saveSocial(change) {
+      var lib = loadData(KEYS.library, [])
+      var it = lib.find(function(x) { return x.id === id })
+      if (!it) return
+      change(it); saveData(KEYS.library, lib)
+      renderMeta()
+    }
+    function renderMeta() {
+      var fi = freshItem()
+      var rating = fi.personalRating
+      metaRow.innerHTML =
+        '<div class="detail-rating-chip chip-personal" id="social-rating-chip" style="cursor:pointer;' + (rating ? '' : 'opacity:0.5;') + '"><span class="chip-label">MY RATING</span><span class="chip-val">' + (rating ? rating + '<span style="font-size:9px;opacity:0.6">/10</span>' : '\u2014') + '</span></div>' +
+        (fi.moodTags || []).map(function(t) { return '<span class="detail-mood-pill">' + t + '</span>' }).join('') +
+        '<button class="detail-tags-edit-btn" id="social-tags-edit-btn" title="Edit tags">\u270e</button>'
+      metaRow.querySelector('#social-tags-edit-btn').addEventListener('click', openSocialTags)
+      metaRow.querySelector('#social-rating-chip').addEventListener('click', function(e) { e.stopPropagation(); openSocialRating(this) })
+    }
+    function openSocialRating(chip) {
+      document.querySelectorAll('.detail-personal-rating-popup').forEach(function(p) { p.remove() })
+      var r = chip.getBoundingClientRect()
+      var popup = document.createElement('div')
+      popup.className = 'detail-personal-rating-popup'
+      popup.style.cssText = 'position:fixed;z-index:99999;left:' + Math.max(8, Math.min(r.left, innerWidth - 300)) + 'px;top:' + (r.bottom + 6) + 'px;background:#1a1630;border:1px solid rgba(130,160,255,0.5);border-radius:10px;padding:6px 8px;display:flex;gap:2px;flex-wrap:wrap;max-width:290px;'
+      var cur = freshItem().personalRating || 0
+      for (var n = 1; n <= 10; n++) {
+        var b = document.createElement('button')
+        b.textContent = '\u2605'; b.dataset.val = n
+        b.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;padding:4px;line-height:1;color:' + (cur >= n ? '#ff8a4c' : 'rgba(180,190,220,0.55)') + ';'
+        b.addEventListener('click', function(ev) { ev.stopPropagation(); var v = parseInt(this.dataset.val, 10); popup.remove(); saveSocial(function(it) { it.personalRating = v }) })
+        popup.appendChild(b)
+      }
+      var clear = document.createElement('button')
+      clear.textContent = 'clear'; clear.style.cssText = 'background:none;border:none;color:var(--text-3);font:500 10px var(--font-mono);cursor:pointer;padding:4px 6px;'
+      clear.addEventListener('click', function(ev) { ev.stopPropagation(); popup.remove(); saveSocial(function(it) { delete it.personalRating }) })
+      popup.appendChild(clear)
+      document.body.appendChild(popup)
+      setTimeout(function() { document.addEventListener('click', function off() { popup.remove(); document.removeEventListener('click', off) }) }, 0)
+    }
+    function openSocialTags() {
+      var overlay = document.createElement('div')
+      overlay.className = 'modal-overlay'
+      document.body.appendChild(overlay)
+      var box = document.createElement('div')
+      box.className = 'modal-box'
+      box.style.cssText = 'position:relative;width:min(480px,calc(100vw - 40px));padding:26px 24px 20px;border-radius:20px;'
+      var current = (freshItem().moodTags || []).slice()
+      box.innerHTML = '<div class="modal-title-row">EDIT MOOD TAGS</div><div style="font:500 11px var(--font-mono);letter-spacing:0.1em;color:var(--text-3);margin:-10px 0 16px 0;text-transform:uppercase;">' + item.title + '</div><div class="modal-mood-grid"></div>' +
+        '<div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:14px;border-top:1px solid rgba(100,160,255,0.16);"><button class="btn-ghost" id="smt-cancel">CANCEL</button><button class="btn-primary" id="smt-save">SAVE TAGS</button></div>'
+      var grid = box.querySelector('.modal-mood-grid')
+      SOCIAL_MOODS.forEach(function(m) {
+        var btn = document.createElement('button')
+        btn.className = 'modal-mood-toggle' + (current.indexOf(m) !== -1 ? ' active' : '')
+        btn.type = 'button'; btn.textContent = m
+        btn.addEventListener('click', function() {
+          var i = current.indexOf(m)
+          if (i === -1) { current.push(m); btn.classList.add('active') } else { current.splice(i, 1); btn.classList.remove('active') }
+        })
+        grid.appendChild(btn)
+      })
+      overlay.appendChild(box)
+      requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('visible') }) })
+      function close() { overlay.classList.remove('visible'); setTimeout(function() { overlay.remove() }, 250) }
+      box.querySelector('#smt-cancel').addEventListener('click', close)
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) close() })
+      box.querySelector('#smt-save').addEventListener('click', function() { saveSocial(function(it) { it.moodTags = current.slice() }); close() })
+    }
+    heroLeft.appendChild(metaRow)
+    renderMeta()
 
     function renderStats() {
       var fi = freshItem()
@@ -11569,6 +12066,8 @@ window.phubTypeLabel = function (t) {
       if (it6) {
         if (it6.status === 'on-hold') {
           it6.status = 'watching'
+          delete it6.queuePos                          // watching it now, so it leaves the queue
+          delete it6.queuedFrom
           holdBtn.textContent = '⏸ Put on Hold'
           holdBtn.style.borderColor = 'rgba(249,115,22,0.3)'
           logEvent('Resumed ' + item.title)
@@ -11580,10 +12079,39 @@ window.phubTypeLabel = function (t) {
         }
         item.status = it6.status
         saveData(KEYS.library, lib6)
+        drawNextUpBtn()
         showQuickConfirmWithUndo((it6.status === 'on-hold' ? 'ON HOLD: ' : 'RESUMED: ') + item.title.toUpperCase(), null)
       }
     })
     gravWrap.appendChild(holdBtn)
+
+    // Next Up queue
+    var nuWrap = document.createElement('div')
+    function drawNextUpBtn() {
+      nuWrap.innerHTML = ''
+      var cur = loadData(KEYS.library, []).find(function(i) { return i.id === id }) || item
+      if (!queueCanAdd(cur)) return            // finished or dropped: nothing to queue
+      var inQ = cur.queuePos != null && queueEligible(cur)
+      var b = document.createElement('button')
+      b.className = 'btn-ghost'
+      b.style.cssText = 'width:100%;margin-bottom:8px;border-color:rgba(168,85,247,0.4);color:#c084fc;'
+      b.textContent = inQ ? '\u2715 Remove from Next Up (#' + cur.queuePos + ')'
+                    : (cur.status === 'watching' ? '\u23ed Move to Next Up (stop watching for now)' : '\u23ed Add to Next Up')
+      b.addEventListener('click', function() {
+        if (inQ) queueRemove(id)
+        else if (!queueAdd(id)) return
+        var after = loadData(KEYS.library, []).find(function(i) { return i.id === id }) || {}
+        item.queuePos = after.queuePos
+        item.status = after.status || item.status
+        // keep the Put on Hold / Resume button in step with the new status
+        holdBtn.textContent = item.status === 'on-hold' ? '\u25b6 Resume Series' : '\u23f8 Put on Hold'
+        showQuickConfirm((inQ ? (item.status === 'watching' ? 'BACK TO WATCHING: ' : 'REMOVED FROM NEXT UP: ') : 'NEXT UP: ') + item.title.toUpperCase())
+        drawNextUpBtn()
+      })
+      nuWrap.appendChild(b)
+    }
+    drawNextUpBtn()
+    gravWrap.appendChild(nuWrap)
 
     var gravBtn = document.createElement('button')
     gravBtn.className = 'btn-danger'
@@ -11668,6 +12196,23 @@ window.phubTypeLabel = function (t) {
         })
       })
       addSeasonWrap.appendChild(manageSeasonBtn)
+      if (phubIsRead(item.type)) {
+        var toArcsBtn = document.createElement('button')
+        toArcsBtn.className = 'btn-ghost'
+        toArcsBtn.style.cssText = 'width:100%;font-size:10px;letter-spacing:0.08em;margin-top:6px;opacity:0.85;'
+        toArcsBtn.textContent = '\u21c4 Convert seasons to ' + (phubIsVolume(item) ? 'Volumes' : 'Arcs') + ' (adds prologue / epilogue)'
+        toArcsBtn.addEventListener('click', function() {
+          if (!confirm('Turn this item\'s seasons into ' + (phubIsVolume(item) ? 'volumes' : 'arcs') + '?\n\nChapters you have read, ratings and titles stay. You can then set a prologue and epilogue for each one.')) return
+          var libC = loadData(KEYS.library, [])
+          var itC = libC.find(function(i) { return i.id === id })
+          if (!itC || !phubSeasonsToArcs(itC)) return
+          saveData(KEYS.library, libC)
+          var qC = loadData(KEYS.queuedEps, {}); if (qC[id]) { delete qC[id]; saveData(KEYS.queuedEps, qC) }   // queued keys used the old numbering
+          logEvent(item.title + ' now uses ' + (phubIsVolume(itC) ? 'volumes' : 'arcs'))
+          navigateTo('detail', id, true)
+        })
+        addSeasonWrap.appendChild(toArcsBtn)
+      }
       heroRight.appendChild(addSeasonWrap)
     } else if (hasArcsData || phubIsRead(item.type)) {
       // For reading content: show arc management buttons.
@@ -11679,7 +12224,7 @@ window.phubTypeLabel = function (t) {
       var addArcBtn = document.createElement('button')
       addArcBtn.className = 'btn-ghost'
       addArcBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;'
-      addArcBtn.textContent = phubArcWord(item.type, '+ Add New Arc')
+      addArcBtn.textContent = phubArcWord(item, '+ Add New Arc')
       addArcBtn.addEventListener('click', function() {
         openAddArcModal(item, id, function(updatedItem) {
           var lib6 = loadData(KEYS.library, [])
@@ -11701,7 +12246,7 @@ window.phubTypeLabel = function (t) {
       var manageArcBtn = document.createElement('button')
       manageArcBtn.className = 'btn-ghost'
       manageArcBtn.style.cssText = 'width:100%;font-size:11px;letter-spacing:0.08em;margin-top:6px;'
-      manageArcBtn.textContent = phubArcWord(item.type, 'Manage Arcs')
+      manageArcBtn.textContent = phubArcWord(item, 'Manage Arcs')
       manageArcBtn.addEventListener('click', function() {
         openManageArcsModal(item, id, function() {
           var lib6 = loadData(KEYS.library, [])
@@ -11743,6 +12288,21 @@ window.phubTypeLabel = function (t) {
         })
         addArcWrap.appendChild(swBtn)
       }
+
+      // Volume or Arc: only the name changes, the chapters stay the same
+      var gbBtn = document.createElement('button')
+      gbBtn.className = 'btn-ghost'
+      gbBtn.style.cssText = 'width:100%;font-size:10px;letter-spacing:0.08em;margin-top:6px;opacity:0.7;'
+      gbBtn.textContent = '\u21c4 Call them ' + (phubIsVolume(item) ? 'Arcs' : 'Volumes') + ' instead'
+      gbBtn.addEventListener('click', function() {
+        var libG = loadData(KEYS.library, [])
+        var itG = libG.find(function(i) { return i.id === id })
+        if (!itG) return
+        itG.groupBy = phubIsVolume(itG) ? 'arc' : 'volume'
+        saveData(KEYS.library, libG)
+        navigateTo('detail', id, true)
+      })
+      addArcWrap.appendChild(gbBtn)
       heroRight.appendChild(addArcWrap)
     }
 
@@ -12251,7 +12811,9 @@ window.phubTypeLabel = function (t) {
     container._stopTimer = stopTimer
     // Use tab row for ≤6 arcs, dropdown select for more (e.g. manhwa with 31 arcs)
     var useDropdown = item.arcs.length > 6
-    var hideArrows = (item.type === 'anime' || item.type === 'show')
+    // A book added with no volumes is one unnamed section, so there are no volume tabs to show
+    var soloBook = item.arcs.length === 1 && !!item.arcs[0].solo
+    var hideArrows = (item.type === 'anime' || item.type === 'show') || soloBook
 
     if (useDropdown) {
       var navRow = document.createElement('div')
@@ -12274,9 +12836,7 @@ window.phubTypeLabel = function (t) {
       item.arcs.forEach(function(arc, i) {
         var opt = document.createElement('option')
         opt.value = i
-        opt.textContent = arc.name + (item.type === 'lightnovel'
-          ? '  (' + (arc.chapterStart === 0 ? 'prologue + ' : '') + arc.chapterEnd + ' ch)'
-          : '  (Ch. ' + arc.chapterStart + '\u2013' + arc.chapterEnd + ')')
+        opt.textContent = arc.name + '  (' + phubArcSummary(item, arc) + ')'
         if (i === activeIdx) opt.selected = true
         sel.appendChild(opt)
       })
@@ -12352,11 +12912,11 @@ window.phubTypeLabel = function (t) {
       }
 
       item.arcs.forEach(function(arc, i) {
+        if (soloBook) return              // one unnamed section: nothing to switch between
         var tab = document.createElement('button')
         tab.className = 'detail-season-tab' + (i === activeIdx ? ' active' : '')
         tab.textContent = arc.name
-        tab.title = item.type === 'lightnovel' ? (arc.chapterStart === 0 ? 'Prologue + ' : '') + arc.chapterEnd + ' chapters'
-                                               : 'Ch. ' + arc.chapterStart + '\u2013' + arc.chapterEnd
+        tab.title = phubArcSummary(item, arc)
         tab.style.cssText = 'white-space:nowrap;flex-shrink:0;'
         tab.dataset.arcIdx = i
         tab.addEventListener('click', function() {
@@ -12429,18 +12989,18 @@ window.phubTypeLabel = function (t) {
     var _covered = {}
     item.arcs.forEach(function(a) { getArcChapterNums(a).forEach(function(n) { _covered[Math.floor(n)] = true }) })
     var _gapStart = null, _gapEnd = null
-    for (var _n = 1; _n <= (item.totalEpisodes || 0); _n++) {
+    for (var _n = 1; _n <= (item.totalEpisodes || 0) - phubExtras(item); _n++) {
       if (!_covered[_n]) { if (_gapStart === null) _gapStart = _n; _gapEnd = _n }
     }
     if (_gapStart !== null && item.type !== 'lightnovel') {   // volumes restart at 1 — no running count to have gaps in
       var gapNote = document.createElement('div')
       gapNote.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;padding:8px 12px;border:1px dashed var(--border);border-radius:10px;font:500 11px var(--font-mono);color:var(--text-3);'
       var _u = 'Ch. '
-      gapNote.innerHTML = '<span>' + _u + _gapStart + (_gapEnd > _gapStart ? '\u2013' + _gapEnd : '') + ' ' + (_gapEnd > _gapStart ? 'aren\'t' : 'isn\'t') + ' ' + phubArcWord(item.type, 'in an arc') + ' yet</span>'
+      gapNote.innerHTML = '<span>' + _u + _gapStart + (_gapEnd > _gapStart ? '\u2013' + _gapEnd : '') + ' ' + (_gapEnd > _gapStart ? 'aren\'t' : 'isn\'t') + ' ' + phubArcWord(item, 'in an arc') + ' yet</span>'
       var gapBtn = document.createElement('button')
       gapBtn.className = 'btn-ghost'
       gapBtn.style.cssText = 'font-size:10px;letter-spacing:0.08em;padding:4px 10px;'
-      gapBtn.textContent = phubArcWord(item.type, '+ Add arc')
+      gapBtn.textContent = phubArcWord(item, '+ Add arc')
       gapBtn.addEventListener('click', function() {
         openAddArcModal(item, item.id, function() { navigateTo('detail', item.id, true) })
       })
@@ -12451,12 +13011,13 @@ window.phubTypeLabel = function (t) {
     // Chapter grid
     var chapters = []
     getArcChapterNums(arc).forEach(function(n) {
-      var savedRating = 0
-      if (arc.chapters) {
-        var savedCh = arc.chapters.find(function(c) { return c.number === n })
-        if (savedCh) savedRating = savedCh.rating || 0
-      }
-      chapters.push({ number: n, title: n === 0 ? 'Prologue' : 'Ch. ' + n, rating: savedRating, isChapter: true })
+      var savedCh = arc.chapters ? arc.chapters.find(function(c) { return c.number === n }) : null
+      var chap = Object.assign({}, savedCh || {})
+      chap.number = n
+      chap.title = (savedCh && savedCh.title) || phubChapterLabel(n)
+      chap.rating = (savedCh && savedCh.rating) || 0
+      chap.isChapter = true
+      chapters.push(chap)
     })
     // Create arc info object for select bar
     var arcInfo = {
@@ -12524,12 +13085,26 @@ window.phubTypeLabel = function (t) {
   }
 
   // Returns all chapter numbers for an arc, including decimal bonus chapters (e.g. 23.5, 35.2)
+  // "prologue + Ch. 1–10 + epilogue", or "8 chapters" for volumes that restart at 1
+  function phubArcSummary(item, arc) {
+    var local = item.type === 'lightnovel'
+    var bits = []
+    if (phubHasPrologue(arc)) bits.push('prologue')
+    var regular = arc.chapterStart === 0 ? Math.floor(arc.chapterEnd) : null
+    bits.push(local ? ((regular != null ? regular : Math.floor(arc.chapterEnd)) + ' ch')
+                    : 'Ch. ' + (arc.chapterStart === 0 ? 1 : arc.chapterStart) + '\u2013' + arc.chapterEnd)
+    if (arc.epilogue) bits.push('epilogue')
+    return bits.join(' + ')
+  }
+
   function getArcChapterNums(arc) {
     var nums = []
     var end = arc.chapterEnd
     var endFloor = Math.floor(end)
+    if (arc.prologue && arc.chapterStart !== 0) nums.push(0)          // Ch. 0 in front of the range
     for (var n = arc.chapterStart; n <= endFloor; n++) nums.push(n)
     if (end !== endFloor) nums.push(end)
+    if (arc.epilogue) nums.push(PHUB_EPILOGUE)                        // one final chapter, shown as "Epilogue"
     return nums
   }
 
@@ -12598,7 +13173,7 @@ window.phubTypeLabel = function (t) {
     }
     tile.innerHTML =
       ratingsHTML +
-      '<span class="ep-num">' + ep.number + '</span>' +
+      '<span class="ep-num">' + (ep.isChapter ? phubTileText(ep.number) : ep.number) + '</span>' +
       '<span class="ep-check">\u2713</span>' +
       '<button class="ep-rate-btn" aria-label="Rate this episode">\u2605</button>' +
       '<button class="ep-timer-btn" aria-label="Start timer for this episode">\u23f1</button>'
@@ -12640,11 +13215,11 @@ window.phubTypeLabel = function (t) {
       })()
 
       if (it.status === 'upcoming') {
-        it.status = 'watching'
+        it.status = 'watching'; delete it.queuePos
         item.status = 'watching'
         logEvent('Status updated: ' + item.title + ' \u2192 watching')
       }
-      logEvent((phubIsRead(item.type) ? 'Read ch ' : 'Watched ep ') + ep.number + ' of ' + item.title)
+      logEvent((phubIsRead(item.type) ? 'Read ch ' : 'Watched ep ') + phubNumText(ep.number) + ' of ' + item.title)
 
       item.watchedEpisodes = it.watchedEpisodes.slice()
       touchLibraryItemActivity(it)
@@ -12990,7 +13565,7 @@ window.phubTypeLabel = function (t) {
       if (wasWatched) {
         it.watchedEpisodes = it.watchedEpisodes.filter(function(n) { return n !== epKey })
         tile.classList.remove('watched')
-        logEvent((phubIsRead(item.type) ? 'Unread ch ' : 'Unwatched ep ') + ep.number + ' of ' + item.title)
+        logEvent((phubIsRead(item.type) ? 'Unread ch ' : 'Unwatched ep ') + phubNumText(ep.number) + ' of ' + item.title)
       } else {
         it.watchedEpisodes.push(epKey)
         tile.classList.add('watched')
@@ -13013,11 +13588,11 @@ window.phubTypeLabel = function (t) {
         })()
         // Auto-promote upcoming → watching when first episode is marked watched
         if (it.status === 'upcoming') {
-          it.status = 'watching'
+          it.status = 'watching'; delete it.queuePos
           item.status = 'watching'
           logEvent('Status updated: ' + item.title + ' → watching')
         }
-        logEvent((phubIsRead(item.type) ? 'Read ch ' : 'Watched ep ') + ep.number + ' of ' + item.title)
+        logEvent((phubIsRead(item.type) ? 'Read ch ' : 'Watched ep ') + phubNumText(ep.number) + ' of ' + item.title)
       }
 
       // Sync back to the live item reference
@@ -13211,7 +13786,7 @@ window.phubTypeLabel = function (t) {
 
       // No longer finished — take it out of "Done" so the library tab matches.
       if (it.status === 'completed' && it.watchedEpisodes.length < (it.totalEpisodes || 0)) {
-        it.status = 'watching'; item.status = 'watching'; saveData(KEYS.library, lib)
+        it.status = 'watching'; delete it.queuePos; item.status = 'watching'; saveData(KEYS.library, lib)
       }
       logEvent((phubIsRead(item.type) ? 'Unread all of ' : 'Unwatched all of ') + item.title)
       refreshStats(it.watchedEpisodes)
@@ -13224,7 +13799,7 @@ window.phubTypeLabel = function (t) {
     dlStrip.style.cssText = 'margin-bottom:10px;'
     if (_multiSeason) (function() {
       var isArc    = !!season._isArc
-      var srcLabel = isArc ? phubArcWord(item.type, 'Arc') : 'Season'
+      var srcLabel = isArc ? phubArcWord(item, 'Arc') : 'Season'
       function freshSeasonUrl() {
         var lib = loadData(KEYS.library, [])
         var fi  = lib.find(function(i) { return i.id === item.id }) || item
@@ -14013,7 +14588,7 @@ window.phubTypeLabel = function (t) {
         var selectedInArc = arcChapters.filter(function(n) { return selectedEps.indexOf(makeEpKey(ai, n)) >= 0 || selectedEps.indexOf(n) >= 0 })
         if (selectedInArc.length > 0) {
           arcStats.push({
-            name: arc.name || phubArcWord(item.type, 'Arc'),
+            name: arc.name || phubArcWord(item, 'Arc'),
             selected: selectedInArc.length,
             total: arcChapters.length,
             isComplete: selectedInArc.length === arcChapters.length
@@ -14028,7 +14603,7 @@ window.phubTypeLabel = function (t) {
       }
       // Multiple arcs
       var totalChs = arcStats.reduce(function(sum, a) { return sum + a.selected }, 0)
-      return arcStats.length + ' ' + phubArcWord(item.type, 'arcs') + ' · ' + totalChs + ' ' + unitLabelPlural + ' selected'
+      return arcStats.length + ' ' + phubArcWord(item, 'arcs') + ' · ' + totalChs + ' ' + unitLabelPlural + ' selected'
     }
     
     // Flat episodes/chapters
@@ -14389,6 +14964,7 @@ window.phubTypeLabel = function (t) {
         if (el.dataset.field === 'count') nextByIndex[idx].count = Math.max(0, parseInt(el.value, 10) || 0)
       })
 
+      var oldTotal = it.totalEpisodes || 0
       var watchedSet = new Set(it.watchedEpisodes || [])
       var newSeasons = []
       var newWatched = []
@@ -14410,6 +14986,8 @@ window.phubTypeLabel = function (t) {
       it.seasons = newSeasons
       it.totalEpisodes = epNum - 1
       it.watchedEpisodes = Array.from(new Set(newWatched))
+      // New episodes for a finished series put it back in Watching
+      if (it.status === 'completed' && it.totalEpisodes > oldTotal && it.watchedEpisodes.length < it.totalEpisodes) it.status = 'watching'
       saveData(KEYS.library, lib)
       logEvent('Updated seasons for ' + item.title)
       closeModal()
@@ -14594,6 +15172,7 @@ window.phubTypeLabel = function (t) {
       it6.seasons.push(newSeason)
       it6.totalEpisodes = (it6.totalEpisodes || 0) + epCount
       if (newStatus === 'upcoming') it6.status = 'upcoming'
+      else if (it6.status === 'completed') it6.status = 'watching'      // a new season to follow: not finished any more
       if (relDate) it6.releaseDate = relDate
       saveData(KEYS.library, lib6)
       logEvent('Added season "' + name + '" to ' + item.title)
@@ -14684,34 +15263,33 @@ window.phubTypeLabel = function (t) {
 
     var arcs = (item.arcs || []).slice()
     if (!arcs.length) {
-      alert(phubArcWord(item.type, 'No arcs found. Add an arc first.'))
+      alert(phubArcWord(item, 'No arcs found. Add an arc first.'))
       return
     }
 
-    var isLN = item.type === 'lightnovel'
+    var isLN = item.type === 'lightnovel'     // chapter numbers restart at 1 in every section
+    var cols = isLN ? '1fr 78px 40px 40px' : '1fr 62px 62px 40px 40px'
     var rowsHtml = arcs.map(function(a, i) {
-      if (isLN) {
-        var size = Math.max(1, Math.floor(a.chapterEnd != null ? a.chapterEnd : 1))    // regular chapters
-        var hasPro = a.chapterStart === 0
-        return '<div style="display:grid;grid-template-columns:1fr 90px 64px;gap:8px;margin-bottom:8px;align-items:center;">' +
-          '<input class="sched-modal-input" data-aidx="' + i + '" data-field="name" value="' + (a.name || ('Volume ' + (i + 1))) + '" placeholder="Volume name" autocomplete="off"/>' +
-          '<input class="sched-modal-input" data-aidx="' + i + '" data-field="count" type="number" min="1" value="' + size + '" placeholder="Chapters" autocomplete="off"/>' +
-          '<label style="display:flex;justify-content:center;cursor:pointer;" title="Has a prologue (Ch. 0)"><input type="checkbox" data-aidx="' + i + '" data-field="prologue"' + (hasPro ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:var(--accent-cool);"/></label>' +
-        '</div>'
+      var hasPro = phubHasPrologue(a), hasEpi = !!a.epilogue
+      var chk = function(field, on, tip) {
+        return '<label style="display:flex;justify-content:center;cursor:pointer;" title="' + tip + '"><input type="checkbox" data-aidx="' + i + '" data-field="' + field + '"' + (on ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:var(--accent-cool);"/></label>'
       }
-      return '<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:8px;">' +
-        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="name" value="' + (a.name || (phubArcWord(item.type, 'Arc') + ' ' + (i + 1))) + '" placeholder="' + phubArcWord(item.type, 'Arc name') + '" autocomplete="off"/>' +
-        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="start" type="number" min="1" value="' + (a.chapterStart != null ? a.chapterStart : 1) + '" placeholder="Start" autocomplete="off"/>' +
-        '<input class="sched-modal-input" data-aidx="' + i + '" data-field="end" type="number" min="1" value="' + (a.chapterEnd || 1) + '" placeholder="End" autocomplete="off"/>' +
+      var nameCell = '<input class="sched-modal-input" data-aidx="' + i + '" data-field="name" value="' + (a.name || (phubArcWord(item, 'Arc') + ' ' + (i + 1))) + '" placeholder="' + phubArcWord(item, 'Arc name') + '" autocomplete="off"/>'
+      var numCells = isLN
+        ? '<input class="sched-modal-input" data-aidx="' + i + '" data-field="count" type="number" min="1" value="' + Math.max(1, Math.floor(a.chapterEnd != null ? a.chapterEnd : 1)) + '" placeholder="Chapters" autocomplete="off"/>'
+        : '<input class="sched-modal-input" data-aidx="' + i + '" data-field="start" type="number" min="1" value="' + (a.chapterStart > 0 ? a.chapterStart : 1) + '" placeholder="Start" autocomplete="off"/>' +
+          '<input class="sched-modal-input" data-aidx="' + i + '" data-field="end" type="number" min="1" value="' + (a.chapterEnd || 1) + '" placeholder="End" autocomplete="off"/>'
+      return '<div style="display:grid;grid-template-columns:' + cols + ';gap:8px;margin-bottom:8px;align-items:center;">' +
+        nameCell + numCells + chk('prologue', hasPro, 'Has a prologue (Ch. 0)') + chk('epilogue', hasEpi, 'Has an epilogue (last chapter)') +
       '</div>'
     }).join('')
 
     box.innerHTML =
-      '<div class="sched-modal-title">' + phubArcWord(item.type, 'Manage Arcs') + '</div>' +
+      '<div class="sched-modal-title">' + phubArcWord(item, 'Manage Arcs') + '</div>' +
       '<div class="sched-modal-subtitle">' + item.title + '</div>' +
-      '<div style="font:500 10px var(--font-mono);color:var(--text-3);margin-bottom:8px;">' + (isLN ? 'Edit each volume\'s name and how many chapters it has.' : 'Edit arc name, start chapter, and end chapter.') + '</div>' +
-      '<div style="display:grid;grid-template-columns:' + (isLN ? '1fr 90px 64px' : '1fr 80px 80px') + ';gap:8px;margin-bottom:4px;font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase;">' +
-        (isLN ? '<div>VOLUME NAME</div><div>CHAPTERS</div><div style="text-align:center;">CH. 0</div>' : '<div>ARC NAME</div><div>START CH</div><div>END CH</div>') +
+      '<div style="font:500 10px var(--font-mono);color:var(--text-3);margin-bottom:8px;">' + (isLN ? 'Edit each ' + phubArcWord(item, 'arc') + '\'s name and how many chapters it has. Tick PRO for a prologue and EPI for an epilogue.' : 'Edit the ' + phubArcWord(item, 'arc') + ' name and its start and end chapter. Tick PRO for a prologue and EPI for an epilogue.') + '</div>' +
+      '<div style="display:grid;grid-template-columns:' + cols + ';gap:8px;margin-bottom:4px;font:700 9px var(--font-mono);color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase;">' +
+        '<div>' + phubArcWord(item, 'ARC NAME') + '</div>' + (isLN ? '<div>CHAPTERS</div>' : '<div>START CH</div><div>END CH</div>') + '<div style="text-align:center;">PRO</div><div style="text-align:center;">EPI</div>' +
       '</div>' +
       '<div style="max-height:400px;overflow-y:auto;overflow-x:hidden;margin-bottom:16px;padding-right:4px;">' +
         rowsHtml +
@@ -14736,46 +15314,64 @@ window.phubTypeLabel = function (t) {
       var lib = loadData(KEYS.library, [])
       var it = lib.find(function(x) { return x.id === id })
       if (!it) return
+      var oldExtras = phubExtras(it)
+      var oldTotalArcs = it.totalEpisodes || 0
       var rows = box.querySelectorAll('[data-aidx]')
       var nextByIndex = {}
       rows.forEach(function(el) {
         var idx = parseInt(el.dataset.aidx, 10)
-        if (!nextByIndex[idx]) nextByIndex[idx] = { name: '', start: 1, end: 1 }
-        if (el.dataset.field === 'name') nextByIndex[idx].name = (el.value || '').trim() || (phubArcWord(item.type, 'Arc') + ' ' + (idx + 1))
-        if (el.dataset.field === 'start') nextByIndex[idx].start = Math.max(1, parseInt(el.value, 10) || 1)
-        if (el.dataset.field === 'end') nextByIndex[idx].end = Math.max(1, parseInt(el.value, 10) || 1)
-        if (el.dataset.field === 'count') { nextByIndex[idx].end = Math.max(1, parseInt(el.value, 10) || 1); if (nextByIndex[idx].start !== 0) nextByIndex[idx].start = 1 }
-        if (el.dataset.field === 'prologue') nextByIndex[idx].start = el.checked ? 0 : 1
+        if (!nextByIndex[idx]) nextByIndex[idx] = { name: '', start: 1, end: 1, pro: false, epi: false }
+        var f = el.dataset.field
+        if (f === 'name') nextByIndex[idx].name = (el.value || '').trim() || (phubArcWord(item, 'Arc') + ' ' + (idx + 1))
+        if (f === 'start') nextByIndex[idx].start = Math.max(1, parseInt(el.value, 10) || 1)
+        if (f === 'end') nextByIndex[idx].end = Math.max(1, parseInt(el.value, 10) || 1)
+        if (f === 'count') nextByIndex[idx].end = Math.max(1, parseInt(el.value, 10) || 1)
+        if (f === 'prologue') nextByIndex[idx].pro = el.checked
+        if (f === 'epilogue') nextByIndex[idx].epi = el.checked
       })
 
       var newArcs = []
       ;(it.arcs || []).forEach(function(a, idx) {
-        var spec = nextByIndex[idx] || { name: a.name || (phubArcWord(item.type, 'Arc') + ' ' + (idx + 1)), start: a.chapterStart != null ? a.chapterStart : 1, end: a.chapterEnd || 1 }
-        newArcs.push({
+        var spec = nextByIndex[idx] || { name: a.name || (phubArcWord(item, 'Arc') + ' ' + (idx + 1)), start: a.chapterStart > 0 ? a.chapterStart : 1, end: a.chapterEnd || 1, pro: phubHasPrologue(a), epi: !!a.epilogue }
+        var arc = {
           id: a.id || ('arc-' + (idx + 1)),
           name: spec.name,
-          chapterStart: spec.start,
-          chapterEnd: spec.end,
+          chapterStart: isLN ? (spec.pro ? 0 : 1) : spec.start,        // light novels keep a prologue as Ch. 0 of the range
+          chapterEnd: Math.max(isLN ? 1 : spec.start, spec.end),
           chapters: a.chapters || [], // Preserve chapter ratings
           _prologue: a._prologue || undefined  // light-novel Ch. 0, kept across a web-novel detour
-        })
+        }
+        if (!isLN && spec.pro) arc.prologue = true
+        if (spec.epi) arc.epilogue = true
+        if (a.solo && (it.arcs || []).length === 1) arc.solo = true      // still a single book, so no volume tabs
+        newArcs.push(arc)
       })
       it.arcs = newArcs
+
+      // A removed prologue or epilogue (or a shrunken range, for light novels) shouldn't
+      // keep reads for chapters it no longer has, or progress could exceed 100%.
+      it.watchedEpisodes = (it.watchedEpisodes || []).filter(function(k) {
+        var m = /^s(\d+)_(.+)$/.exec(String(k)); if (!m) return true
+        var a = newArcs[parseInt(m[1], 10)], n = parseFloat(m[2])
+        if (!a) return true
+        if (n === PHUB_EPILOGUE) return !!a.epilogue
+        if (n === 0) return phubHasPrologue(a)
+        if (isLN) return n <= a.chapterEnd && n >= a.chapterStart
+        return true
+      })
       if (isLN) {
-        // A volume that shrank shouldn't keep reads for chapters it no longer has,
-        // or progress could exceed 100%.
-        it.watchedEpisodes = (it.watchedEpisodes || []).filter(function(k) {
-          var m = /^s(\d+)_(.+)$/.exec(String(k)); if (!m) return true
-          var a = newArcs[parseInt(m[1], 10)], n = parseFloat(m[2])
-          return !a || (n <= a.chapterEnd && n >= a.chapterStart)       // also drops Ch. 0 if the prologue was removed
-        })
-        phubLocalizeVolumes(it)                    // total = chapters across every volume
+        phubLocalizeVolumes(it)                    // total = chapters across every section
       } else {
-      newArcs.forEach(function(a) { it.totalEpisodes = Math.max(it.totalEpisodes || 0, Math.floor(a.chapterEnd || 0)) })
+        // Keep a count you set yourself, but make it cover the sections and their extra chapters
+        var base = Math.max((it.totalEpisodes || 0) - oldExtras, 0)
+        newArcs.forEach(function(a) { base = Math.max(base, Math.floor(a.chapterEnd || 0)) })
+        it.totalEpisodes = base + phubExtras(it)
       }
+      // More chapters for a finished series put it back in Watching
+      if (it.status === 'completed' && (it.totalEpisodes || 0) > oldTotalArcs && (it.watchedEpisodes || []).length < it.totalEpisodes) it.status = 'watching'
       refreshDetailProgress(it)
       saveData(KEYS.library, lib)
-      logEvent(phubArcWord(item.type, 'Updated arcs') + ' for ' + item.title)
+      logEvent(phubArcWord(item, 'Updated arcs') + ' for ' + item.title)
       closeModal()
     })
   }
@@ -14806,7 +15402,7 @@ window.phubTypeLabel = function (t) {
       if (a.chapterEnd > lastChapter) lastChapter = a.chapterEnd
     })
     var nextArcNum = existingArcs.length + 1
-    var A = function(w) { return phubArcWord(item.type, w) }    // "Arc" → "Volume" for light novels
+    var A = function(w) { return phubArcWord(item, w) }    // "Arc" → "Volume" for light novels
     var suggestedName = A('Arc') + ' ' + nextArcNum
     var suggestedStart = lastChapter + 1
     // First arc on an item that already has a count: offer to cover all of it,
@@ -14833,10 +15429,6 @@ window.phubTypeLabel = function (t) {
       <div class="sched-modal-field">
         <div class="sched-modal-label">Chapters in this volume</div>
         <input class="sched-modal-input" id="aa-count" type="number" min="1" value="${suggestedCount}" placeholder="8" autocomplete="off"/>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font:500 11px var(--font-mono);color:var(--text-2);cursor:pointer;">
-          <input type="checkbox" id="aa-prologue" style="width:14px;height:14px;accent-color:var(--accent-cool);"/>
-          Starts with a prologue (Ch. 0)
-        </label>
       </div>` : ''}
       <div style="display:${isLN ? 'none' : 'grid'};grid-template-columns:1fr 1fr;gap:12px;">
         <div class="sched-modal-field">
@@ -14847,6 +15439,17 @@ window.phubTypeLabel = function (t) {
           <div class="sched-modal-label">End Chapter</div>
           <input class="sched-modal-input" id="aa-end" type="number" min="1" value="${suggestedEnd}" placeholder="10" autocomplete="off"/>
         </div>
+      </div>
+
+      <div class="sched-modal-field" style="display:flex;gap:18px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;font:500 11px var(--font-mono);color:var(--text-2);cursor:pointer;">
+          <input type="checkbox" id="aa-prologue" style="width:14px;height:14px;accent-color:var(--accent-cool);"/>
+          Starts with a prologue
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font:500 11px var(--font-mono);color:var(--text-2);cursor:pointer;">
+          <input type="checkbox" id="aa-epilogue" style="width:14px;height:14px;accent-color:var(--accent-cool);"/>
+          Ends with an epilogue
+        </label>
       </div>
 
       <div class="sched-modal-btns">
@@ -14872,9 +15475,10 @@ window.phubTypeLabel = function (t) {
       var name = box.querySelector('#aa-name').value.trim() || suggestedName
       var start = Math.max(1, parseInt(box.querySelector('#aa-start').value, 10) || 1)
       var end = Math.max(start, parseInt(box.querySelector('#aa-end').value, 10) || start)
+      var wantPro = box.querySelector('#aa-prologue').checked, wantEpi = box.querySelector('#aa-epilogue').checked
       if (isLN) {
         end = Math.max(1, parseInt(box.querySelector('#aa-count').value, 10) || 1)
-        start = box.querySelector('#aa-prologue').checked ? 0 : 1    // prologue = chapter 0
+        start = wantPro ? 0 : 1    // light novels: prologue = chapter 0 of the range
       }
 
       var lib = loadData(KEYS.library, [])
@@ -14882,6 +15486,7 @@ window.phubTypeLabel = function (t) {
       if (!it) return
 
       if (!it.arcs) it.arcs = []
+      var oldExtras = phubExtras(it)
       var newIdx = it.arcs.length
       var newArc = {
         // Was 'arc-' + count, which repeats an existing id if one was ever removed.
@@ -14891,6 +15496,9 @@ window.phubTypeLabel = function (t) {
         chapterEnd: end,
         chapters: []
       }
+      it.arcs.forEach(function(x) { delete x.solo })     // two or more sections: show the volume tabs
+      if (!isLN && wantPro) newArc.prologue = true      // other types: Ch. 0 in front of the range
+      if (wantEpi) newArc.epilogue = true                // one final chapter shown as "Epilogue"
       it.arcs.push(newArc)
 
       // Chapters read in the flat grid are saved as plain numbers, but inside
@@ -14905,8 +15513,10 @@ window.phubTypeLabel = function (t) {
         })
       }
       // The count must cover the arcs, or progress reads e.g. "12 of 10".
-      it.totalEpisodes = Math.max(it.totalEpisodes || 0, Math.floor(end))
+      it.totalEpisodes = Math.max((it.totalEpisodes || 0) - oldExtras, Math.floor(end)) + phubExtras(it)
       if (isLN) phubLocalizeVolumes(it)            // total = chapters across every volume
+      // A finished series that gets a new volume or arc with unread chapters is not finished any more
+      if (it.status === 'completed' && (it.watchedEpisodes || []).length < (it.totalEpisodes || 0)) it.status = 'watching'
       saveData(KEYS.library, lib)
       refreshDetailProgress(it)
       logEvent(A('Added arc') + ' "' + name + '" to ' + item.title)
@@ -15294,7 +15904,8 @@ window.phubTypeLabel = function (t) {
       manga:   10,
       manhwa:  10,
       novel:   15,
-      lightnovel: 15
+      lightnovel: 15,
+      book:    15
     }
 
     var TIME_OPTIONS = [
@@ -15872,6 +16483,7 @@ window.phubTypeLabel = function (t) {
      Live operations manifest. Terminal intelligence feed.
   ================================================================= */
   function renderOverview() {
+    fixSocialStatuses()
     var main    = document.getElementById('app-main')
     var library = loadData(KEYS.library, [])
 
@@ -16077,7 +16689,7 @@ window.phubTypeLabel = function (t) {
     //                tasks use active/done
     // Type values:   library content types + 'task' for task-only view
     var LIBRARY_STATUS_PILLS = ['all','watching','reading','not started','upcoming','completed','on hold','graveyard']
-    var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel','lightnovel','social']
+    var TYPE_PILLS           = ['all','anime','manga','manhwa','show','movie','novel','lightnovel','book','social']
 
     // Row 1: Library status (cyan accent)
     var row1 = document.createElement('div'); row1.className = 'overview-filter-row'
@@ -16136,7 +16748,7 @@ window.phubTypeLabel = function (t) {
         if (e.item.status === 'graveyard' && activeStatus === 'all') return false
         if (e.item.status === 'on-hold' && activeStatus === 'all') return false
         if (activeStatus !== 'all') {
-          var w = (e.item.watchedEpisodes || []).length
+          var w = e.item.type === 'social' ? 1 : (e.item.watchedEpisodes || []).length    // social is always "started"
           var isReadType = (phubIsRead(e.item.type))
           if (activeStatus === 'not started') statusOk = e.item.status === 'watching' && w === 0
           else if (activeStatus === 'watching') statusOk = e.item.status === 'watching' && w > 0 && !isReadType
@@ -16190,8 +16802,8 @@ window.phubTypeLabel = function (t) {
     var statusWrap = document.createElement('div')
     statusWrap.className = 'manifest-status'
     if (item.status === 'watching') {
-      var itemWatched = (item.watchedEpisodes || []).length
-      var watchLabel = itemWatched === 0 ? 'NOT STARTED' : (phubIsRead(item.type)) ? 'READING' : 'WATCHING'
+      var itemWatched = item.type === 'social' ? 1 : (item.watchedEpisodes || []).length
+      var watchLabel = itemWatched === 0 ? 'NOT STARTED' : item.type === 'social' ? 'ACTIVE' : (phubIsRead(item.type)) ? 'READING' : 'WATCHING'
       statusWrap.innerHTML =
         '<span class="manifest-status-watch-chip' + (itemWatched === 0 ? ' not-started' : '') + '">' +
           '<span class="chip-dot"' + (itemWatched === 0 ? ' style="background:var(--text-3)"' : '') + '></span>' + watchLabel +
@@ -16230,8 +16842,8 @@ window.phubTypeLabel = function (t) {
     // Progress bar
     var progCell = document.createElement('div')
     progCell.className = 'manifest-prog-cell'
-    var pct = item.totalEpisodes > 0
-      ? Math.min(((item.watchedEpisodes||[]).length / item.totalEpisodes) * 100, 100) : 0
+    var _rowC = phubCounts(item)
+    var pct = _rowC.total > 0 ? Math.min((_rowC.watched / _rowC.total) * 100, 100) : 0
     progCell.innerHTML =
       '<div class="manifest-prog-bar"><div class="manifest-prog-fill" style="width:' + pct + '%;"></div></div>'
     row.appendChild(progCell)
@@ -16239,8 +16851,8 @@ window.phubTypeLabel = function (t) {
     // Left / remaining
     var leftCell = document.createElement('div')
     leftCell.className = 'manifest-left-cell'
-    var rem = item.totalEpisodes - (item.watchedEpisodes||[]).length
-    var unit = (phubIsRead(item.type)) ? 'ch' : 'ep'
+    var rem = _rowC.left
+    var unit = _rowC.isSocial ? 'videos' : (phubIsRead(item.type)) ? 'ch' : 'ep'
     leftCell.textContent = rem > 0 ? (rem + ' ' + unit) : '\u2014'
     row.appendChild(leftCell)
 
@@ -18862,7 +19474,7 @@ window.phubTypeLabel = function (t) {
       { value: 'comfortable', label: 'Comfortable' }, { value: 'compact', label: 'Compact' }
     ], function() { applyUiDensitySettings() })))
     s1.appendChild(makeRow('Default content status', 'Status applied when adding new library entries', makeSelect('defaultNewContentStatus', settings.defaultNewContentStatus, [
-      { value: 'watching', label: 'Watching' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'on-hold', label: 'On Hold' }
+      { value: 'watching', label: 'Watching' }, { value: 'next-up', label: 'Next Up' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'on-hold', label: 'On Hold' }
     ])))
     s1.appendChild(makeRow('Confirm destructive actions', 'Ask before marking all watched / graveyard drops', makeToggle('detailConfirmActions', settings.detailConfirmActions)))
     s1.appendChild(makeRow('Auto-focus detail nav', 'Focus season/arc nav on open for keyboard shortcuts', makeToggle('autoFocusDetailNav', settings.autoFocusDetailNav)))
@@ -19326,7 +19938,7 @@ window.phubTypeLabel = function (t) {
 
     var TYPE_COLORS = {
       anime:'#c084fc', manga:'#34d399', manhwa:'#fb923c',
-      show:'#60a5fa',  movie:'#fbbf24', novel:'#f472b6', lightnovel:'#c084fc', social:'#ff4d4d'
+      show:'#60a5fa',  movie:'#fbbf24', novel:'#f472b6', lightnovel:'#c084fc', book:'#f59e0b', social:'#ff4d4d'
     }
     var SECTIONS = [
       { label:'Dashboard',   sub:'Home',           section:'dashboard'  },

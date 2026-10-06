@@ -35,6 +35,15 @@ To sync across devices, tap the sync dot in any app and paste your pairing code.
 - Library → add a series and tick episodes as you watch
 - Mood Queue → pick a mood and get something to watch
 - Graveyard → where dropped series go
+- **Next Up** is the line of what to watch next. Pick **Next Up** in the Status box when you add a series, or tap ⏭ Next Up on any series that isn't finished (on its card or its page). A show you're watching can go straight to Next Up, and taking it out of the queue puts it back in Watching. The Library has a Next Up tab where you reorder with ▲ ▼ or start one with ▶ Watch Now
+- When nothing is left in Watching, the Library and Dashboard offer your Next Up series first. If the queue is empty they offer your On Hold series instead, as the second priority
+- Types: anime, show, movie, manga, manhwa, web novel, light novel, book and social media
+- Manga, manhwa, novels and books group chapters into **volumes or arcs** (your choice, and you can switch any time). Add them when you create the series, or later with Add New Volume / Manage Volumes
+- Each volume or arc can have a **prologue** (a chapter before Ch. 1) and an **epilogue** (one final chapter), and they count toward progress
+- An older item that still uses seasons shows a Convert button, which keeps your read chapters and ratings
+- Social media items have mood tags and a rating too, and they show up in the Mood Queue
+- A finished series goes back to **Watching** by itself when you add a season, volume or arc, or raise a season's episode count
+- A social media channel never finishes, so it is only ever **Watching** or **On Hold** (never Not Started, Done or Next Up), and it has no episode fields. You add its videos yourself
 
 ---
 
